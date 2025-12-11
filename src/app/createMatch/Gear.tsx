@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import AudiotrackIcon from "@mui/icons-material/Audiotrack";
-import OutdoorGrillIcon from "@mui/icons-material/OutdoorGrill";
 import { RsetCreateTalent } from "@/store/slices/mainSlice";
 import { useAppDispatch } from "@/store/reduxHook";
 import { Icon } from "@/components/Icon";
