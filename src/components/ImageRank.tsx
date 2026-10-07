@@ -1,201 +1,200 @@
-import React, { useEffect, useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/router";
-import Started from "@/assets/ranks/start_question.png";
-import bronseBase1 from "@/assets/ranks/bronze-1.png";
-import bronseBase2 from "@/assets/ranks/bronze-2.png";
-import bronseBase3 from "@/assets/ranks/bronze-3.png";
-import silver1 from "@/assets/ranks/silver-1.png";
-import silver2 from "@/assets/ranks/silver-2.png";
-import silver3 from "@/assets/ranks/silver-3.png";
-import gold1 from "@/assets/ranks/gold-1.png";
-import gold2 from "@/assets/ranks/gold-2.png";
-import gold3 from "@/assets/ranks/gold-3.png";
-import ruby from "@/assets/ranks/ruby.png";
-import gem from "@/assets/ranks/gem.png";
-import word from "@/assets/ranks/wordOne.png";
+// src/components/profile/ImageRank.tsx
+"use client";
 
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import React, { useMemo, useState } from "react";
+import Image, { StaticImageData } from "next/image";
+import { useRouter } from "next/navigation";
 
-interface ProfileWithRankProps {
+import Started from "../../public/assets/ranks/starter.png";
+import bronseBase1 from "../../public/assets/ranks/bronze1.png";
+import bronseBase2 from "../../public/assets/ranks/bronze2.png";
+import bronseBase3 from "../../public/assets/ranks/bronze3.png";
+import silver1 from "../../public/assets/ranks/silver1.png";
+import silver2 from "../../public/assets/ranks/silver2.png";
+import silver3 from "../../public/assets/ranks/silver3.png";
+import gold1 from "../../public/assets/ranks/gold1.png";
+import gold2 from "../../public/assets/ranks/gold2.png";
+import gold3 from "../../public/assets/ranks/gold3.png";
+import gem1 from "../../public/assets/ranks/gem1.png";
+import gem2 from "../../public/assets/ranks/gem2.png";
+import gem3 from "../../public/assets/ranks/gem3.png";
+import ruby1 from "../../public/assets/ranks/ruby1.png";
+import ruby2 from "../../public/assets/ranks/ruby2.png";
+import ruby3 from "../../public/assets/ranks/ruby3.png";
+import word from "../../public/assets/ranks/worldMain.png";
+import { Icon } from "./Icon";
+
+type StarType = "bronse" | "silver" | "gold" | "gem" | "ruby" | "word" | "";
+
+interface RankState {
+  base: StaticImageData | string;
+  stars: number;
+  starType: StarType;
+  displayNumber?: number;
+}
+
+interface ImageRankProps {
   userInfo?: any;
-  imgSrc?: string;
+  imgSrc?: string | null;
   userName?: string;
   score?: number;
   imgSize?: number;
-  userNameStyle?: string;
-  positionVideo?: number;
+  userNameLength?: number;
   showProfile?: boolean;
+  onClickDisable?: boolean;
+  className?: string;
 }
 
-const rankPositionSettings = {
-  bronse: { bottom: "-20%", left: "-20%" },
-  silver: { bottom: "-23%", left: "-23%" },
-  gold: { bottom: "-23%", left: "-23%" },
-  gem: { bottom: "-23%", left: "-23%" },
-  ruby: { bottom: "-23%", left: "-23%" },
-  word: { bottom: "-23%", left: "-23%" },
+const getRankData = (score: number): RankState => {
+  if (score < 0) return { base: Started, stars: 0, starType: "" };
+  if (score < 100) return { base: bronseBase1, stars: 1, starType: "bronse" };
+  if (score < 200) return { base: bronseBase2, stars: 2, starType: "bronse" };
+  if (score < 300) return { base: bronseBase3, stars: 3, starType: "bronse" };
+  if (score < 400) return { base: silver1, stars: 1, starType: "silver" };
+  if (score < 500) return { base: silver2, stars: 2, starType: "silver" };
+  if (score < 600) return { base: silver3, stars: 3, starType: "silver" };
+  if (score < 700) return { base: gold1, stars: 1, starType: "gold" };
+  if (score < 800) return { base: gold2, stars: 2, starType: "gold" };
+  if (score < 900) return { base: gold3, stars: 3, starType: "gold" };
+  if (score < 1000) return { base: gem1, stars: 1, starType: "ruby" };
+  if (score < 1100) return { base: gem2, stars: 2, starType: "ruby" };
+  if (score < 1200) return { base: gem3, stars: 3, starType: "ruby" };
+  if (score < 1300) return { base: ruby1, stars: 1, starType: "ruby" };
+  if (score < 1400) return { base: ruby2, stars: 2, starType: "ruby" };
+  if (score < 1500) return { base: ruby3, stars: 3, starType: "ruby" };
+  if (score < 1600)
+    return { base: word, stars: 1, starType: "word", displayNumber: 900 };
+  if (score < 1700)
+    return { base: word, stars: 1, starType: "word", displayNumber: 850 };
+  if (score < 1800)
+    return { base: word, stars: 2, starType: "word", displayNumber: 800 };
+  if (score < 1850)
+    return { base: word, stars: 2, starType: "word", displayNumber: 750 };
+  if (score < 1900)
+    return { base: word, stars: 3, starType: "word", displayNumber: 700 };
+  if (score < 1950)
+    return { base: word, stars: 3, starType: "word", displayNumber: 650 };
+  if (score < 2000)
+    return { base: word, stars: 3, starType: "word", displayNumber: 600 };
+  return { base: word, stars: 3, starType: "word", displayNumber: 550 };
 };
 
-const ImageRank: React.FC<ProfileWithRankProps> = ({
+const ImageRank: React.FC<ImageRankProps> = ({
   imgSrc,
-  showProfile = true,
-  userNameStyle,
-  positionVideo,
   userName,
   score = -1,
   imgSize = 40,
+  userNameLength = 15,
+  showProfile = true,
+  onClickDisable = false,
   userInfo,
+  className = "",
 }) => {
-  const [rankData, setRankData] = useState<{
-    base: any;
-    stars: number;
-    starType: "bronse" | "silver" | "gold" | "gem" | "ruby" | "word" | "";
-    displayNumber?: number;
-  }>({ base: Started, stars: 0, starType: "" });
-
-  const rankSize = Math.floor(imgSize * 0.6);
   const router = useRouter();
+  const [imageError, setImageError] = useState(false);
 
-  const determineRank = () => {
-    if (score === 0)
-      return { base: bronseBase1, stars: 1, starType: "bronse" as const };
-    else if (score > 0 && score < 100)
-      return { base: bronseBase1, stars: 1, starType: "bronse" as const };
-    else if (score >= 100 && score < 200)
-      return { base: bronseBase2, stars: 2, starType: "bronse" as const };
-    else if (score >= 200 && score < 300)
-      return { base: bronseBase3, stars: 3, starType: "bronse" as const };
-    else if (score >= 300 && score < 400)
-      return { base: silver1, stars: 1, starType: "silver" as const };
-    else if (score >= 400 && score < 500)
-      return { base: silver2, stars: 2, starType: "silver" as const };
-    else if (score >= 500 && score < 600)
-      return { base: silver3, stars: 3, starType: "silver" as const };
-    else if (score >= 600 && score < 700)
-      return { base: gold1, stars: 1, starType: "gold" as const };
-    else if (score >= 700 && score < 800)
-      return { base: gold2, stars: 2, starType: "gold" as const };
-    else if (score >= 800 && score < 900)
-      return { base: gold3, stars: 3, starType: "gold" as const };
-    else if (score >= 900 && score < 1000)
-      return { base: ruby, stars: 1, starType: "ruby" as const };
-    else if (score >= 1000 && score < 1100)
-      return { base: ruby, stars: 2, starType: "ruby" as const };
-    else if (score >= 1100 && score < 1200)
-      return { base: ruby, stars: 3, starType: "ruby" as const };
-    else if (score >= 1200 && score < 1300)
-      return { base: ruby, stars: 1, starType: "ruby" as const };
-    else if (score >= 1300 && score < 1400)
-      return { base: ruby, stars: 2, starType: "ruby" as const };
-    else if (score >= 1400 && score < 1500)
-      return { base: ruby, stars: 3, starType: "ruby" as const };
-    else if (score >= 1500)
-      return {
-        base: word,
-        stars: 3,
-        starType: "word" as const,
-        displayNumber: 550,
-      };
-    else return { base: Started, stars: 0, starType: "" as const };
-  };
+  const rankData = useMemo(() => getRankData(score), [score]);
+  const rankSize = Math.floor(imgSize * 0.6);
 
-  useEffect(() => {
-    setRankData(determineRank());
-  }, [score]);
-
-  const shortenUserName = (name: string | undefined) => {
-    if (!name) return "";
-    return name.length > 15 ? `${name.slice(0, 15)}...` : name;
-  };
+  const hasValidImage =
+    Boolean(imgSrc) && !imgSrc?.includes("undefined") && !imageError;
 
   const handleClick = () => {
-    if (!showProfile) return;
+    if (onClickDisable || !showProfile) return;
 
-    const userData = {
-      profile:
-        positionVideo === 0
-          ? userInfo?.profileInserted
-          : positionVideo === 1
-          ? userInfo?.profileMatched
-          : userInfo?.userProfile,
-      user:
-        positionVideo === 0
-          ? userInfo?.userInserted
-          : positionVideo === 1
-          ? userInfo?.userMatched
-          : userInfo?.user,
-      score:
-        positionVideo === 0
-          ? userInfo?.scoreInserted
-          : positionVideo === 1
-          ? userInfo?.scoreMatched
-          : userInfo?.score,
-    };
+    // پیدا کردن نام کاربری یا شناسه برای آدرس‌دهی سئومحور
+    const targetIdentifier =
+      userInfo?.userName ||
+      userInfo?.user?.userName ||
+      userInfo?.id ||
+      userInfo?.user?.id;
 
-    router.push({
-      pathname: "/profile",
-      query: { userData: JSON.stringify(userData) },
-    });
+    if (targetIdentifier) {
+      router.push(`/profile/${encodeURIComponent(targetIdentifier)}`);
+    }
   };
+
+  const displayName = userName
+    ? userName.length > userNameLength
+      ? `${userName.slice(0, userNameLength)}...`
+      : userName
+    : null;
 
   return (
     <div
-      onClick={handleClick}
-      className="flex items-center m-1 relative cursor-pointer"
-      style={{ height: `${imgSize}px` }}
+      onClick={onClickDisable ? undefined : handleClick}
+      className={`inline-flex items-center gap-2 select-none ${
+        onClickDisable || !showProfile ? "" : "cursor-pointer group"
+      } ${className}`}
     >
+      {/* ظرف آواتار و مدال رتبه */}
       <div
-        className="relative"
-        style={{ width: `${imgSize}px`, height: `${imgSize}px` }}
+        className="relative shrink-0 flex items-center justify-center"
+        style={{ width: imgSize, height: imgSize }}
       >
-        {!imgSrc ? (
-          <AccountCircleIcon
-            className="text-gray-200 w-full h-full"
-            style={{ width: "100%", height: "100%", borderRadius: "50%" }}
-          />
-        ) : (
+        {hasValidImage ? (
           <Image
-            src={imgSrc}
-            alt="Profile"
-            className="rounded-full object-cover"
+            src={imgSrc as string}
+            alt={userName || "User Avatar"}
             width={imgSize}
             height={imgSize}
+            onError={() => setImageError(true)}
+            className="rounded-full object-cover border border-gray-200 dark:border-gray-700 shadow-sm"
+            style={{ width: imgSize, height: imgSize }}
+            unoptimized={
+              typeof imgSrc === "string" && imgSrc.startsWith("blob:")
+            }
           />
+        ) : (
+          <div
+            className="rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700"
+            style={{ width: imgSize, height: imgSize }}
+          >
+            <Icon
+              name="person"
+              size={Math.round(imgSize * 0.55)}
+              className="text-gray-400 dark:text-gray-500"
+            />
+          </div>
         )}
 
         {score >= 0 && rankData.starType && (
           <div
-            className=""
+            className="absolute z-10 pointer-events-none drop-shadow-md"
             style={{
-              position: "absolute",
-              bottom: rankPositionSettings[rankData.starType]?.bottom,
-              left: rankPositionSettings[rankData.starType]?.left,
-              width: `${rankSize}px`,
-              height: `${rankSize}px`,
-              zIndex: 10,
+              width: rankSize,
+              height: rankSize,
+              bottom: -Math.floor(rankSize * 0.25),
+              left: -Math.floor(rankSize * 0.25),
             }}
           >
             <Image
               src={rankData.base}
-              alt="Rank"
+              alt={rankData.starType}
               width={rankSize}
               height={rankSize}
+              className="object-contain w-full h-full"
             />
             {rankData.starType === "word" && rankData.displayNumber && (
-              <div className="rank-number">{rankData.displayNumber}</div>
+              <span
+                className="absolute inset-0 flex items-center justify-center font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
+                style={{ fontSize: `${Math.max(rankSize * 0.22, 8)}px` }}
+              >
+                {rankData.displayNumber}
+              </span>
             )}
           </div>
         )}
       </div>
 
-      {userName && (
-        <span className={`ms-2 font-bold ${userNameStyle || "text-gray-800"}`}>
-          {shortenUserName(userName)}
+      {/* نام کاربر */}
+      {displayName && (
+        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+          {displayName}
         </span>
       )}
     </div>
   );
 };
 
-export default ImageRank;
+export default React.memo(ImageRank);

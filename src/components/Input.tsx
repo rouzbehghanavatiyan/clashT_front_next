@@ -33,7 +33,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       onKeyDown,
       value,
       label,
-      className,
+      className = "",
       type = "text",
       Icon,
       placeholder,
@@ -48,7 +48,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const [isOverflow, setIsOverflow] = useState<boolean>(false);
+    const [, setIsOverflow] = useState<boolean>(false);
 
     const changeHandler = (
       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -67,15 +67,21 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       onChange(e);
     };
 
+    // استایل مشترک بردر پیش‌فرض کم‌رنگ و فوکوس خاکستری کم‌رنگ
+    const borderFocusClasses =
+      "border border-gray-200 outline-none transition-colors duration-150 focus:border-gray-400 focus:ring-1 focus:ring-gray-300";
+
     if (multiline) {
       return (
         <div>
-          <label
-            htmlFor={name}
-            className="input-label  input-label-sm lg:input-label-base"
-          >
-            {label}
-          </label>
+          {label && (
+            <label
+              htmlFor={name}
+              className="input-label input-label-sm lg:input-label-base"
+            >
+              {label}
+            </label>
+          )}
           <div className="input-container">
             <textarea
               disabled={disabled}
@@ -88,7 +94,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               onChange={(e) => changeHandler(e, onChange)}
               value={value}
               ref={ref as React.Ref<HTMLTextAreaElement>}
-              className={className}
+              className={`${borderFocusClasses} ${className}`}
               style={{
                 maxHeight: maxHeight,
               }}
@@ -126,12 +132,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div>
-        <label
-          htmlFor={name}
-          className="input-label input-label-sm lg:input-label-base"
-        >
-          {label}
-        </label>
+        {label && (
+          <label
+            htmlFor={name}
+            className="input-label input-label-sm lg:input-label-base"
+          >
+            {label}
+          </label>
+        )}
         <div className="input-container">
           <input
             disabled={disabled}
@@ -145,7 +153,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             onChange={(e) => changeHandler(e, onChange)}
             value={value}
             ref={ref}
-            className={`${className}  input input-sm lg:input-base data-[state=failed]:input-failed 
+            className={`${borderFocusClasses} ${className} input input-sm lg:input-base data-[state=failed]:input-failed 
             data-[state=success]:input-success truncate disabled:cursor-pointer disabled:!border-none 
             disabled:bg-gray-100 disabled:text-[#777777] disabled:!shadow-none data-[state=disabled]:disabled:!px-1 data-[state=disabled]:disabled:!py-2`}
             data-state={

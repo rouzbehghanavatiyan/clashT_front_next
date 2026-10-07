@@ -3,8 +3,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { userService } from "@/services/user.service";
 import StringHelpers from "@/utils/StringHelpers";
 import Dropdown from "@/components/DropDown";
-import Follows from "@/components/Fallows";
 import ImageRank from "@/components/ImageRank";
+import Follows from "@/components/Follows";
 
 const OptionTop: React.FC<any> = ({
   video,

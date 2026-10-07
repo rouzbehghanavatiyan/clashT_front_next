@@ -1,9 +1,10 @@
 "use client";
+
 import React, { FC, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import logo from "@/assets/img/1724181984017.jpg";
+import logo from "../../public/assets/images/logocircle.png";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 
@@ -12,6 +13,17 @@ import { jwtDecode } from "jwt-decode";
 
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import { loginUser, RsetUserLogin } from "@/store/slices/mainSlice";
+
+interface LoginFormState {
+  username: string;
+  password: string;
+}
+
+interface DecodedToken {
+  sub?: string;
+  nameid?: string;
+  [key: string]: unknown;
+}
 
 const LoginForm: FC = () => {
   const router = useRouter();
@@ -22,7 +34,7 @@ const LoginForm: FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const [formState, setFormState] = useState<any>({
+  const [formState, setFormState] = useState<LoginFormState>({
     username: "",
     password: "",
   });
@@ -30,32 +42,37 @@ const LoginForm: FC = () => {
   useEffect(() => {
     const saved = localStorage.getItem("rememberedUsername");
     if (saved) {
-      setFormState((prev: any) => ({ ...prev, username: saved }));
+      setFormState((prev) => ({ ...prev, username: saved }));
       setRememberMe(true);
     }
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormState((prev: any) => ({
+    const { name, value } = e.target;
+    setFormState((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const result = await dispatch(
       loginUser({
-        userName: formState.username,
+        username: formState.username,
         password: formState.password,
-      })
+      }),
     );
 
     if (loginUser.fulfilled.match(result)) {
-      const token = result.payload.data.token;
-      const userData: any = jwtDecode(token);
-      const userId = Object.values(userData)?.[1] as string;
+      const token = result.payload?.token;
+      if (!token) return;
+
+      const userData = jwtDecode<DecodedToken>(token);
+      const userId = (userData.nameid ||
+        userData.sub ||
+        Object.values(userData)?.[1]) as string;
 
       sessionStorage.setItem("token", token);
 
@@ -64,10 +81,9 @@ const LoginForm: FC = () => {
           token,
           userId,
           username: formState.username,
-        })
+        }),
       );
 
-      // Save username if Remember Me is active
       if (rememberMe) {
         localStorage.setItem("rememberedUsername", formState.username);
       } else {
@@ -80,22 +96,31 @@ const LoginForm: FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-200 from-gray-50 to-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-4">
         <div className="flex flex-col items-center mb-8">
           <Link href="/" className="mb-4">
-            <div className="relative w-24 h-24 rounded-full shadow-lg">
-              <Image src={logo} alt="Logo" fill className="object-cover" />
+            <div className="relative w-24 h-24 rounded-full overflow-hidden shadow-lg">
+              <Image
+                src={logo}
+                alt="Logo"
+                fill
+                sizes="96px"
+                priority
+                className="object-cover"
+              />
             </div>
           </Link>
           <h1 className="text-2xl font-bold text-gray-800">Clash Talent</h1>
           <p className="text-gray-600 text-center">Sign in to your account</p>
         </div>
+
         {error && (
-          <div className="mb-6 p-4 text-red-700 rounded-lg text-sm">
+          <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">
             {error}
           </div>
         )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -107,9 +132,11 @@ const LoginForm: FC = () => {
               onChange={handleChange}
               placeholder="Enter your username"
               autoComplete="username"
+              required
               className="w-full px-4 py-3 rounded-lg border"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Password
@@ -122,23 +149,31 @@ const LoginForm: FC = () => {
                 onChange={handleChange}
                 placeholder="Enter your password"
                 autoComplete="current-password"
+                required
                 className="w-full px-4 py-3 pr-12 rounded-lg border"
               />
-              <span
+              <button
+                type="button"
                 onClick={() => setShowPassword((p) => !p)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 focus:outline-none"
+                tabIndex={-1}
               >
-                {showPassword ? <VisibilityOff /> : <Visibility />}
-              </span>
+                {showPassword ? (
+                  <VisibilityOff fontSize="small" />
+                ) : (
+                  <Visibility fontSize="small" />
+                )}
+              </button>
             </div>
           </div>
+
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="cursor-pointer"
+                className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
               Remember Me
             </label>
@@ -152,15 +187,16 @@ const LoginForm: FC = () => {
           </div>
 
           <Button
-            label="sign in"
+            label="Sign in"
             type="submit"
             loading={loading}
             disabled={loading}
-            className="w-full py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            className="w-full py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           />
-          <div className="text-center pt-4 border-t">
+
+          <div className="text-center pt-4 border-t border-gray-100">
             <p className="text-sm text-gray-600">
-              Don’t have an account?
+              Don’t have an account?{" "}
               <Link
                 href="/signUp"
                 className="text-blue-600 font-medium hover:underline"

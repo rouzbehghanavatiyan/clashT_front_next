@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
-import logo from "@/assets/img/1724181984017.jpg";
+import logo from "../../public/assets/images/logocircle.png";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";

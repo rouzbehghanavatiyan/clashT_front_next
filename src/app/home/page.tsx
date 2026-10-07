@@ -19,6 +19,8 @@ const HomePage: React.FC = () => {
   const { pagination, data: reduxData } = main.homeMatch;
   const userIdLogin = main?.userLogin?.user?.id;
 
+  console.log("Current userIdLogin:", userIdLogin);
+  
   const customFetchNextPage = useCallback(
     async (params: {
       skip: number;
@@ -27,7 +29,7 @@ const HomePage: React.FC = () => {
     }) => {
       if (!params.inviteId) return [];
       try {
-        const res = await  attachmentService.followerAttachmentList({
+        const res = await attachmentService.followerAttachmentList({
           skip: params.skip,
           take: params.take,
           userIdLogin,
@@ -38,7 +40,7 @@ const HomePage: React.FC = () => {
             take: params.take,
             skip: params.skip + params.take,
             hasMore: (res?.data || []).length > 0,
-          })
+          }),
         );
         return res?.data || [];
       } catch (error) {
@@ -46,7 +48,7 @@ const HomePage: React.FC = () => {
         return [];
       }
     },
-    [dispatch, userIdLogin]
+    [dispatch, userIdLogin],
   );
 
   const {

@@ -12,9 +12,12 @@ const initialState: any = {
   user: null,
   createTalent: {},
   token: null,
+  followingLength: 0,
+  followerLength: 0,
   loading: false,
   error: null,
   userLogin: {},
+  profileVideo: [],
   showLoading: {},
   watchVideo: {
     pagination: {
@@ -51,7 +54,7 @@ export const loginUser = createAsyncThunk(
       username: string;
       password: string;
     },
-    thunkAPI
+    thunkAPI,
   ) => {
     try {
       const response = await authService.login({
@@ -77,14 +80,14 @@ export const loginUser = createAsyncThunk(
       };
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.message || "Server error"
+        err.response?.data?.message || "Server error",
       );
     }
-  }
+  },
 );
 
-const authSlice = createSlice({
-  name: "auth",
+const mainSlice = createSlice({
+  name: "main",
   initialState,
   reducers: {
     RsetShowWatch: (state: any, action: PayloadAction<any>) => {
@@ -114,7 +117,7 @@ const authSlice = createSlice({
     },
     RsetLoading: (
       state,
-      action: PayloadAction<{ btnName?: string | number; value?: boolean }>
+      action: PayloadAction<{ btnName?: string | number; value?: boolean }>,
     ) => {
       state.showLoading = action.payload;
     },
@@ -123,7 +126,7 @@ const authSlice = createSlice({
     },
     setPaginationShowWatch: (
       state,
-      action: PayloadAction<{ take: number; skip: number; hasMore: boolean }>
+      action: PayloadAction<{ take: number; skip: number; hasMore: boolean }>,
     ) => {
       state.showWatchMatch.pagination = action.payload;
     },
@@ -132,14 +135,23 @@ const authSlice = createSlice({
         state.homeMatch.data = [...state.homeMatch.data, ...action.payload];
       }
     },
+    RsetProfileVideo: (state, action: PayloadAction<any[]>) => {
+      state.profileVideo = action.payload;
+    },
     RsetCreateTalent: (state, action: PayloadAction<any>) => {
       state.createTalent = action.payload;
     },
     setPaginationHomeMatch: (
       state,
-      action: PayloadAction<{ take: number; skip: number; hasMore: boolean }>
+      action: PayloadAction<{ take: number; skip: number; hasMore: boolean }>,
     ) => {
       state.homeMatch.pagination = action.payload;
+    },
+    RsetFollowingLength: (state, action: PayloadAction<any[]>) => {
+      state.followingLength = action.payload;
+    },
+    RsetFollowerLength: (state, action: PayloadAction<any[]>) => {
+      state.followerLength = action.payload;
     },
     resetShowWatchState: (state) => {
       state.showWatchMatch = {
@@ -157,7 +169,7 @@ const authSlice = createSlice({
         movieId: string;
         isLiked: boolean;
         positionVideo?: number;
-      }>
+      }>,
     ) => {
       const { movieId, isLiked, positionVideo } = action.payload;
       state.showWatchMatch.data = state.showWatchMatch.data.map(
@@ -177,7 +189,7 @@ const authSlice = createSlice({
           };
 
           return videoCopy;
-        }
+        },
       );
     },
   },
@@ -216,6 +228,9 @@ export const {
   updateLikeStatus,
   RsetLoading,
   RsetCreateTalent,
-} = authSlice.actions;
+  RsetProfileVideo,
+  RsetFollowerLength,
+  RsetFollowingLength,
+} = mainSlice.actions;
 
-export default authSlice.reducer;
+export default mainSlice.reducer;

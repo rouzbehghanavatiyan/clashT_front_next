@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-
+import { AppShell } from "@/components/AppShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Your App Title",
-  description: "Your app description",
+  title: "Clash Talent",
+  description: "Find and manage top talents",
 };
 
 export default function RootLayout({
@@ -28,8 +28,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Providers>{children}</Providers>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Providers>
+          <AppShell>{children}</AppShell>
+        </Providers>
       </body>
     </html>
   );

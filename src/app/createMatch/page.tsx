@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import Arena from "./Arena";
-import Mode from "./Mode";
 import { Icon } from "@/components/Icon";
 import { categoryService } from "@/services/category.service";
 import { miscService } from "@/services/misc.service";
 import Skill from "./Skill";
+import Gear from "./Gear";
 
 interface StepData {
   title: string;
