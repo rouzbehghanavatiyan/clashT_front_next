@@ -1,20 +1,110 @@
-import axios from "axios";
+import axios, {
+  type AxiosError,
+  type AxiosInstance,
+  type InternalAxiosRequestConfig,
+} from "axios";
+import {
+  getAccessToken,
+  getRefreshToken,
+  removeTokens,
+  saveTokens,
+} from "./tokenService";
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL;
-const notifURL = process.env.NEXT_PUBLIC_NOTIF_API;
+export const baseURL = process.env.NEXT_PUBLIC_API_URL;
 
 export const api = axios.create({
   baseURL,
+  headers: { "Content-Type": "application/json" },
 });
 
-export const notifApi = axios.create({
-  baseURL: notifURL,
-});
+type RetryConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
+let isRefreshing = false;
+let failedQueue: {
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token!)));
+  failedQueue = [];
+};
+
+const redirectToLogin = () => {
+  removeTokens();
+  if (typeof window !== "undefined") window.location.href = "/";
+};
+
+const setupInterceptors = (instance: AxiosInstance) => {
+  instance.interceptors.request.use((config) => {
+    const token = getAccessToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+    return config;
+  });
+
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error: AxiosError) => {
+      const originalRequest = error.config as RetryConfig | undefined;
+
+      if (
+        !originalRequest ||
+        error.response?.status !== 401 ||
+        originalRequest._retry
+      ) {
+        return Promise.reject(error);
+      }
+
+      // اگر همزمان رفرش در جریان است، در صف منتظر بمان
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest._retry = true;
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return instance(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        isRefreshing = false;
+        processQueue(error, null);
+        redirectToLogin();
+        return Promise.reject(error);
+      }
+
+      try {
+        const response = await axios.post(`${baseURL}/refreshToken`, {
+          accessToken: getAccessToken(),
+          refreshToken,
+        });
+
+        const data = response.data?.data;
+        const newAccessToken: string | undefined = data?.token;
+        const newRefreshToken: string | undefined = data?.refreshToken;
+
+        if (!newAccessToken || !newRefreshToken) {
+          throw new Error("Invalid new tokens received from server.");
+        }
+
+        saveTokens(newAccessToken, newRefreshToken);
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        processQueue(null, newAccessToken);
+
+        return instance(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        redirectToLogin();
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    },
+  );
+};
+
+setupInterceptors(api);

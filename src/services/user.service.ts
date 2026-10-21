@@ -9,4 +9,7 @@ export const userService = {
   removeLike: (data: any) => api.delete("/removeLike", { data }),
   showProfileByUser: (userId: number) =>
     api.get(`/showProfileByUser?userId=${userId}`),
+  removeFollower: (postData: any) =>
+    api.delete(`/removeFollower`, { data: postData }),
+  addFollower: (data: any) => api.post("/addFollower", data),
 };

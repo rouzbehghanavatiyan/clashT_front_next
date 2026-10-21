@@ -3,7 +3,6 @@ import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { userService } from "@/services/user.service";
-import { updateLikeStatus } from "@/store/slices/mainSlice";
 import { useAppDispatch } from "@/store/reduxHook";
 
 const OptionBottom: React.FC<any> = ({
@@ -84,12 +83,10 @@ const OptionBottom: React.FC<any> = ({
       );
     } catch (error) {
       console.error("Error in like operation:", error);
-      // در صورت خطا، UI را به حالت قبلی برگردان
       setIsLiked(isLiked);
     }
   }, [isLiked, movieId, userIdLogin, socket, dispatch, positionVideo]);
 
-  // تعداد لایک‌ها را برای این movieId خاص محاسبه کن
   const currentLikeCount = useMemo(() => {
     if (countLiked !== undefined) return countLiked;
 

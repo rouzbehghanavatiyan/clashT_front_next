@@ -50,7 +50,6 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
   const scrollContainerRef = useRef<HTMLElement>(null);
   const expireTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // --- استیت‌های ریداکس ---
   const myVideosInRedux =
     useAppSelector((state) => state?.main?.profileVideo) || [];
   const userLogin = useAppSelector((state) => state?.main?.userLogin);

@@ -1,32 +1,41 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { jwtDecode } from "jwt-decode";
-import { authService } from "@/services/auth.service";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-type MessageModal = {
-  title?: string;
-  show?: boolean;
-  icon?: string;
+interface Pagination {
+  take: number;
+  skip: number;
+  hasMore: boolean;
+}
+
+interface DataState<T = any> {
+  pagination: Pagination;
+  data: T[];
+}
+
+interface MainState {
+  showTimerButtn: boolean;
+  lastMatch: any[];
+  unreadMessagesCount: number;
+  watchVideo: DataState;
+  homeMatch: DataState;
+  showWatchMatch: DataState;
+}
+
+const initialPagination: Pagination = {
+  take: 6,
+  skip: 0,
+  hasMore: true,
+};
+
+const initialDataState: DataState = {
+  pagination: { ...initialPagination },
+  data: [],
 };
 
 const initialState: any = {
-  user: null,
-  createTalent: {},
-  token: null,
-  followingLength: 0,
-  followerLength: 0,
-  loading: false,
-  error: null,
-  userLogin: {},
-  profileVideo: [],
-  showLoading: {},
-  watchVideo: {
-    pagination: {
-      take: 6,
-      skip: 0,
-      hasMore: true,
-    },
-    data: [],
-  },
+  showTimerButtn: false,
+  lastMatch: [],
+  unreadMessagesCount: 0,
+  watchVideo: { ...initialDataState },
   homeMatch: {
     pagination: {
       take: 6,
@@ -41,111 +50,47 @@ const initialState: any = {
       skip: 0,
       hasMore: true,
     },
+    data: [],
   },
+  profileVideo: [],
+  followingLength: 0,
+  followerLength: 0,
+  allFollowerList: [],
+  allFollowingList: [],
+  category: [],
+  categoryCache: {},
+  selectedSteps: {
+    arenaId: null,
+    skillId: null,
+    gearId: null,
+  },
+  userLogin: {},
+  userId: 0,
+  socketConfig: null,
+  userOnlines: null,
 };
-
-export const loginUser = createAsyncThunk(
-  "auth/loginUser",
-  async (
-    {
-      username,
-      password,
-    }: {
-      username: string;
-      password: string;
-    },
-    thunkAPI,
-  ) => {
-    try {
-      const response = await authService.login({
-        userName: username,
-        password,
-      });
-
-      const { status, data } = response.data;
-
-      if (status !== 0) {
-        return thunkAPI.rejectWithValue("Invalid username or password");
-      }
-
-      const decoded = jwtDecode(data.token) as any;
-      const userId = Object.values(decoded)?.[1] as string;
-
-      return {
-        token: data.token,
-        user: {
-          username,
-          userId,
-        },
-      };
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(
-        err.response?.data?.message || "Server error",
-      );
-    }
-  },
-);
 
 const mainSlice = createSlice({
   name: "main",
   initialState,
   reducers: {
-    RsetShowWatch: (state: any, action: PayloadAction<any>) => {
-      if (Array.isArray(action.payload)) {
-        state.showWatchMatch.data = [
-          ...state.showWatchMatch.data,
-          ...action.payload,
-        ];
-      }
+    setPaginationWatch: (state, action: PayloadAction<Pagination>) => {
+      state.watchVideo.pagination = action.payload;
     },
-    setToken: (state, action: PayloadAction<string>) => {
-      state.token = action.payload;
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", action.payload);
-      }
-    },
-    logout: (state) => {
-      state.token = null;
-      state.user = null;
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-      }
-    },
-    RsetUserLogin: (state, action: PayloadAction<any>) => {
-      // state.userLogin = { ...state.userLogin, ...action.payload };
-      state.userLogin = action.payload;
-    },
-    RsetLoading: (
-      state,
-      action: PayloadAction<{ btnName?: string | number; value?: boolean }>,
-    ) => {
-      state.showLoading = action.payload;
-    },
-    RsetMessageModal: (state, action: PayloadAction<MessageModal>) => {
-      state.messageModal = action.payload;
-    },
-    setPaginationShowWatch: (
-      state,
-      action: PayloadAction<{ take: number; skip: number; hasMore: boolean }>,
-    ) => {
-      state.showWatchMatch.pagination = action.payload;
-    },
-    RsetHomeMatch: (state, action: PayloadAction<any[]>) => {
-      if (Array.isArray(action.payload)) {
-        state.homeMatch.data = [...state.homeMatch.data, ...action.payload];
-      }
+    setWatchData: (state, action: PayloadAction<any[]>) => {
+      state.watchVideo.data = action.payload;
     },
     RsetProfileVideo: (state, action: PayloadAction<any[]>) => {
       state.profileVideo = action.payload;
     },
-    RsetCreateTalent: (state, action: PayloadAction<any>) => {
-      state.createTalent = action.payload;
+    appendWatchData: (state, action: PayloadAction<any[]>) => {
+      state.watchVideo.data = [...state.watchVideo.data, ...action.payload];
     },
-    setPaginationHomeMatch: (
-      state,
-      action: PayloadAction<{ take: number; skip: number; hasMore: boolean }>,
-    ) => {
-      state.homeMatch.pagination = action.payload;
+    RsetAllFollowerList: (state, action: PayloadAction<any[]>) => {
+      state.allFollowerList = action.payload;
+    },
+    RsetAllFollowingList: (state, action: PayloadAction<any[]>) => {
+      state.allFollowingList = action.payload;
     },
     RsetFollowingLength: (state, action: PayloadAction<any[]>) => {
       state.followingLength = action.payload;
@@ -153,84 +98,192 @@ const mainSlice = createSlice({
     RsetFollowerLength: (state, action: PayloadAction<any[]>) => {
       state.followerLength = action.payload;
     },
+    RsetLastMatch: (state, action: PayloadAction<any[]>) => {
+      state.lastMatch = action.payload;
+    },
+    RsetCategory: (
+      state,
+      action: PayloadAction<any[] | { parentId: number | string; data: any[] }>,
+    ) => {
+      if (Array.isArray(action.payload)) {
+        state.category = action.payload;
+      } else {
+        const { parentId, data } = action.payload;
+        if (!state.categoryCache) {
+          state.categoryCache = {};
+        }
+        state.categoryCache[parentId] = data;
+      }
+    },
+    setSelectedStep: (
+      state,
+      action: PayloadAction<{
+        step: "arenaId" | "skillId" | "gearId";
+        id: number | null;
+      }>,
+    ) => {
+      const { step, id } = action.payload;
+      if (!state.selectedSteps) {
+        state.selectedSteps = { arenaId: null, skillId: null, gearId: null };
+      }
+      state.selectedSteps[step] = id;
+    },
+    RsetUserLogin: (state, action: PayloadAction<any>) => {
+      state.userLogin = action.payload;
+    },
+    RsetUserId: (state, action: PayloadAction<any>) => {
+      state.userId = action.payload;
+    },
+    RsetSocketConfig: (state, action: PayloadAction<any>) => {
+      state.socketConfig = action.payload;
+    },
+    RsetGiveUserOnlines: (state, action: PayloadAction<any>) => {
+      state.userOnlines = action.payload;
+    },
+    setPaginationHome: (state, action: PayloadAction<Pagination>) => {
+      state.homeMatch.pagination = action.payload;
+    },
+    setHomeData: (state, action: PayloadAction<any[]>) => {
+      state.homeMatch.data = action.payload;
+    },
+    RsetFollowerList: (state, action: PayloadAction<any[]>) => {
+      state.followerList.data = action.payload;
+    },
+    RsetShowWatch: (state, action) => {
+      state.showWatchMatch.data = action.payload;
+    },
+    appendHomeData: (state, action: PayloadAction<any[]>) => {
+      state.homeMatch.data = [...state.homeMatch.data, ...action.payload];
+    },
+    setPaginationShowWatch: (state, action: PayloadAction<Pagination>) => {
+      state.showWatchMatch.pagination = action.payload;
+    },
+    RsetShowTimerButtn: (state, action: PayloadAction<boolean>) => {
+      state.showTimerButtn = action.payload;
+    },
+    setPaginationHomeMatch: (
+      state,
+      action: PayloadAction<{ take: number; skip: number; hasMore: boolean }>,
+    ) => {
+      state.homeMatch.pagination = action.payload;
+    },
+    setShowWatchData: (state, action: PayloadAction<any[]>) => {
+      state.showWatchMatch.data = action.payload;
+    },
+    resetHomeMatch: (state) => {
+      state.homeMatch.data = [];
+      state.homeMatch.pagination = {
+        skip: 0,
+        take: 6,
+        hasMore: true,
+      };
+    },
+    appendHomeMatch: (state, action) => {
+      state.homeMatch.data = [...state.homeMatch.data, ...action.payload];
+    },
+    appendShowWatch: (state, action) => {
+      state.showWatchMatch.data = [
+        ...state.showWatchMatch.data,
+        ...action.payload,
+      ];
+    },
+    RsetHomeMatch: (state, action: PayloadAction<any[]>) => {
+      if (Array.isArray(action.payload)) {
+        state.homeMatch.data = [...state.homeMatch.data, ...action.payload];
+      }
+    },
+    setUnreadMessagesCount: (state, action: PayloadAction<number>) => {
+      state.unreadMessagesCount = action.payload;
+    },
+
+    // 🟢 اضافه شدن اکشن برای افزایش تعداد پیام‌های خوانده نشده
+    incrementUnreadCount: (state) => {
+      state.unreadMessagesCount += 1;
+    },
+
+    // 🟢 اضافه شدن اکشن برای صفر کردن شمارنده
+    clearUnreadCount: (state) => {
+      state.unreadMessagesCount = 0;
+    },
+
+    setLastMatch: (state, action: PayloadAction<any[]>) => {
+      state.lastMatch = action.payload;
+    },
+    setShowTimerButton: (state, action: PayloadAction<boolean>) => {
+      state.showTimerButtn = action.payload;
+    },
+    resetWatchState: (state) => {
+      state.watchVideo = { ...initialDataState };
+    },
+    resetProfileVideo: (state) => {
+      state.profileVideo = [];
+    },
+    resetHomeState: (state) => {
+      state.homeMatch = { ...initialDataState };
+    },
     resetShowWatchState: (state) => {
       state.showWatchMatch = {
+        data: [],
         pagination: {
           take: 6,
           skip: 0,
           hasMore: true,
         },
-        data: [],
       };
     },
-    updateLikeStatus: (
-      state,
-      action: PayloadAction<{
-        movieId: string;
-        isLiked: boolean;
-        positionVideo?: number;
-      }>,
-    ) => {
-      const { movieId, isLiked, positionVideo } = action.payload;
-      state.showWatchMatch.data = state.showWatchMatch.data.map(
-        (video: any) => {
-          const videoCopy = { ...video };
-
-          if (!videoCopy.likes) {
-            videoCopy.likes = {};
-          }
-
-          if (!videoCopy.likes[movieId]) {
-            videoCopy.likes[movieId] = { isLiked: false, count: 0 };
-          }
-          videoCopy.likes[movieId] = {
-            ...videoCopy.likes[movieId],
-            isLiked: isLiked,
-          };
-
-          return videoCopy;
-        },
-      );
+    resetAllFeeds: (state) => {
+      state.watchVideo = { ...initialDataState };
+      state.homeMatch = { ...initialDataState };
+      state.showWatchMatch = { ...initialDataState };
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(loginUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.token = action.payload.token;
-        state.user = action.payload.user;
-
-        if (typeof window !== "undefined") {
-          localStorage.setItem("token", action.payload.token);
-        }
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      });
   },
 });
 
 export const {
-  setToken,
-  logout,
-  RsetUserLogin,
-  RsetMessageModal,
-  resetShowWatchState,
-  RsetShowWatch,
+  // watch
+  setPaginationWatch,
+  setWatchData,
+  appendWatchData,
+
+  // home
+  setPaginationHome,
+  setHomeData,
+  appendHomeData,
+
+  // showWatch
   setPaginationShowWatch,
+  setShowWatchData,
+  appendShowWatch,
+  RsetProfileVideo,
+
+  // other
+  setUnreadMessagesCount,
+  incrementUnreadCount, // 🟢 اضافه شد
+  clearUnreadCount, // 🟢 اضافه شد
+  setSelectedStep,
+  setLastMatch,
+  setShowTimerButton,
   RsetHomeMatch,
   setPaginationHomeMatch,
-  updateLikeStatus,
-  RsetLoading,
-  RsetCreateTalent,
-  RsetProfileVideo,
+  RsetUserId,
+  resetWatchState,
+  resetProfileVideo,
+  resetHomeState,
   RsetFollowerLength,
   RsetFollowingLength,
+  resetShowWatchState,
+  resetAllFeeds,
+  RsetAllFollowerList,
+  RsetAllFollowingList,
+  RsetCategory,
+  RsetUserLogin,
+  RsetSocketConfig,
+  RsetGiveUserOnlines,
+  RsetShowWatch,
+  appendHomeMatch,
+  resetHomeMatch,
+  RsetShowTimerButtn,
+  RsetLastMatch,
 } = mainSlice.actions;
 
 export default mainSlice.reducer;

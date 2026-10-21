@@ -3,17 +3,25 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAppSelector } from "@/store/reduxHook";
 
-const navItems = [
-  { label: "Home", href: "/home" },
-  { label: "Talents", href: "/talents" },
-  { label: "Messages", href: "/messages" },
-  { label: "Profile", href: "/profile" },
-];
+
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
+  const userLogin = useAppSelector((state) => state?.main?.userLogin);
+  const username = userLogin?.user?.userName ?? userLogin?.username;
+  const profileHref = username
+    ? `/profile/${encodeURIComponent(username)}`
+    : "/profile";
 
+
+  const navItems = [
+    { label: "Home", href: "/home", match: "/home" },
+    { label: "Talents", href: "/talents", match: "/talents" },
+    { label: "Messages", href: "/messages", match: "/messages" },
+    { label: "Profile", href: profileHref, match: "/profile" },
+  ];
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -32,11 +40,10 @@ export const Header: React.FC = () => {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-sm font-medium transition-colors ${
-                  isActive
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={`text-sm font-medium transition-colors ${isActive
+                  ? "text-blue-600"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
               >
                 {item.label}
               </Link>

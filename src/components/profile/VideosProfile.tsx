@@ -1,18 +1,16 @@
 "use client";
 
 import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react";
-import Timer from "../../../components/Timer";
-import StringHelpers from "../../../utils/helpers/StringHelper";
-import VideoSection from "../../../common/VideoSection";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ReportIcon from "@mui/icons-material/Report";
 import EmailIcon from "@mui/icons-material/Email";
 import TurnedInNotIcon from "@mui/icons-material/TurnedInNot";
 import { useRouter } from "next/navigation";
-import { useAppDispatch } from "../../../hooks/reduxHookType";
-import VideoItemSkeleton from "../../../components/VideoLoading";
-import { RsetLastMatch } from "../../../common/Slices/main";
-import LoadingChild from "../../../components/Loading/LoadingChild";
+import LoadingChild from "../LoadingChild";
+import { RsetLastMatch } from "@/store/slices/mainSlice";
+import { useAppDispatch } from "@/store/reduxHook";
+import StringHelpers from "@/utils/StringHelpers";
+import VideoSection from "../VideoSection";
 
 interface VideosProfileProps {
   isLoading: boolean;
@@ -37,7 +35,7 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
           (video.likeInserted || 0);
         const childLikes = video.child
           ? (videoLikes[video.attachmentMatched?.attachmentId] || 0) +
-            (video.likeMatched || 0)
+          (video.likeMatched || 0)
           : 0;
 
         return {
@@ -113,12 +111,13 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
       <div ref={ref}>
         <div className="col-span-12 justify-center flex md:col-span-12 lg:col-span-12 border-t-[1px]">
           <div className="grid grid-cols-1 w-full">
-            {isLoading ? (
-              [...Array(videoGroupsWithLikes?.length || 3)].map((_, index) => (
-                <div key={`skeleton-${index}`} className="bg-black">
-                  <VideoItemSkeleton section="itsProfile" />
-                </div>
-              ))
+            {false ? (
+              "GGGGGG"
+              // [...Array(videoGroupsWithLikes?.length || 3)].map((_, index) => (
+              //   <div key={`skeleton-${index}`} className="bg-black">
+              //     <VideoItemSkeleton section="itsProfile" />
+              //   </div>
+              // ))
             ) : videoGroupsWithLikes?.length === 0 ? (
               <div className="flex h-[calc(50vh-100px)] justify-center items-center">
                 <span className="font-bold">Empty videos</span>
@@ -152,9 +151,8 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
                   <section
                     key={video?.id || index}
                     ref={index === 0 ? firstVideoRef : null}
-                    className={`flex pt-1 bg-white flex-col relative h-[calc(100vh-105px)] ${
-                      index === 0 ? "first-video scroll-mt-[60px]" : ""
-                    }`}
+                    className={`flex pt-1 bg-white flex-col relative h-[calc(100vh-105px)] ${index === 0 ? "first-video scroll-mt-[60px]" : ""
+                      }`}
                   >
                     <div className="flex-1 min-h-0">
                       <VideoSection
@@ -179,7 +177,7 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
                       )}
                     </div>
 
-                    {endTime && (
+                    {/* {endTime && (
                       <div className="w-full absolute top-2/4 z-50">
                         <div className="w-5/6 ms-8 flex rounded-full items-center justify-center text-white">
                           <Timer
@@ -187,11 +185,11 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
                             startTime={startTime}
                             duration={3600}
                             active={true}
-                            onComplete={() => {}}
+                            onComplete={() => { }}
                           />
                         </div>
                       </div>
-                    )}
+                    )} */}
 
                     <div className="flex-1 min-h-0 relative">
                       <VideoSection
