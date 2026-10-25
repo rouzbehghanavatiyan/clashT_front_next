@@ -347,14 +347,13 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center leading-relaxed">
                 {isMyProfile
-                  ? "شما هنوز هیچ ویدیویی آپلود نکرده‌اید. همین حالا شروع کنید!"
-                  : "این کاربر در حال حاضر هیچ ویدیویی برای نمایش ندارد."}
+                  ? "You haven't uploaded any videos yet. Get started right now!"
+                  : "This user currently has no videos to display."}
               </p>
             </div>
           </article>
         ) : (
           <div className="flex flex-col gap-4">
-            {/* لیست ویدیوها در صورت فعال‌سازی مجدد کامپوننت آیتم‌ها */}
           </div>
         )}
 

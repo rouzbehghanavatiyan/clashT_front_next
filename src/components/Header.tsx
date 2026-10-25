@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useSyncExternalStore } from "react";
+import React, { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppSelector } from "@/store/reduxHook";
@@ -12,12 +12,7 @@ export const Header: React.FC = () => {
 
   const userLogin = useAppSelector((s) => s?.main?.userLogin);
   const username = userLogin?.user?.userName ?? userLogin?.username;
-  const profileHref = username
-    ? `/profile/${encodeURIComponent(username)}`
-    : "/profile";
-
-  const noop = () => () => { };
-  const isClient = useSyncExternalStore(noop, () => true, () => false);
+  const profileHref = username ? `/${encodeURIComponent(username)}` : "/login";
 
   const handleOpenVideoPicker = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -51,7 +46,6 @@ export const Header: React.FC = () => {
         if (fileInputRef.current) fileInputRef.current.value = "";
       } else {
         setSelectedVideo(file);
-        // You can dispatch file to Redux or trigger an upload modal here
         console.log("Valid video selected:", file.name, `${Math.round(duration)}s`);
       }
     };
@@ -68,8 +62,13 @@ export const Header: React.FC = () => {
     {
       label: "Talents",
       href: "/clashTalent",
-      onClick: handleOpenVideoPicker, // Trigger file selector
+      onClick: handleOpenVideoPicker,
     },
+    {
+      label: "Watch",
+      href: "/watch",
+    },
+
     { label: "Messages", href: "/messages" },
     { label: "Profile", href: profileHref },
   ];
@@ -86,17 +85,15 @@ export const Header: React.FC = () => {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
         <Link href="/home" className="flex items-center gap-2">
           <span className="text-xl font-bold tracking-tight text-gray-900">
             Clash<span className="text-blue-600">Talent</span>
           </span>
         </Link>
 
-        {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">
           {navItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
+            const isActive = item.href ? pathname.startsWith(item.href) : false;
 
             if (item.onClick) {
               return (
@@ -105,8 +102,8 @@ export const Header: React.FC = () => {
                   type="button"
                   onClick={item.onClick}
                   className={`text-sm font-medium transition-colors cursor-pointer ${isActive
-                      ? "text-blue-600"
-                      : "text-gray-600 hover:text-gray-900"
+                    ? "text-blue-600"
+                    : "text-gray-600 hover:text-gray-900"
                     }`}
                 >
                   {item.label}
@@ -116,11 +113,11 @@ export const Header: React.FC = () => {
 
             return (
               <Link
-                key={item.href}
+                key={item.label}
                 href={item.href}
                 className={`text-sm font-medium transition-colors ${isActive
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
+                  ? "text-blue-600"
+                  : "text-gray-600 hover:text-gray-900"
                   }`}
               >
                 {item.label}
@@ -132,7 +129,7 @@ export const Header: React.FC = () => {
         {/* Action Button */}
         <div className="flex items-center gap-3">
           <Link
-            href="/profile"
+            href="/settings"
             className="hidden sm:inline-flex text-xs font-semibold px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 transition"
           >
             Settings

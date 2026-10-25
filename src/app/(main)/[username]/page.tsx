@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProfileClient from "@/components/profile/ProfileClient";
 import StringHelpers from "@/utils/StringHelpers";
-import { API_URL, SITE_URL } from "@/lib/socket";
-import { withMatchEndAt, isMatchActive } from "@/utils/matchTimer";
+import { SITE_URL } from "@/lib/socket";
+import { userService } from "@/services/user.service";
 
 
 interface Props {
@@ -25,29 +25,23 @@ export interface UserProfileData {
 
 async function fetchUserProfile(rawUsername: string): Promise<UserProfileData | null> {
   const username = decodeURIComponent(rawUsername);
+  console.log("usernameusernameusernameusernameusername", username);
 
-  const url = `${API_URL}/profile/${encodeURIComponent(username)}`;
 
   try {
-    const res = await fetch(url, {
-      cache: "no-store",
-      headers: {
-        "Accept": "application/json",
-      },
-    });
+    console.log("usernameusernameusernameusername", rawUsername);
 
-    console.log("[profile]", url, res);
+    const res = await userService.profile(username);
 
-    if (!res.ok) {
-      console.error("[profile] body:", await res.text());
+    console.log("[profile]", res);
+
+    if (res?.data?.status !== 0) {
+      console.error("[profile] body:", res);
       return null;
     }
 
-    const json = await res.json();
-    console.log("[profile] json:", JSON.stringify(json).slice(0, 500));
 
-    // در ساختارهای استاندارد ممکن است دیتا مستقیماً برگردد یا درون json.data باشد
-    const d = json?.data ?? json;
+    const d = res?.data?.data;
     if (!d || (!d.userId && !d.id && !d.userName)) return null;
 
     const attachment = d.avatar ?? d.profile ?? null;
@@ -125,8 +119,7 @@ export default async function UserProfilePage({ params }: Props) {
   if (!initialUserData) {
     notFound();
   }
-
-  const profileUrl = `${SITE_URL}/profile/${encodeURIComponent(initialUserData.userName)}`;
+  const profileUrl = `${SITE_URL}/${encodeURIComponent(initialUserData.userName)}`;
 
   const personSchema = {
     "@context": "https://schema.org",

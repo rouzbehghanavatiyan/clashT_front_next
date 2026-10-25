@@ -19,8 +19,8 @@ const HomePage: React.FC = () => {
   const { pagination, data: reduxData } = main.homeMatch;
   const userIdLogin = main?.userLogin?.user?.id;
 
-  console.log("Current userIdLogin:", userIdLogin);
-  
+  console.log("main.homeMatchmain.homeMatchmain.homeMatchmain.homeMatch", main.homeMatch);
+
   const customFetchNextPage = useCallback(
     async (params: {
       skip: number;
@@ -34,15 +34,17 @@ const HomePage: React.FC = () => {
           take: params.take,
           userIdLogin,
         });
-        dispatch(RsetHomeMatch(res?.data || []));
+        console.log("res?.datares?.data", res?.data);
+
+        dispatch(RsetHomeMatch(res?.data?.data || []));
         dispatch(
           setPaginationHomeMatch({
             take: params.take,
             skip: params.skip + params.take,
-            hasMore: (res?.data || []).length > 0,
+            hasMore: (res?.data?.data || []).length > 0,
           }),
         );
-        return res?.data || [];
+        return res?.data?.data || [];
       } catch (error) {
         console.error("Error fetching data:", error);
         return [];
@@ -68,6 +70,9 @@ const HomePage: React.FC = () => {
     pagination,
     customFetchNextPage,
   });
+
+  console.log("reduxDatareduxDatareduxDatareduxData", reduxData);
+
 
   return (
     <div className="relative w-full bg-black mt-0 flex flex-col h-[calc(100svh-98px)] md:h-[calc(100vh-65px)]">

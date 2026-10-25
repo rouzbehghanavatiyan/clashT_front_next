@@ -1,5 +1,5 @@
 export default class StringHelpers {
-  static baseURL: string = process.env.NEXT_PUBLIC_SERVERTEST || "";
+  static baseURL: string = process.env.NEXT_PUBLIC_BASE_URL || "";
 
   static fixUserName(data: any) {
     console.log(data);

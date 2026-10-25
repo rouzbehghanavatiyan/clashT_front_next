@@ -13,4 +13,7 @@ export const userService = {
     api.delete(`/removeFollower`, { data: postData }),
   addFollower: (data: any) => api.post("/addFollower", data),
   profile: (username: any) => api.get(`/profile/${username}`),
+  addProfile: (data: any) => api.put(`/addProfile/${data}`),
+  forgotPassword: (data: any) => api.post("/forgotPassword", data),
+  requestChangeEmail: (data: any) => api.post("/requestChangeEmail", data),
 };

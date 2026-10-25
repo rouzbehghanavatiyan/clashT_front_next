@@ -17,7 +17,6 @@ import { authService } from "@/services/auth.service";
 
 const REMEMBER_KEY = "rememberedUsername";
 
-// خواندن localStorage بدون useEffect: روی سرور "" برمی‌گرداند
 const subscribe = (cb: () => void) => {
   window.addEventListener("storage", cb);
   return () => window.removeEventListener("storage", cb);
