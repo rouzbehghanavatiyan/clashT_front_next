@@ -1,10 +1,25 @@
-import React, { useState, useRef, useEffect } from "react";
+"use client";
+import React, { useState, useRef } from "react";
 import ReactPlayer from "react-player";
 
-const Video: React.FC<any> = ({
+interface VideoProps {
+  loop?: boolean;
+  playing?: boolean;
+  playbackRate?: number;
+  muted?: boolean;
+  url: string;
+  onEnded?: () => void;
+  className?: string;
+  handleVideo?: () => void;
+  style?: React.CSSProperties;
+  width?: string | number;
+  height?: string | number;
+}
+
+const Video: React.FC<VideoProps> = ({
   loop,
   playing = false,
-  playbackRate,
+  playbackRate = 1,
   muted = false,
   url,
   onEnded,
@@ -14,75 +29,45 @@ const Video: React.FC<any> = ({
   width = "100%",
   height = "100%",
 }) => {
-  const playerRef = useRef<any>(null);
-  const [showControls, setShowControls] = useState(false);
+  const playerRef = useRef<HTMLVideoElement | null>(null);
   const [played, setPlayed] = useState(0);
-  const [duration, setDuration] = useState(0);
 
   const handleVideoClick = () => {
-    setShowControls((prev) => !prev);
-    handleVideo();
+    handleVideo?.();
   };
 
-  const handleProgress = (state: any) => {
-    setPlayed(state.played);
+  const handleTimeUpdate = () => {
+    const el = playerRef.current;
+    if (!el || !el.duration) return;
+    setPlayed(el.currentTime / el.duration);
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const seekTime = parseFloat(e.target.value);
-    setPlayed(seekTime);
-    playerRef.current?.seekTo(seekTime, "fraction");
-  };
-
-  const handleDuration = (duration: number) => {
-    setDuration(duration);
-  };
-
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    const fraction = parseFloat(e.target.value);
+    setPlayed(fraction);
+    const el = playerRef.current;
+    if (el && el.duration) el.currentTime = fraction * el.duration;
   };
 
   return (
     <div style={{ position: "relative", width, height }}>
-      <span onClick={handleVideoClick}>
+      <div onClick={handleVideoClick} style={{ width, height }}>
         <ReactPlayer
           ref={playerRef}
-          style={style}
+          src={url}
+          style={{ width: "100%", height: "100%", ...style }}
           className={className}
-          playsinline
-          width={width}
-          height={height}
+          playsInline
           playing={playing}
           loop={loop}
           playbackRate={playbackRate}
           muted={muted}
           onEnded={onEnded}
-          onProgress={handleProgress}
-          onDuration={handleDuration}
-          config={{
-            // file: {
-            //   attributes: {
-            //     playsInline: true,
-            //     webkitPlaysInline: true,
-            //   },
-            //   forceAudio: true, // اضافه کردن این خط
-            // },
-            youtube: {
-              playerVars: {
-                showinfo: 1,
-                playsinline: 1, // اضافه کردن این خط
-              },
-            },
-            facebook: {
-              appId: "12345",
-            },
-          }}
-          url={url}
+          onTimeUpdate={handleTimeUpdate}
         />
-      </span>
-      <div className="flex items-center gap-10 z-10 bottom-0 right-0 left-0  absolute controls fade-in">
+      </div>
+
+      <div className="flex items-center gap-10 z-10 bottom-0 right-0 left-0 absolute controls fade-in">
         <input
           type="range"
           min={0}

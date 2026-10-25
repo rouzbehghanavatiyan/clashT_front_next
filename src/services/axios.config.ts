@@ -55,7 +55,6 @@ const setupInterceptors = (instance: AxiosInstance) => {
         return Promise.reject(error);
       }
 
-      // اگر همزمان رفرش در جریان است، در صف منتظر بمان
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -97,8 +96,23 @@ const setupInterceptors = (instance: AxiosInstance) => {
 
         return instance(originalRequest);
       } catch (refreshError) {
+        console.error(
+          "refresh failed:",
+          (refreshError as any)?.response?.status,
+          (refreshError as any)?.response?.data,
+        );
         processQueue(refreshError, null);
         redirectToLogin();
+
+        processQueue(refreshError, null);
+
+        const status = axios.isAxiosError(refreshError)
+          ? refreshError.response?.status
+          : undefined;
+
+        if (status === 401 || status === 403 || status === 400) {
+          redirectToLogin();
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
