@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import ProfileClient from "@/components/profile/ProfileClient";
 import StringHelpers from "@/utils/StringHelpers";
 import { API_URL, SITE_URL } from "@/lib/socket";
+import { withMatchEndAt, isMatchActive } from "@/utils/matchTimer";
+
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -14,31 +16,40 @@ export interface UserProfileData {
   fullName?: string;
   bio?: string;
   location?: string;
-  profile?: any; // آبجکت Attachment، همان چیزی که StringHelpers.getProfile می‌خواهد
+  profile?: any;
   avatarUrl?: string;
   score: number;
   followersCount: number;
   followingCount: number;
 }
 
-async function fetchUserProfile(
-  rawUsername: string,
-): Promise<UserProfileData | null> {
+async function fetchUserProfile(rawUsername: string): Promise<UserProfileData | null> {
   const username = decodeURIComponent(rawUsername);
 
-  try {
-    const res = await fetch(
-      `${API_URL}/api/User/profile/${encodeURIComponent(username)}`,
-      { next: { revalidate: 30 } },
-    );
+  const url = `${API_URL}/profile/${encodeURIComponent(username)}`;
 
-    if (!res.ok) return null;
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+
+    console.log("[profile]", url, res);
+
+    if (!res.ok) {
+      console.error("[profile] body:", await res.text());
+      return null;
+    }
 
     const json = await res.json();
-    const d = json?.data;
-    if (!d) return null;
+    console.log("[profile] json:", JSON.stringify(json).slice(0, 500));
 
-    // بسته به اینکه property را Avatar یا Profile گذاشته‌اید، هر دو پوشش داده شده
+    // در ساختارهای استاندارد ممکن است دیتا مستقیماً برگردد یا درون json.data باشد
+    const d = json?.data ?? json;
+    if (!d || (!d.userId && !d.id && !d.userName)) return null;
+
     const attachment = d.avatar ?? d.profile ?? null;
 
     let avatarUrl: string | undefined;
@@ -51,9 +62,9 @@ async function fetchUserProfile(
     }
 
     return {
-      id: d.userId,
+      id: d.userId ?? d.id,
       userName: d.userName,
-      fullName: d.userName,
+      fullName: d.fullName || d.userName,
       bio: d.bio ?? "",
       location: d.location ?? "",
       profile: attachment,
@@ -62,7 +73,8 @@ async function fetchUserProfile(
       followersCount: d.followersCount ?? 0,
       followingCount: d.followingCount ?? 0,
     };
-  } catch {
+  } catch (err) {
+    console.error("[profile] fetch failed:", err);
     return null;
   }
 }
@@ -73,15 +85,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!user) {
     return {
-      title: "پروفایل کاربر یافت نشد",
+      title: "User Profile Not Found | Clash Talent",
       robots: { index: false, follow: false },
     };
   }
 
   const name = user.fullName || user.userName;
   const title = `${name} (@${user.userName}) | Clash Talent`;
-  const description = user.bio || `پروفایل ${name} در Clash Talent`;
-  const profileUrl = `http://localhost:7131/api/User/profile/${encodeURIComponent(user.userName)}`;
+  const description = user.bio || `Watch ${name}'s talents and matches on Clash Talent`;
+  const profileUrl = `${SITE_URL}/profile/${encodeURIComponent(user.userName)}`;
   const avatar = user.avatarUrl || `${SITE_URL}/default-avatar.png`;
 
   return {
@@ -110,7 +122,9 @@ export default async function UserProfilePage({ params }: Props) {
   const { username } = await params;
   const initialUserData = await fetchUserProfile(username);
 
-  if (!initialUserData) notFound();
+  if (!initialUserData) {
+    notFound();
+  }
 
   const profileUrl = `${SITE_URL}/profile/${encodeURIComponent(initialUserData.userName)}`;
 
@@ -129,7 +143,6 @@ export default async function UserProfilePage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          // جلوگیری از شکستن تگ script با کاراکتر <
           __html: JSON.stringify(personSchema).replace(/</g, "\\u003c"),
         }}
       />

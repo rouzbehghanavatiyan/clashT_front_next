@@ -12,4 +12,5 @@ export const userService = {
   removeFollower: (postData: any) =>
     api.delete(`/removeFollower`, { data: postData }),
   addFollower: (data: any) => api.post("/addFollower", data),
+  profile: (username: any) => api.get(`/profile/${username}`),
 };

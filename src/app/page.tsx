@@ -35,7 +35,6 @@ const LoginForm: FC = () => {
     getServerSnapshot,
   );
 
-  // null یعنی کاربر هنوز دست نبرده و مقدار ذخیره‌شده نمایش داده می‌شود
   const [usernameInput, setUsernameInput] = useState<string | null>(null);
   const [rememberInput, setRememberInput] = useState<boolean | null>(null);
   const [password, setPassword] = useState("");
@@ -94,8 +93,9 @@ const LoginForm: FC = () => {
       else localStorage.removeItem(REMEMBER_KEY);
 
       router.push("/home");
-      router.refresh();
+      return;
     } catch (err) {
+      setLoading(false);
       setAttempts((p) => p + 1);
       const status = isAxiosError(err) ? err.response?.status : undefined;
       setError(

@@ -33,7 +33,7 @@ export const BottomTabBar: React.FC = () => {
     },
     {
       name: "Explore",
-      href: "/talents",
+      href: "/clashTalent",
       icon: <ExploreOutlined fontSize="small" />,
       activeIcon: <ExploreRounded fontSize="small" />,
     },

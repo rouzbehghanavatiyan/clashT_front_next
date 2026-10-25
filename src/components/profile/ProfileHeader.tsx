@@ -150,11 +150,10 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
         <div className="flex items-center min-h-[128px]">
           <div
             onClick={handleAvatarClick}
-            className={`relative shrink-0 ${
-              isMyProfile
-                ? "cursor-pointer group hover:opacity-90"
-                : "cursor-default"
-            }`}
+            className={`relative shrink-0 ${isMyProfile
+              ? "cursor-pointer group hover:opacity-90"
+              : "cursor-default"
+              }`}
           >
             <div className="rounded-full border border-gray-200 dark:border-gray-700 p-0.5 flex items-center justify-center">
               <ImageRank score={score} imgSrc={userImage} imgSize={96} />
@@ -183,27 +182,19 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
             {isMyProfile ? (
               <div className="flex items-center gap-6 mt-2">
                 <Link
-                  href="/followers"
-                  className="flex flex-col items-center hover:opacity-80 transition-opacity"
+                  href={`/profile/${encodeURIComponent(userName)}/following`}
+                  className="flex items-center gap-1 hover:underline"
                 >
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">
-                    {followersCount}
-                  </span>
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Followers
-                  </span>
+                  <span className="font-bold">{followingCount}</span>
+                  <span className="text-gray-500 text-sm">Following</span>
                 </Link>
 
                 <Link
-                  href="/following"
-                  className="flex flex-col items-center hover:opacity-80 transition-opacity"
+                  href={`/profile/${encodeURIComponent(userName)}/followers`}
+                  className="flex items-center gap-1 hover:underline"
                 >
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">
-                    {followingCount}
-                  </span>
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Following
-                  </span>
+                  <span className="font-bold">{followersCount}</span>
+                  <span className="text-gray-500 text-sm">Followers</span>
                 </Link>
               </div>
             ) : (

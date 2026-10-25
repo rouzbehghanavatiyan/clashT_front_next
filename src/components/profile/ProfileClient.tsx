@@ -14,7 +14,6 @@ import ProfileHeader from "./ProfileHeader";
 import { stopMatchTimer } from "../TimerForFindMatch";
 import { useLoadMore } from "@/hooks/useLoadMore";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
-import { withMatchEndAt } from "@/utils/matchTimer";
 import {
   RsetFollowerLength,
   RsetFollowingLength,
@@ -27,6 +26,7 @@ import { followService } from "@/services/follow.service";
 import { setNeedProfileRefresh } from "@/store/slices/videoSlice";
 import StringHelpers from "@/utils/StringHelpers";
 import { socket } from "@/lib/socket";
+import { withMatchEndAt, isMatchActive } from "@/utils/matchTimer";
 
 interface InitialUserData {
   id: number;
@@ -326,7 +326,6 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
           rankScore={currentProfile?.score}
           rankPercentage={percentage}
         />
-        {/* <ProfileAchievements /> */}
       </header>
 
       <section className="flex-1 w-full max-w-lg mx-auto py-4">
@@ -355,27 +354,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
           </article>
         ) : (
           <div className="flex flex-col gap-4">
-            {/* {allVideoData?.map((item: any, index: number) => {
-              const uniqueKey =
-                item?.inviteInserted?.id ?? item?.inviteMatched?.id ?? index;
-              return (
-                <VideosProfileItem
-                  key={uniqueKey}
-                  profileWatch={true}
-                  itsMatchingWithTimer={itsMatchingWithTimer}
-                  activeVideoId={currentlyPlayingId}
-                  onPlay={handleVideoPlay}
-                  video={item}
-                  isActive={true}
-                  videoLikes={videoLikes}
-                  openDropdowns={openDropdowns}
-                  setOpenDropdowns={setOpenDropdowns}
-                  toggleDropdown={toggleDropdown}
-                  dropdownItems={dropdownItems}
-                  handleToggleComments={handleOpenComments}
-                />
-              );
-            })} */}
+            {/* لیست ویدیوها در صورت فعال‌سازی مجدد کامپوننت آیتم‌ها */}
           </div>
         )}
 
@@ -388,18 +367,6 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
           )}
         </div>
       </section>
-
-      {/* {showComments && (
-        <div className="fixed inset-0 z-[9999] bg-black/50 flex justify-center items-end">
-          <Comments
-            visible={showComments}
-            onClose={handleCloseComments}
-            video={selectedVideo}
-            positionVideo={commentPosition}
-            userIdLogin={myUserId}
-          />
-        </div>
-      )} */}
     </main>
   );
 };
