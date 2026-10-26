@@ -83,12 +83,13 @@ export const useShowWatch = ({
     }) => {
       if (!inviteId) return [];
       try {
-        const res = await attachmentService.listByInviteId({
+        const res = await attachmentService.attachmentListByInviteId({
           skip,
           take,
           inviteId,
         });
-        return res?.data || [];
+        const payload = res?.data?.data ?? res?.data ?? [];
+        return Array.isArray(payload) ? payload : [];
       } catch (error) {
         console.error("Error fetching data:", error);
         return [];
@@ -110,17 +111,18 @@ export const useShowWatch = ({
         inviteId,
       });
 
+      const nextPagination = {
+        take: paginationRef.current.take,
+        skip: paginationRef.current.skip + paginationRef.current.take,
+        hasMore: newData.length >= paginationRef.current.take,
+      };
+      paginationRef.current = nextPagination;
+
       if (newData.length > 0) {
         setInternalData((prev) => [...prev, ...newData]);
         if (useRedux) {
           dispatch(RsetShowWatch(newData));
-          dispatch(
-            setPaginationShowWatch({
-              take: paginationRef.current.take,
-              skip: paginationRef.current.skip + paginationRef.current.take,
-              hasMore: newData.length > 0,
-            })
-          );
+          dispatch(setPaginationShowWatch(nextPagination));
         }
       }
 

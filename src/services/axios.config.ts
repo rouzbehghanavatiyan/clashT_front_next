@@ -32,7 +32,7 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 const redirectToLogin = () => {
   removeTokens();
-  if (typeof window !== "undefined") window.location.href = "/";
+  if (typeof window !== "undefined") window.location.href = "/login";
 };
 
 const setupInterceptors = (instance: AxiosInstance) => {

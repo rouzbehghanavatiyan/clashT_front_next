@@ -50,8 +50,6 @@ const VideoGroup = ({
 
         return () => clearTimeout(timer);
     }, [measureForTour]);
-    console.log("imageTopimageTopimageTopimageTopimageTopimageTopimageTopimageTopimageTop", imageTop);
-
     return (
         <button
             ref={containerRef}
@@ -74,14 +72,14 @@ const VideoGroup = ({
                 {imageTop ? (
                     <Image
                         src={imageTop}
-                        alt="Attachment Inserted"
+                        alt={`${group?.userInserted?.userName || "Challenger"} photo`}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover"
                     />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
-                        No Image
+                        No photo
                     </div>
                 )}
             </div>
@@ -90,14 +88,14 @@ const VideoGroup = ({
                 {imageBottom ? (
                     <Image
                         src={imageBottom}
-                        alt="Attachment Matched"
+                        alt={`${group?.userMatched?.userName || "Opponent"} photo`}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover"
                     />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
-                        No Image
+                        No photo
                     </div>
                 )}
             </div>

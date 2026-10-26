@@ -141,13 +141,13 @@ const ProfileBio: React.FC<ProfileBioProps> = ({
   return (
     <section
       className="w-full flex flex-col items-center px-4"
-      aria-label="مشخصات و نشان‌ها"
+      aria-label="Profile details and ranks"
     >
       <button
         type="button"
         onClick={() => setShowRanksModal(true)}
         className="w-full group focus:outline-none"
-        title="مشاهده تمام رتبه‌ها"
+        title="View all ranks"
       >
         <div className="w-full h-4 bg-gray-200 dark:bg-gray-700 rounded-full relative overflow-hidden border border-indigo-500/40 shadow-inner">
           <div
@@ -185,7 +185,7 @@ const ProfileBio: React.FC<ProfileBioProps> = ({
                 setZoomedRank(null);
               }}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 dark:hover:text-white p-2 rounded-full transition-colors"
-              aria-label="بستن"
+              aria-label="Close"
             >
               ✕
             </button>
@@ -275,7 +275,7 @@ const ProfileBio: React.FC<ProfileBioProps> = ({
         {isMyProfile ? (
           <div className="w-full flex justify-center">
             <Link
-              href="/setting/editProfile"
+              href="/settings/editProfile"
               className="inline-flex items-center justify-center px-4 py-1.5 rounded-full border border-pink-500 text-pink-500 hover:bg-pink-500/10 transition-colors text-xs font-semibold gap-1.5"
             >
               <Icon name="edit" size={14} className="text-pink-500" />

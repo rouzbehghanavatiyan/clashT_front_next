@@ -19,6 +19,8 @@ interface InputProps {
   disabled?: boolean;
   value?: any;
   className?: string;
+  id?: string;
+  autoComplete?: string;
   onKeyDown?: any;
   onFocus?: any;
   multiline?: boolean; 
@@ -42,6 +44,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       guidMessage,
       maxLength,
       disabled = false,
+      id,
+      autoComplete,
+      required,
       handleOnChange = () => {},
       multiline = false,
       maxHeight = "120px",
@@ -146,7 +151,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             maxLength={maxLength}
             onFocus={onFocus}
             type={type}
-            id={name}
+            id={id ?? name}
+            autoComplete={autoComplete}
+            required={required}
             onKeyDown={onKeyDown}
             name={name}
             placeholder={placeholder}

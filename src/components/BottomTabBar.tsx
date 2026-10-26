@@ -6,67 +6,68 @@ import { usePathname } from "next/navigation";
 import {
   HomeOutlined,
   HomeRounded,
+  PlayCircleOutline,
+  PlayCircleFilled,
+  AddCircleOutline,
+  AddCircle,
+  EmojiEventsOutlined,
+  EmojiEvents,
   PersonOutline,
   PersonRounded,
-  ChatBubbleOutline,
-  ChatBubbleRounded,
-  ExploreOutlined,
-  ExploreRounded,
 } from "@mui/icons-material";
 import { useAppSelector } from "@/store/reduxHook";
+import { MAIN_TABS, isTabActive } from "@/lib/navigation";
+
+const ICONS: Record<
+  string,
+  { idle: React.ReactNode; active: React.ReactNode }
+> = {
+  home: {
+    idle: <HomeOutlined fontSize="small" />,
+    active: <HomeRounded fontSize="small" />,
+  },
+  watch: {
+    idle: <PlayCircleOutline fontSize="small" />,
+    active: <PlayCircleFilled fontSize="small" />,
+  },
+  create: {
+    idle: <AddCircleOutline fontSize="small" />,
+    active: <AddCircle fontSize="small" />,
+  },
+  top: {
+    idle: <EmojiEventsOutlined fontSize="small" />,
+    active: <EmojiEvents fontSize="small" />,
+  },
+  profile: {
+    idle: <PersonOutline fontSize="small" />,
+    active: <PersonRounded fontSize="small" />,
+  },
+};
 
 export const BottomTabBar: React.FC = () => {
   const pathname = usePathname();
   const userLogin = useAppSelector((state) => state?.main?.userLogin);
-
   const username = userLogin?.user?.userName ?? userLogin?.username;
-  const profileHref = username
-    ? `/profile/${encodeURIComponent(username)}`
-    : "/profile";
-
-  const tabs = [
-    {
-      name: "Home",
-      href: "/home",
-      icon: <HomeOutlined fontSize="small" />,
-      activeIcon: <HomeRounded fontSize="small" />,
-    },
-    {
-      name: "Explore",
-      href: "/clashTalent",
-      icon: <ExploreOutlined fontSize="small" />,
-      activeIcon: <ExploreRounded fontSize="small" />,
-    },
-    {
-      name: "Chat",
-      href: "/messages",
-      icon: <ChatBubbleOutline fontSize="small" />,
-      activeIcon: <ChatBubbleRounded fontSize="small" />,
-    },
-    {
-      name: "Profile",
-      href: profileHref,
-      match: "/profile",
-      icon: <PersonOutline fontSize="small" />,
-      activeIcon: <PersonRounded fontSize="small" />,
-    },
-  ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-gray-200 safe-area-pb">
+    <nav
+      aria-label="Main"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-gray-200"
+    >
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
-        {tabs.map((tab) => {
-          const isActive = pathname.startsWith(tab.match ?? tab.href);
+        {MAIN_TABS.map((tab) => {
+          const isActive = isTabActive(tab.id, pathname, username);
+          const icons = ICONS[tab.id];
           return (
             <Link
-              key={tab.name}
+              key={tab.id}
               href={tab.href}
-              className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-800"
-                }`}
+              aria-current={isActive ? "page" : undefined}
+              className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+                isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-800"
+              }`}
             >
-              <div className="relative">
-                {isActive ? tab.activeIcon : tab.icon}
-              </div>
+              {isActive ? icons.active : icons.idle}
               <span className="text-[11px] mt-0.5 font-medium">{tab.name}</span>
             </Link>
           );

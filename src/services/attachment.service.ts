@@ -2,6 +2,11 @@ import { api } from "./axios.config";
 
 export const attachmentService = {
   attachmentList: (params: any) => api.get(`/attachmentList`, { params }),
+  attachmentListByInviteId: (params: {
+    skip: number;
+    take: number;
+    inviteId: string | number;
+  }) => api.get(`/attachmentListByInviteId`, { params }),
   listByInviteId: (params: any) =>
     api.get(`/attachmentListByInviteId`, { params }),
 
@@ -24,3 +29,5 @@ export const attachmentService = {
       `/followerAttachmentList?skip=${postData?.skip}&take=${postData?.take}&userId=${postData?.userIdLogin}`,
     ),
 };
+
+// کد پیکیری 4783979

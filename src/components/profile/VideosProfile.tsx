@@ -71,19 +71,19 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
             // در Next.js استیت به صورت Query ارسال می‌شود یا از Redux استفاده می‌شود
             const serializedInfo = encodeURIComponent(JSON.stringify(temp));
             router.push(
-              `/privateMessage?id=${userSenderId?.id}&userInfo=${serializedInfo}`,
+              `/chat/${userSenderId?.id}?userInfo=${serializedInfo}`,
             );
           },
         },
         {
           label: "Report",
           icon: <ReportIcon className="text-gray-800 font20" />,
-          onClick: () => alert("اعلان‌ها"),
+          onClick: () => alert("Report submitted"),
         },
         {
           label: "Save",
           icon: <TurnedInNotIcon className="text-gray-800 font20" />,
-          onClick: () => alert("اعلان‌ها"),
+          onClick: () => alert("Saved"),
         },
         { divider: true },
       ];

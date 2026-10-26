@@ -103,7 +103,7 @@ const SignUpForm: FC = () => {
       if (status === 0 || status === 2) {
         // Optional: show message modal
         // dispatch(RsetMessageModal({ title: "Check your email to verify.", show: true, icon: "email" }));
-        router.push("/home");
+        router.push("/");
       } else {
         setErrors({
           general: message || "Registration failed. Please try again.",

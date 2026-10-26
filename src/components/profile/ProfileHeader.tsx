@@ -182,7 +182,7 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
             {isMyProfile ? (
               <div className="flex items-center gap-6 mt-2">
                 <Link
-                  href={`/profile/${encodeURIComponent(userName)}/following`}
+                  href={`/${encodeURIComponent(userName ?? "")}/following`}
                   className="flex items-center gap-1 hover:underline"
                 >
                   <span className="font-bold">{followingCount}</span>
@@ -190,7 +190,7 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
                 </Link>
 
                 <Link
-                  href={`/profile/${encodeURIComponent(userName)}/followers`}
+                  href={`/${encodeURIComponent(userName ?? "")}/followers`}
                   className="flex items-center gap-1 hover:underline"
                 >
                   <span className="font-bold">{followersCount}</span>
