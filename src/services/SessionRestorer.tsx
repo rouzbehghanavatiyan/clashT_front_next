@@ -9,24 +9,23 @@ export const SessionRestorer: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const dispatch = useAppDispatch();
-  const currentId = useAppSelector((s) => s.main.userLogin?.user?.id);
+  const currentId = useAppSelector((s) => s.main.userLogin);
 
   useEffect(() => {
     const token = getAccessToken();
-    const userId = getUserID();
 
-    if (currentId || !token || !userId) return;
-
+    if (currentId || !token) return;
+    console.log("currentIdcurrentIdcurrentIdcurrentId",currentId);
+    
     (async () => {
       try {
-        const res = await userService.profileAttachment(userId);
+        const res = await userService.profileAttachment(currentId);
         const profileData = res?.data?.data;
         dispatch(
           RsetUserLogin({
             ...(profileData ?? {}),
             token,
             refreshToken: getRefreshToken(),
-            userId,
           }),
         );
       } catch (e) {

@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Mousewheel } from "swiper/modules";
-import { useShowWatch } from "@/hooks/useShowWatch";
+import type { Swiper as SwiperType } from "swiper";
 import { attachmentService } from "@/services/attachment.service";
 import { VideoSlide } from "@/components/VideoSlide";
 import LoadingChild from "@/components/LoadingChild";
+
+const PAGE_SIZE = 10;
 
 function normalizeList(payload: any): any[] {
   if (Array.isArray(payload?.data)) return payload.data;
@@ -15,42 +17,100 @@ function normalizeList(payload: any): any[] {
   return [];
 }
 
-export default function WatchPlayer({ inviteId }: { inviteId: string }) {
-  const [error, setError] = useState("");
+const getKey = (v: any, i: number) =>
+  `invite-${v?.inviteInserted?.id ?? v?.attachmentInserted?.id ?? i}`;
 
-  const {
-    data,
-    isLoading,
-    openDropdowns,
-    setOpenDropdowns,
-    currentlyPlayingId,
-    handleVideoPlay,
-    toggleDropdown,
-    dropdownItems,
-    handleSlideChange,
-    initializeSwiper,
-  } = useShowWatch({
-    inviteId,
-    data: [],
-    pagination: { skip: 0, take: 10, hasMore: true },
-    useRedux: false,
-    customFetchNextPage: async ({ skip, take, inviteId: id }) => {
-      if (!id) return [];
-      try {
-        setError("");
-        const res = await attachmentService.attachmentListByInviteId({
-          skip,
-          take,
-          inviteId: id,
-        });
-        return normalizeList(res?.data);
-      } catch (err) {
-        console.error("Failed to load videos for invite:", err);
-        setError("Could not load videos for this match.");
-        return [];
+export default function WatchPlayer({ inviteId }: { inviteId: string }) {
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [currentlyPlayingId, setCurrentlyPlayingId] = useState<any>(null);
+  const [openDropdowns, setOpenDropdowns] = useState<Record<number, boolean>>(
+    {}
+  );
+
+  const skipRef = useRef(0);
+  const hasMoreRef = useRef(true);
+  const loadingRef = useRef(false);
+  const requestIdRef = useRef(0);
+
+  const loadPage = useCallback(async () => {
+    if (!inviteId || loadingRef.current || !hasMoreRef.current) return;
+
+    loadingRef.current = true;
+    const myRequestId = ++requestIdRef.current;
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const numericId = Number(inviteId);
+      const res = await attachmentService.attachmentListByInviteId({
+        skip: skipRef.current,
+        take: PAGE_SIZE,
+        inviteId: Number.isNaN(numericId) ? inviteId : numericId,
+      });
+
+      if (myRequestId !== requestIdRef.current) return; // پاسخ کهنه
+
+      const list = normalizeList(res?.data);
+      const isFirstPage = skipRef.current === 0;
+
+      skipRef.current += list.length;
+      if (list.length < PAGE_SIZE) hasMoreRef.current = false;
+
+      setData((prev) => {
+        const seen = new Set(prev.map((p) => p?.inviteInserted?.id));
+        return [
+          ...prev,
+          ...list.filter((i) => !seen.has(i?.inviteInserted?.id)),
+        ];
+      });
+
+      if (isFirstPage && list[0]) {
+        setCurrentlyPlayingId(list[0]?.attachmentInserted?.attachmentId ?? null);
       }
-    },
-  });
+    } catch (err) {
+      if (myRequestId !== requestIdRef.current) return;
+      console.error("Failed to load videos for invite:", err);
+      hasMoreRef.current = false; // جلوگیری از تلاش بی‌پایان بعد از خطا
+      setError("Could not load videos for this match.");
+    } finally {
+      if (myRequestId === requestIdRef.current) {
+        loadingRef.current = false;
+        setIsLoading(false);
+      }
+    }
+  }, [inviteId]);
+
+  // فقط وقتی inviteId عوض شد: ریست و بارگذاری صفحه اول
+  useEffect(() => {
+    skipRef.current = 0;
+    hasMoreRef.current = true;
+    loadingRef.current = false;
+    setData([]);
+    setCurrentlyPlayingId(null);
+    setOpenDropdowns({});
+    loadPage();
+  }, [inviteId, loadPage]);
+
+  const handleSlideChange = (swiper: SwiperType) => {
+    const current = data[swiper.activeIndex];
+    setCurrentlyPlayingId(current?.attachmentInserted?.attachmentId ?? null);
+    setOpenDropdowns({});
+    if (swiper.activeIndex >= data.length - 3) loadPage();
+  };
+
+  const handleVideoPlay = (attachmentId: any) => {
+    setCurrentlyPlayingId((prev: any) =>
+      prev === attachmentId ? null : attachmentId
+    );
+  };
+
+  const toggleDropdown = (index: number) => {
+    setOpenDropdowns((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const dropdownItems = (_video: any, _position: number, _user: any) => [];
 
   return (
     <section
@@ -81,11 +141,10 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
         mousewheel={true}
         onSlideChange={handleSlideChange}
         modules={[Mousewheel]}
-        onInit={initializeSwiper}
         className="mySwiper w-full h-full"
       >
-        {data?.map((video: any, index: number) => (
-          <SwiperSlide key={`invite-video-${video.id || index}`}>
+        {data.map((video, index) => (
+          <SwiperSlide key={getKey(video, index)}>
             <VideoSlide
               showLiked={false}
               endTime={false}

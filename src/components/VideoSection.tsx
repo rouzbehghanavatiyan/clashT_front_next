@@ -34,6 +34,9 @@ const VideoSection: React.FC<any> = ({
     setShowComments(true);
   };
 
+  console.log("videovideovideovideovideovideovideovideo", video);
+
+
   const videoUrl =
     positionVideo === 0
       ? StringHelpers?.getProfile(video?.attachmentInserted)

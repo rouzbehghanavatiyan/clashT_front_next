@@ -90,6 +90,8 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
           const { status: attachmentStatus } = resAttachment?.data || {};
 
           if (attachmentStatus === 0) {
+            console.log("33333333333333333",userId);
+            
             const resProfileAttachment =
               await userService.profileAttachment(userId);
             const { status, data } = resProfileAttachment?.data || {};

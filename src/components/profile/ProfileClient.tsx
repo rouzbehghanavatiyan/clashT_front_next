@@ -102,6 +102,8 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
   // --- رفرش دیتای پروفایل ---
   const refreshMyProfileAttachment = useCallback(async () => {
     if (!isMyProfile || !myUserId) return;
+    console.log("222222222222222",myUserId);
+    
     try {
       const profileRes = await userService.profileAttachment(myUserId);
       const freshUserData = profileRes?.data?.data || profileRes?.data;

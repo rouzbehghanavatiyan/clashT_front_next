@@ -66,6 +66,7 @@ const LoginForm: FC = () => {
       const token = response?.data?.data?.token;
       const refreshToken = response?.data?.data?.refreshToken;
       const userId = response?.data?.data?.userId;
+      console.log("response?.data?.data", response?.data?.data);
 
       if (!ok || !token) {
         setAttempts((p) => p + 1);
@@ -77,6 +78,8 @@ const LoginForm: FC = () => {
       dispatch(RsetUserLogin({ token, userId, username: username.trim() }));
 
       try {
+        console.log("111111111", userId);
+
         const res = await userService.profileAttachment(userId);
         const profileData = res?.data?.data;
         if (profileData) {
