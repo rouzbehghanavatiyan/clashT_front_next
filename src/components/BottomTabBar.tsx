@@ -16,7 +16,12 @@ import {
   PersonRounded,
 } from "@mui/icons-material";
 import { useAppSelector } from "@/store/reduxHook";
-import { MAIN_TABS, isTabActive } from "@/lib/navigation";
+import {
+  MAIN_TABS,
+  getLoggedInUsername,
+  isTabActive,
+  profileHref,
+} from "@/lib/navigation";
 
 const ICONS: Record<
   string,
@@ -47,7 +52,7 @@ const ICONS: Record<
 export const BottomTabBar: React.FC = () => {
   const pathname = usePathname();
   const userLogin = useAppSelector((state) => state?.main?.userLogin);
-  const username = userLogin?.user?.userName ?? userLogin?.username;
+  const username = getLoggedInUsername(userLogin);
 
   return (
     <nav
@@ -61,7 +66,7 @@ export const BottomTabBar: React.FC = () => {
           return (
             <Link
               key={tab.id}
-              href={tab.href}
+              href={tab.id === "profile" ? profileHref(username) : tab.href}
               aria-current={isActive ? "page" : undefined}
               className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
                 isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-800"

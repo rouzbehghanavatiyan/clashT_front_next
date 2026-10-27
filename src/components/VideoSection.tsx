@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAppSelector } from "@/store/reduxHook";
 import OptionTop from "@/common/OptionTop";
 import OptionBottom from "@/common/OptionBottom";
@@ -34,16 +34,13 @@ const VideoSection: React.FC<any> = ({
     setShowComments(true);
   };
 
-  console.log("videovideovideovideovideovideovideovideo", video);
-
-
   const videoUrl =
     positionVideo === 0
       ? StringHelpers?.getProfile(video?.attachmentInserted)
       : StringHelpers?.getProfile(video?.attachmentMatched);
 
   return (
-    <div className="h-full w-full relative flex flex-col border-b border-gray-800 min-h-0">
+    <div className="relative flex h-full min-h-0 w-full flex-col border-b border-white/10">
       <OptionTop
         main={main}
         video={video}
@@ -55,11 +52,10 @@ const VideoSection: React.FC<any> = ({
         toggleDropdown={toggleDropdown}
         dropdownItems={dropdownItems}
       />
-      <div className="flex-1 bg-red min-h-0 relative  flex items-center justify-center">
-        <div className="relative w-full h-full flex items-center  justify-center bg-black overflow-hidden">
+      <div className="relative min-h-0 flex-1">
+        <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black">
           <Video
-            videoId={video?.id}
-            className="max-w-full max-h-full w-auto h-auto object-contain"
+            className="h-full w-full object-contain"
             loop
             playing={isPlaying}
             handleVideo={() => onVideoPlay(video)}

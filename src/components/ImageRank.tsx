@@ -104,7 +104,7 @@ const ImageRank: React.FC<ImageRankProps> = ({
 
     // پیدا کردن نام کاربری یا شناسه برای آدرس‌دهی سئومحور
     const targetIdentifier =
-      userInfo?.userName || userInfo?.user?.userName;
+      userName || userInfo?.userName || userInfo?.user?.userName;
 
     if (targetIdentifier) {
       router.push(`/${encodeURIComponent(targetIdentifier)}`);

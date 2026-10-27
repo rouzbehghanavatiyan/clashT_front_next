@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import { RsetAllFollowerList } from "@/store/slices/mainSlice";
 import { userService } from "@/services/user.service";
+import StringHelpers from "@/utils/StringHelpers";
 
 export default function FollowersClient() {
   const router = useRouter();
@@ -84,7 +85,11 @@ export default function FollowersClient() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={item?.profile || item?.avatarUrl || "/default-avatar.png"}
+                    src={
+                      StringHelpers.getProfile(item?.profile) ||
+                      StringHelpers.getProfile(item?.avatar) ||
+                      "/default-avatar.png"
+                    }
                     alt={item?.userName || "User"}
                     className="w-12 h-12 rounded-full object-cover border border-gray-200"
                   />

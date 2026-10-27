@@ -37,6 +37,20 @@ export const MAIN_TABS: {
   { id: "profile", name: "Profile", href: "/profile" },
 ];
 
+export function getLoggedInUsername(userLogin: any): string | undefined {
+  const value =
+    userLogin?.user?.userName ??
+    userLogin?.userName ??
+    userLogin?.username;
+  if (typeof value !== "string") return undefined;
+  const username = value.trim();
+  return username || undefined;
+}
+
+export function profileHref(username?: string): string {
+  return username ? `/${encodeURIComponent(username)}` : "/profile";
+}
+
 export function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),

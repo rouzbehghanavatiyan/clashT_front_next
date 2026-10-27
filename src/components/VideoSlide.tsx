@@ -70,8 +70,6 @@ export const VideoSlide: React.FC<VideoSlideProps> = ({
     },
   ];
 
-  console.log(video);
-
   return (
     <>
       {videoSections.map((section, sectionIndex) => {

@@ -105,34 +105,34 @@ const OptionBottom: React.FC<any> = ({
   }, [countLiked, video, positionVideo, isLiked, movieId]);
 
   return (
-    <div className="absolute w-full bottom-5 z-10">
-      <div className="flex mb-4 justify-between mx-2">
-        <div className="col-span-1  flex items-end justify-start">
+    <div className="pointer-events-none absolute bottom-9 z-10 w-full">
+      <div className="mx-2 mb-4 flex justify-between">
+        <div className="pointer-events-auto flex items-end justify-start">
           <ChatBubbleOutlineIcon
             onClick={() => handleToggleComments(video)}
-            className="font25  text-white"
+            className="font25 cursor-pointer text-white"
           />
         </div>
         {endTime ? null : result === "Win" ? (
-          <div className="text-green col-span-1 flex items-center justify-center">
-            <span className="font15 border-green px-2 rounded-lg border font-bold">
+          <div className="pointer-events-auto flex items-center justify-center text-green">
+            <span className="font15 rounded-lg border border-green px-2 font-bold">
               Win
             </span>
           </div>
         ) : result === "Loss" ? (
-          <div className="text-red col-span-1 flex items-center justify-center">
-            <span className="font15 border-red px-2 rounded-lg border font-bold">
+          <div className="pointer-events-auto flex items-center justify-center text-red">
+            <span className="font15 rounded-lg border border-red px-2 font-bold">
               Loss
             </span>
           </div>
         ) : result === "Draw" ? (
-          <div className="text-yellow col-span-1 flex items-center justify-center">
-            <span className="font15 border-yellow px-2 rounded-lg border font-bold">
+          <div className="pointer-events-auto flex items-center justify-center text-yellow">
+            <span className="font15 rounded-lg border border-yellow px-2 font-bold">
               Draw
             </span>
           </div>
         ) : null}
-        <div className="col-span-1 flex justify-end">
+        <div className="pointer-events-auto flex justify-end">
           {showLiked && movieId && (
             <>
               {isLiked ? (

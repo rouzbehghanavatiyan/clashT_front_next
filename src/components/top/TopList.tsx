@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { miscService } from "@/services/misc.service";
 import ImageRank from "@/components/ImageRank";
+import StringHelpers from "@/utils/StringHelpers";
 
 export default function TopList() {
   const router = useRouter();
@@ -77,7 +78,11 @@ export default function TopList() {
               >
                 <ImageRank
                   score={item?.score ?? 0}
-                  imgSrc={item?.avatarUrl || item?.profileUrl}
+                  imgSrc={
+                    StringHelpers.getProfile(item?.profile) ||
+                    StringHelpers.getProfile(item?.avatar) ||
+                    undefined
+                  }
                   userName={username}
                   onClickDisable
                 />

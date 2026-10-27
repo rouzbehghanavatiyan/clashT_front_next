@@ -16,7 +16,12 @@ import {
   PersonRounded,
 } from "@mui/icons-material";
 import { useAppSelector } from "@/store/reduxHook";
-import { MAIN_TABS, isTabActive } from "@/lib/navigation";
+import {
+  MAIN_TABS,
+  getLoggedInUsername,
+  isTabActive,
+  profileHref,
+} from "@/lib/navigation";
 
 const ICONS: Record<
   string,
@@ -47,7 +52,7 @@ const ICONS: Record<
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const userLogin = useAppSelector((state) => state?.main?.userLogin);
-  const username = userLogin?.user?.userName ?? userLogin?.username;
+  const username = getLoggedInUsername(userLogin);
 
   return (
     <aside className="hidden md:flex md:flex-col fixed inset-y-0 left-0 z-40 w-60 border-r border-gray-200 bg-white">
@@ -63,7 +68,7 @@ export const Sidebar: React.FC = () => {
           return (
             <Link
               key={tab.id}
-              href={tab.href}
+              href={tab.id === "profile" ? profileHref(username) : tab.href}
               aria-current={active ? "page" : undefined}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                 active
