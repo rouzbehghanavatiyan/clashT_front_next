@@ -19,6 +19,7 @@ import { useAppSelector } from "@/store/reduxHook";
 import { MAIN_TABS, isTabActive } from "@/lib/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
 import { CreateEntryButton } from "@/components/create/CreateEntryButton";
+import PwaInstallButton from "@/components/PwaInstallButton";
 
 const ICONS: Record<
   string,
@@ -96,6 +97,7 @@ export const Sidebar: React.FC = () => {
           );
         })}
       </nav>
+      <PwaInstallButton variant="sidebar" />
     </aside>
   );
 };

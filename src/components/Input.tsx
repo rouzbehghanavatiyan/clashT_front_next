@@ -24,7 +24,8 @@ interface InputProps {
   onKeyDown?: any;
   onFocus?: any;
   multiline?: boolean; 
-  maxHeight?: string; 
+  maxHeight?: string;
+  suppressHydrationWarning?: boolean;
 }
  
 const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -50,6 +51,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       handleOnChange = () => {},
       multiline = false,
       maxHeight = "120px",
+      suppressHydrationWarning,
     },
     ref
   ) => {
@@ -97,22 +99,23 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               name={name}
               placeholder={placeholder}
               onChange={(e) => changeHandler(e, onChange)}
-              value={value}
-              ref={ref as React.Ref<HTMLTextAreaElement>}
+            value={value}
+            suppressHydrationWarning={suppressHydrationWarning}
+            ref={ref as React.Ref<HTMLTextAreaElement>}
               className={`${borderFocusClasses} ${className}`}
               style={{
                 maxHeight: maxHeight,
               }}
-              data-state={
-                disabled && !Icon
-                  ? "disabled"
-                  : errors
-                    ? "failed"
-                    : !!value && !errors
-                      ? "success"
-                      : ""
-              }
-              rows={1}
+            data-state={
+              disabled && !Icon
+                ? "disabled"
+                : errors
+                  ? "failed"
+                  : value
+                    ? "success"
+                    : undefined
+            }
+            rows={1}
             />
             {!!Icon && (
               <div className="input-icon">
@@ -160,6 +163,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             onChange={(e) => changeHandler(e, onChange)}
             value={value}
             ref={ref}
+            suppressHydrationWarning={suppressHydrationWarning}
             className={`${borderFocusClasses} ${className} input input-sm lg:input-base data-[state=failed]:input-failed 
             data-[state=success]:input-success truncate disabled:cursor-pointer disabled:!border-none 
             disabled:bg-gray-100 disabled:text-[#777777] disabled:!shadow-none data-[state=disabled]:disabled:!px-1 data-[state=disabled]:disabled:!py-2`}
@@ -168,9 +172,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                 ? "disabled"
                 : errors
                   ? "failed"
-                  : !!value && !errors
+                  : value
                     ? "success"
-                    : ""
+                    : undefined
             }
           />
           {!!Icon && (

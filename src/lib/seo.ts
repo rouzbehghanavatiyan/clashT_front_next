@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { SITE_URL } from "@/lib/socket";
+import { SITE_URL } from "@/lib/env";
+
+export { SITE_URL };
 
 export const SITE_NAME = "Clash Talent";
 export const SITE_LOGO = "/assets/images/logocircle.png";
@@ -32,11 +34,6 @@ export function createMetadata({
   return {
     title,
     description,
-    icons: {
-      icon: SITE_LOGO,
-      shortcut: SITE_LOGO,
-      apple: SITE_LOGO,
-    },
     alternates: { canonical: url },
     robots: noIndex ? { index: false, follow: false } : { index: true, follow: true },
     openGraph: {

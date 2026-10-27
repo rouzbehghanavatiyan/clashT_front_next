@@ -1,7 +1,22 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import ReactPlayer from "react-player";
+import ZoomOut from "@mui/icons-material/ZoomOut";
+
+function playSafely(el: HTMLMediaElement | null) {
+  if (!el) return;
+  const result = el.play();
+  if (result !== undefined) {
+    result.catch(() => {});
+  }
+}
 
 interface VideoProps {
   loop?: boolean;
@@ -15,6 +30,7 @@ interface VideoProps {
   style?: React.CSSProperties;
   width?: string | number;
   height?: string | number;
+  onExitFullscreen?: () => void;
 }
 
 const formatTime = (seconds: number) => {
@@ -36,9 +52,12 @@ const Video: React.FC<VideoProps> = ({
   style,
   width = "100%",
   height = "100%",
+  onExitFullscreen,
 }) => {
   const playerRef = useRef<HTMLVideoElement | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const isMuted = muted || !soundEnabled;
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [ready, setReady] = useState(false);
@@ -63,7 +82,15 @@ const Video: React.FC<VideoProps> = ({
     setReady(false);
     setBuffering(true);
     setShowControls(true);
+    setSoundEnabled(false);
   }, [url]);
+
+  useLayoutEffect(() => {
+    const el = playerRef.current;
+    if (!el) return;
+    el.muted = isMuted;
+    el.defaultMuted = isMuted;
+  }, [isMuted, url]);
 
   useEffect(() => {
     if (!playing) {
@@ -81,6 +108,7 @@ const Video: React.FC<VideoProps> = ({
   };
 
   const handleVideoClick = () => {
+    setSoundEnabled(true);
     handleVideo?.();
   };
 
@@ -129,12 +157,25 @@ const Video: React.FC<VideoProps> = ({
           playing={playing}
           loop={loop}
           playbackRate={playbackRate}
-          muted={muted}
+          muted={isMuted}
+          volume={isMuted ? 0 : 1}
+          autoPlay={playing && isMuted}
           onEnded={onEnded}
+          onError={() => {
+            const el = playerRef.current;
+            if (!playing || !el) return;
+            el.muted = true;
+            playSafely(el);
+          }}
           onReady={() => {
             setReady(true);
             setBuffering(false);
             syncDuration();
+            const el = playerRef.current;
+            if (playing && el) {
+              el.muted = isMuted;
+              playSafely(el);
+            }
           }}
           onWaiting={() => setBuffering(true)}
           onPlaying={() => setBuffering(false)}
@@ -153,6 +194,20 @@ const Video: React.FC<VideoProps> = ({
           playing && ready ? "opacity-0" : "opacity-100"
         }`}
       />
+
+      {onExitFullscreen && (
+        <button
+          type="button"
+          aria-label="Exit fullscreen"
+          onClick={(e) => {
+            e.stopPropagation();
+            onExitFullscreen();
+          }}
+          className="absolute right-3 top-3 z-[5] inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white hover:bg-black/65"
+        >
+          <ZoomOut sx={{ fontSize: 20 }} />
+        </button>
+      )}
 
       {buffering && (
         <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center">

@@ -90,8 +90,8 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
           const { status: attachmentStatus } = resAttachment?.data || {};
 
           if (attachmentStatus === 0) {
-            console.log("33333333333333333",userId);
-            
+            console.log("33333333333333333", userId);
+
             const resProfileAttachment =
               await userService.profileAttachment(userId);
             const { status, data } = resProfileAttachment?.data || {};
@@ -158,7 +158,12 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
               }`}
           >
             <div className="rounded-full border border-gray-200 dark:border-gray-700 p-0.5 flex items-center justify-center">
-              <ImageRank score={score} imgSrc={userImage} imgSize={96} />
+              <ImageRank
+                score={score}
+                imgSrc={userImage}
+                imgSize={96}
+                onClickDisable
+              />
             </div>
 
             {isMyProfile && (

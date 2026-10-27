@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import React from "react";
 import { notFound } from "next/navigation";
 import ProfileClient from "@/components/profile/ProfileClient";
 import StringHelpers from "@/utils/StringHelpers";
-import { SITE_URL } from "@/lib/socket";
+import { SITE_URL } from "@/lib/seo";
 import { userService } from "@/services/user.service";
 import { RESERVED_PATHS } from "@/lib/navigation";
+
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -93,7 +96,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const name = user.fullName || user.userName;
-  const title = `${name} (@${user.userName}) | Clash Talent`;
+  const title = `${name} (@${user.userName})`;
   const description = user.bio || `Watch ${name}'s talents and matches on Clash Talent`;
   const profileUrl = `${SITE_URL}/${encodeURIComponent(user.userName)}`;
   const avatar = user.avatarUrl || `${SITE_URL}/default-avatar.png`;
@@ -133,27 +136,10 @@ export default async function UserProfilePage({ params }: Props) {
     notFound();
   }
 
-  const profileUrl = `${SITE_URL}/${encodeURIComponent(initialUserData.userName)}`;
-
-  const personSchema = {
-    "@context": "https://schema.org",
-    "@type": "Person",
-    name: initialUserData.fullName || initialUserData.userName,
-    alternateName: initialUserData.userName,
-    description: initialUserData.bio || undefined,
-    image: initialUserData.avatarUrl || undefined,
-    url: profileUrl,
-  };
-
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(personSchema).replace(/</g, "\\u003c"),
-        }}
-      />
-      <ProfileClient initialUserData={initialUserData} />
-    </>
+    <ProfileClient
+      key={initialUserData.userName}
+      initialUserData={initialUserData}
+    />
   );
 }

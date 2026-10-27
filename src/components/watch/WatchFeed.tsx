@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CircularProgress from "@mui/material/CircularProgress";
 import ChatBubbleOutline from "@mui/icons-material/ChatBubbleOutline";
-import SearchRounded from "@mui/icons-material/SearchRounded";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
+import UserSearchInput from "@/components/UserSearchInput";
+import PwaInstallButton from "@/components/PwaInstallButton";
 import { attachmentService } from "@/services/attachment.service";
 import {
   appendWatchData,
@@ -19,20 +20,6 @@ import VideoGroup from "@/components/VideoGroup";
 
 const PULL_THRESHOLD = 64;
 
-function matchesSearch(item: any, query: string) {
-  if (!query) return true;
-  const haystack = [
-    item?.userInserted?.userName,
-    item?.userMatched?.userName,
-    item?.inviteInserted?.title,
-    item?.attachmentInserted?.title,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  return haystack.includes(query);
-}
-
 export default function WatchFeed() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -44,7 +31,6 @@ export default function WatchFeed() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [seed, setSeed] = useState<number | null>(null);
-  const [search, setSearch] = useState("");
   const [pullDistance, setPullDistance] = useState(0);
   const bottomObserverRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -147,11 +133,7 @@ export default function WatchFeed() {
     router.push(`/watch/${inviteId}`);
   };
 
-  const query = search.trim().toLowerCase();
-  const visibleData = useMemo(
-    () => (data || []).filter((item: any) => matchesSearch(item, query)),
-    [data, query],
-  );
+  const visibleData = data || [];
 
   const onTouchStart = (e: React.TouchEvent) => {
     const scroller = scrollerRef.current;
@@ -191,12 +173,12 @@ export default function WatchFeed() {
   return (
     <div
       ref={scrollerRef}
-      className="flex h-[calc(100svh-48px)] w-full flex-col overflow-y-auto overscroll-y-contain bg-white text-gray-900 md:h-auto md:min-h-screen md:overscroll-auto"
+      className="flex h-[calc(100svh-32px)] w-full flex-col overflow-y-auto overscroll-y-contain bg-white text-gray-900 md:h-auto md:min-h-screen md:overscroll-auto"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-gray-200 bg-white/95 px-3 py-2 backdrop-blur md:hidden">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3 md:hidden">
         <Link
           href="/chat"
           aria-label="Messages"
@@ -209,20 +191,8 @@ export default function WatchFeed() {
             </span>
           )}
         </Link>
-        <label className="relative min-w-0 flex-1">
-          <span className="sr-only">Search matchups</span>
-          <SearchRounded
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            sx={{ fontSize: 18 }}
-          />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search"
-            className="h-10 w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
-          />
-        </label>
+        <UserSearchInput className="min-w-0 flex-1" compact />
+        <PwaInstallButton variant="header" />
       </header>
 
       <div
@@ -245,9 +215,17 @@ export default function WatchFeed() {
 
         <div className="grid grid-cols-2 gap-[3px] lg:grid-cols-3">
           {visibleData.map((item: any, index: number) => {
-            const key = item?.inviteInserted?.id
-              ? String(item.inviteInserted.id)
-              : `watch-${index}`;
+            const key = [
+              item?.inviteInserted?.id ?? "x",
+              item?.inviteMatched?.id ?? "x",
+              item?.attachmentInserted?.attachmentId ??
+                item?.attachmentInserted?.id ??
+                "x",
+              item?.attachmentMatched?.attachmentId ??
+                item?.attachmentMatched?.id ??
+                "x",
+              index,
+            ].join("-");
 
             return (
               <article key={key} className="w-full">
@@ -264,9 +242,7 @@ export default function WatchFeed() {
 
         {!loading && !error && visibleData.length === 0 && (
           <p className="py-16 text-center text-sm text-gray-500">
-            {query
-              ? "No matchups match your search."
-              : "No matchups yet. Pull down to refresh or create a new clash."}
+            No matchups yet. Pull down to refresh or create a new clash.
           </p>
         )}
 

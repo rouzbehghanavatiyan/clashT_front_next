@@ -1,5 +1,21 @@
 import { api } from "./axios.config";
 
+export const blockListByUser = async () => {
+  return await api.get(`/blockListByUser`);
+};
+
+export const userUnBlock = async (data: any) => {
+  return await api.post(`/userUnBlock`, data);
+};
+
+export const requestChangeEmail = async (data: { newEmail: string }) => {
+  return await api.post(`/requestChangeEmail`, data);
+};
+
+export const forgotPassword = async (data: any) => {
+  return await api.post(`/forgotPassword`, data);
+};
+
 export const userService = {
   list: () => api.get("/userList"),
   followerList: (userId: number) => api.get(`/followerList?userId=${userId}`),
@@ -16,6 +32,16 @@ export const userService = {
   addFollower: (data: any) => api.post("/addFollower", data),
   profile: (username: any) => api.get(`/profile/${username}`),
   addProfile: (data: any) => api.put(`/addProfile/${data}`),
-  forgotPassword: (data: any) => api.post("/forgotPassword", data),
-  requestChangeEmail: (data: any) => api.post("/requestChangeEmail", data),
+  forgotPassword,
+  requestChangeEmail,
+  blockListByUser,
+  userUnBlock,
+  searchUser: (postData: {
+    userNameReq: string;
+    pageNumber: number;
+    pageSize: number;
+  }) =>
+    api.get(
+      `/searchUser?SearchUserDto=${encodeURIComponent(postData?.userNameReq ?? "")}&PageNumber=${postData?.pageNumber}&PageSize=${postData?.pageSize}`,
+    ),
 };

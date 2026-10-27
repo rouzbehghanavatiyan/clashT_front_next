@@ -1,5 +1,9 @@
 import { api } from "./axios.config";
 
+export const removeInvite = async (invId: number) => {
+  return await api.delete(`/removeInvite?inviteId=${invId}`);
+};
+
 export const attachmentService = {
   attachmentList: (params: any) => api.get(`/attachmentList`, { params }),
   attachmentListByInviteId: (params: {
@@ -18,8 +22,7 @@ export const attachmentService = {
 
   play: (path: string) => `${api.defaults.baseURL}/attachmentPlay?path=${path}`,
 
-  removeInvite: (inviteId: number) =>
-    api.delete(`/removeInvite?inviteId=${inviteId}`),
+  removeInvite,
 
   userAttachmentList: (params: any) =>
     api.get(`/userAttachmentList`, { params }),

@@ -3,19 +3,19 @@
 import React, { FC, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import Input from "@/components/Input";
-import Button from "@/components/Button";
-import { SITE_LOGO } from "@/lib/seo";
-import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
+import MaleIcon from "@mui/icons-material/Male";
+import FemaleIcon from "@mui/icons-material/Female";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import MessageModal from "@/components/MessageModal";
+import Input from "@/components/Input";
+import Button from "@/components/Button";
+import { BrandLogo } from "@/components/BrandLogo";
 import { authService } from "@/services/auth.service";
 
 interface FormErrors {
   username?: string;
   email?: string;
+  gender?: string;
   password?: string;
   passwordConfirmation?: string;
   general?: string;
@@ -24,244 +24,387 @@ interface FormErrors {
 interface FormValues {
   username?: string;
   email?: string;
+  gender?: number;
   password?: string;
   passwordConfirmation?: string;
 }
 
+interface ModalState {
+  visible: boolean;
+  type: "success" | "error";
+  title: string;
+  description: React.ReactNode;
+  onConfirm?: () => void;
+}
+
+const genderOptions = [
+  { label: "Male", value: 1, icon: MaleIcon },
+  { label: "Female", value: 2, icon: FemaleIcon },
+];
+
+const FieldError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return (
+    <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
+      <span>*</span>
+      <span>{message}</span>
+    </p>
+  );
+};
+
 const SignUpForm: FC = () => {
   const router = useRouter();
-  const dispatch = useAppDispatch();
-  const main = useAppSelector((state) => state.main);
-
   const [inputs, setInputs] = useState<FormValues>({});
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [modalState, setModalState] = useState<ModalState>({
+    visible: false,
+    type: "error",
+    title: "",
+    description: "",
+  });
 
-  // Validation
+  const handleInputChange = (field: keyof FormValues, value: string | number) => {
+    setInputs((prev) => ({ ...prev, [field]: value }));
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const next: FormErrors = {};
     let isValid = true;
 
     if (!inputs.username?.trim()) {
-      newErrors.username = "Username is required";
+      next.username = "Username is required";
       isValid = false;
     }
 
     if (!inputs.email?.trim()) {
-      newErrors.email = "Email is required";
+      next.email = "Email is required";
       isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inputs.email)) {
-      newErrors.email = "Please enter a valid email";
+      next.email = "Please enter a valid email";
+      isValid = false;
+    }
+
+    if (inputs.gender === undefined || inputs.gender === null) {
+      next.gender = "Please select your gender";
       isValid = false;
     }
 
     if (!inputs.password) {
-      newErrors.password = "Password is required";
+      next.password = "Password is required";
       isValid = false;
     } else if (inputs.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
+      next.password = "Password must be at least 8 characters";
       isValid = false;
     }
 
     if (!inputs.passwordConfirmation) {
-      newErrors.passwordConfirmation = "Please confirm your password";
+      next.passwordConfirmation = "Please confirm your password";
       isValid = false;
     } else if (inputs.passwordConfirmation !== inputs.password) {
-      newErrors.passwordConfirmation = "Passwords do not match";
+      next.passwordConfirmation = "Passwords do not match";
       isValid = false;
     }
 
-    setErrors(newErrors);
+    setErrors(next);
     return isValid;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setInputs((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
+  const handleCloseModal = () => {
+    const confirm = modalState.onConfirm;
+    setModalState((prev) => ({ ...prev, visible: false }));
+    confirm?.();
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (isLoading || !validateForm()) return;
 
     setIsLoading(true);
+    setErrors((prev) => ({ ...prev, general: undefined }));
+
     try {
-      const postData = {
-        UserName: inputs.username,
-        Password: inputs.password,
-        Email: inputs.email,
-      };
-      const res = await authService.register(postData);
-      const { status, message } = res?.data;
+      const res = await authService.register({
+        username: inputs.username,
+        email: inputs.email,
+        password: inputs.password,
+        userTypeId: 1,
+        confirmPassword: inputs.passwordConfirmation,
+        userGender: Number(inputs.gender),
+      });
+
+      const { status, message: apiMessage } = res?.data || {};
 
       if (status === 0 || status === 2) {
-        // Optional: show message modal
-        // dispatch(RsetMessageModal({ title: "Check your email to verify.", show: true, icon: "email" }));
-        router.push("/");
+        setModalState({
+          visible: true,
+          type: "success",
+          title: "Registration Successful",
+          description: (
+            <p className="text-center text-sm leading-6 text-slate-600">
+              Please check your inbox{" "}
+              <span className="font-bold text-slate-900">email</span>, and make
+              sure to check your{" "}
+              <span className="font-bold text-slate-900">spam</span> folder as
+              well!
+            </p>
+          ),
+          onConfirm: () => router.replace("/login"),
+        });
       } else {
         setErrors({
-          general: message || "Registration failed. Please try again.",
+          general: apiMessage || "Registration failed. Please try again.",
         });
       }
-    } catch (err) {
-      setErrors({ general: "An error occurred. Please try again later." });
+    } catch (error) {
+      console.error("Sign Up Error:", error);
+      setModalState({
+        visible: true,
+        type: "error",
+        title: "Error",
+        description: "An error occurred. Please try again later.",
+      });
     } finally {
       setIsLoading(false);
     }
   };
+
+  const inputClass = (hasError?: string) =>
+    `w-full rounded-lg border px-4 py-2.5 text-sm transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 ${hasError
+      ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+      : "border-slate-300 focus:border-blue-500 focus:ring-blue-500/20"
+    }`;
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 from-gray-50 to-gray-200">
-      <div className="rounded-xl p-8 w-full max-w-md mx-4">
-        <form onSubmit={handleSignUp} className="space-y-5">
-          {/* Logo */}
-          <div className="flex flex-col items-center mb-6">
-            <Link href="/" className="mb-4 flex items-center gap-3">
-              <div className="relative h-14 w-14 overflow-hidden rounded-full">
-                <Image src={SITE_LOGO} alt="Clash Talent logo" fill className="object-cover" />
-              </div>
-              <h1 className="whitespace-nowrap text-2xl font-bold tracking-tight text-gray-800">
-                Clash<span className="text-blue-600">Talent</span>
-              </h1>
-            </Link>
-            <p className="text-gray-600">Create an Account</p>
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-900/5">
+        <div className="mb-8 flex flex-col items-center">
+          <BrandLogo
 
-          {/* General error */}
-          {errors.general && (
-            <div className="text-red-600 p-3 rounded bg-red-50 text-sm">
-              {errors.general}
-            </div>
-          )}
+            size={64}
+            showName={false}
+            className="mb-4 transition-transform hover:scale-105"
+            imageClassName="shadow-md ring-2 ring-blue-500/20"
+            nameClassName="whitespace-nowrap text-2xl font-bold tracking-tight text-slate-800"
+          />
+          <p className="text-sm text-slate-500">Create your account</p>
+        </div>
 
-          {/* Username */}
+        <form onSubmit={handleSignUp} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="username"
+              className="mb-1.5 block text-sm font-medium text-slate-700"
+            >
               Username
             </label>
             <Input
+              id="username"
               name="username"
+              autoComplete="username"
               value={inputs.username || ""}
-              onChange={handleInputChange}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleInputChange("username", e.target.value)
+              }
               placeholder="Enter your username"
-              className={`w-full py-2 px-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.username ? "border-red-500" : "border-gray-300"
-              }`}
+              disabled={isLoading}
+              className={inputClass(errors.username)}
             />
-            {errors.username && (
-              <p className="text-red-600 mt-1 text-sm">{errors.username}</p>
-            )}
+            <FieldError message={errors.username} />
           </div>
 
-          {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="email"
+              className="mb-1.5 block text-sm font-medium text-slate-700"
+            >
               Email
             </label>
             <Input
+              id="email"
               name="email"
               type="email"
+              autoComplete="email"
               value={inputs.email || ""}
-              onChange={handleInputChange}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleInputChange("email", e.target.value)
+              }
               placeholder="Enter your email"
-              className={`w-full py-2 px-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.email ? "border-red-500" : "border-gray-300"
-              }`}
+              disabled={isLoading}
+              className={inputClass(errors.email)}
             />
-            {errors.email && (
-              <p className="text-red-600 mt-1 text-sm">{errors.email}</p>
-            )}
+            <FieldError message={errors.email} />
           </div>
 
-          {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <p className="mb-1.5 block text-sm font-medium text-slate-700">
+              Gender
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {genderOptions.map((item) => {
+                const isSelected = inputs.gender === item.value;
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => handleInputChange("gender", item.value)}
+                    className={`flex items-center justify-center gap-2 rounded-lg border py-3 text-sm transition ${isSelected
+                        ? "border-blue-600 bg-blue-50 font-semibold text-blue-700"
+                        : errors.gender
+                          ? "border-red-500 text-slate-700 hover:bg-slate-50"
+                          : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                      }`}
+                  >
+                    <Icon fontSize="small" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+            <FieldError message={errors.gender} />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-1.5 block text-sm font-medium text-slate-700"
+            >
               Password
             </label>
             <div className="relative">
               <Input
+                id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 value={inputs.password || ""}
-                onChange={handleInputChange}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleInputChange("password", e.target.value)
+                }
                 placeholder="Enter your password"
-                className={`w-full py-2 px-4 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.password ? "border-red-500" : "border-gray-300"
-                }`}
+                disabled={isLoading}
+                className={`${inputClass(errors.password)} pr-11`}
               />
-              <span
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 cursor-pointer"
-                onClick={() => setShowPassword(!showPassword)}
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                disabled={isLoading}
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
               >
-                {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-              </span>
+                {showPassword ? (
+                  <VisibilityIcon fontSize="small" />
+                ) : (
+                  <VisibilityOffIcon fontSize="small" />
+                )}
+              </button>
             </div>
-            {errors.password && (
-              <p className="text-red-600 mt-1 text-sm">{errors.password}</p>
-            )}
+            <FieldError message={errors.password} />
           </div>
 
-          {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="passwordConfirmation"
+              className="mb-1.5 block text-sm font-medium text-slate-700"
+            >
               Confirm Password
             </label>
             <div className="relative">
               <Input
+                id="passwordConfirmation"
                 name="passwordConfirmation"
                 type={showConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
                 value={inputs.passwordConfirmation || ""}
-                onChange={handleInputChange}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleInputChange("passwordConfirmation", e.target.value)
+                }
                 placeholder="Confirm your password"
-                className={`w-full py-2 px-4 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.passwordConfirmation
-                    ? "border-red-500"
-                    : "border-gray-300"
-                }`}
+                disabled={isLoading}
+                className={`${inputClass(errors.passwordConfirmation)} pr-11`}
               />
-              <span
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 cursor-pointer"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                disabled={isLoading}
+                tabIndex={-1}
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
               >
                 {showConfirmPassword ? (
-                  <VisibilityOffIcon />
+                  <VisibilityIcon fontSize="small" />
                 ) : (
-                  <VisibilityIcon />
+                  <VisibilityOffIcon fontSize="small" />
                 )}
-              </span>
+              </button>
             </div>
-            {errors.passwordConfirmation && (
-              <p className="text-red-600 mt-1 text-sm">
-                {errors.passwordConfirmation}
-              </p>
-            )}
+            <FieldError message={errors.passwordConfirmation} />
           </div>
+
+          {errors.general && (
+            <p className="text-center text-sm text-red-600">{errors.general}</p>
+          )}
 
           <Button
             type="submit"
+            size="lg"
             loading={isLoading}
-            label="Sign Up"
-            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-          />
+            loadingText="Signing up..."
+            className="mt-2 w-full text-base font-semibold"
+          >
+            Sign up
+          </Button>
 
-          <p className="text-center text-sm text-gray-600">
+          <p className="pt-1 text-center text-sm text-slate-600">
             Already have an account?{" "}
             <Link
-              href="/"
-              className="text-blue-600 hover:text-blue-800 font-medium"
+              href="/login"
+              className="font-semibold text-blue-600 hover:text-blue-700 hover:underline"
             >
-              Log In
+              Sign in
             </Link>
           </p>
         </form>
-
-        {main?.messageModal?.show && <MessageModal />}
       </div>
+
+      {modalState.visible && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
+            <div
+              className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl ${modalState.type === "success"
+                  ? "bg-green-50 text-green-600"
+                  : "bg-red-50 text-red-600"
+                }`}
+            >
+              {modalState.type === "success" ? "✓" : "✕"}
+            </div>
+            <h2 className="mb-2 text-lg font-bold text-slate-900">
+              {modalState.title}
+            </h2>
+            <div className="mb-6">{modalState.description}</div>
+            <Button
+              type="button"
+              className={`w-full font-semibold ${modalState.type === "success"
+                  ? "bg-green-600 hover:bg-green-700 focus-visible:ring-green-500"
+                  : ""
+                }`}
+              onClick={handleCloseModal}
+            >
+              OK
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

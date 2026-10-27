@@ -57,7 +57,7 @@ const HomeFeed: React.FC = () => {
     pagination,
     customFetchNextPage,
     useRedux: false,
-    customCleanup: () => {},
+    customCleanup: () => { },
   });
 
   const waitingForUser = !userIdLogin;
@@ -66,7 +66,7 @@ const HomeFeed: React.FC = () => {
   return (
     <section
       aria-label="Home feed"
-      className="relative mt-0 flex h-[calc(100svh-48px)] w-full flex-col bg-zinc-950 md:h-[calc(100vh-65px)]"
+      className="relative mt-0 flex h-[calc(100svh-32px)] w-full flex-col bg-zinc-950 md:h-[calc(100vh-65px)]"
     >
       {showInitialSkeleton ? (
         <HomeSlideSkeleton />

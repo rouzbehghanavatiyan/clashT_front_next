@@ -10,9 +10,14 @@ import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import BlockIcon from "@mui/icons-material/Block";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { useAppDispatch } from "@/store/reduxHook";
+import { RsetUserId, RsetUserLogin } from "@/store/slices/mainSlice";
+import { removeTokens } from "@/services/tokenService";
+import { PWA_INSTALL_DISMISSED_KEY } from "@/lib/pwa";
 
 export default function SettingPage() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
 
     const [theme, setTheme] = useState<"light" | "dark">("light");
     const isDark = theme === "dark";
@@ -25,13 +30,20 @@ export default function SettingPage() {
             setIsLoggingOut(true);
 
             const savedTheme = localStorage.getItem("@app_theme");
+            const pwaDismissed = localStorage.getItem(PWA_INSTALL_DISMISSED_KEY);
+            removeTokens();
             localStorage.clear();
             if (savedTheme) {
                 localStorage.setItem("@app_theme", savedTheme);
             }
+            if (pwaDismissed) {
+                localStorage.setItem(PWA_INSTALL_DISMISSED_KEY, pwaDismissed);
+            }
 
+            dispatch(RsetUserLogin(null));
+            dispatch(RsetUserId(null));
             setLogoutDialogOpen(false);
-            router.replace("/login");
+            window.location.href = "/login";
         } catch (error) {
             console.error("Logout error:", error);
         } finally {
@@ -60,19 +72,6 @@ export default function SettingPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 flex flex-col">
-            {/* Header / MainTitle */}
-            <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-gray-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 px-4 py-3 backdrop-blur-md">
-                <button
-                    onClick={() => router.back()}
-                    className="rounded-full p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800"
-                    aria-label="Back"
-                >
-                    <ArrowBackIcon sx={{ fontSize: 22 }} />
-                </button>
-                <h1 className="text-lg font-semibold">Settings</h1>
-            </header>
-
-            {/* Main Content */}
             <main className="mx-auto w-full max-w-2xl flex-1 p-4">
                 <div className="divide-y divide-gray-100 dark:divide-zinc-800 rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
                     {/* Profile */}

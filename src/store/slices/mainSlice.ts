@@ -31,6 +31,26 @@ const initialDataState: DataState = {
   data: [],
 };
 
+const watchItemIdentity = (item: any) =>
+  [
+    item?.inviteInserted?.id ?? "x",
+    item?.inviteMatched?.id ?? "x",
+    item?.attachmentInserted?.attachmentId ?? item?.attachmentInserted?.id ?? "x",
+    item?.attachmentMatched?.attachmentId ?? item?.attachmentMatched?.id ?? "x",
+  ].join("-");
+
+const uniqueWatchItems = (items: any[]) => {
+  const seen = new Set<string>();
+  const next: any[] = [];
+  for (const item of items ?? []) {
+    const id = watchItemIdentity(item);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    next.push(item);
+  }
+  return next;
+};
+
 const initialState: any = {
   showTimerButtn: false,
   lastMatch: [],
@@ -83,13 +103,20 @@ const mainSlice = createSlice({
       state.watchVideo.pagination = action.payload;
     },
     setWatchData: (state, action: PayloadAction<any[]>) => {
-      state.watchVideo.data = action.payload;
+      state.watchVideo.data = uniqueWatchItems(action.payload);
     },
     RsetProfileVideo: (state, action: PayloadAction<any[]>) => {
       state.profileVideo = action.payload;
     },
     appendWatchData: (state, action: PayloadAction<any[]>) => {
-      state.watchVideo.data = [...state.watchVideo.data, ...action.payload];
+      const existing = new Set(state.watchVideo.data.map(watchItemIdentity));
+      const incoming = (action.payload ?? []).filter((item) => {
+        const id = watchItemIdentity(item);
+        if (existing.has(id)) return false;
+        existing.add(id);
+        return true;
+      });
+      state.watchVideo.data = [...state.watchVideo.data, ...incoming];
     },
     RsetAllFollowerList: (state, action: PayloadAction<any[]>) => {
       state.allFollowerList = action.payload;

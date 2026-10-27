@@ -1,3 +1,6 @@
+"use client";
+
+import React from "react";
 import * as MuiIcons from "@mui/icons-material";
 
 type MuiIconName = keyof typeof MuiIcons;

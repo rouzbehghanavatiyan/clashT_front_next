@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
-import { userService } from "@/services/user.service";
-import { useAppDispatch } from "@/store/reduxHook";
 
 const OptionBottom: React.FC<any> = ({
   handleToggleComments,
@@ -12,12 +10,9 @@ const OptionBottom: React.FC<any> = ({
   result,
   showLiked,
   positionVideo,
-  userIdLogin,
   countLiked,
   externalIsLiked,
-  socket,
 }) => {
-  const dispatch = useAppDispatch();
   const [isLiked, setIsLiked] = useState(false);
 
   // محاسبه movieId بر اساس positionVideo
@@ -48,44 +43,6 @@ const OptionBottom: React.FC<any> = ({
       setIsLiked(externalIsLiked);
     }
   }, [externalIsLiked]);
-
-  const handleLikeClick = useCallback(async () => {
-    if (!movieId) return;
-
-    // وضعیت جدید (معکوس وضعیت فعلی)
-    const newLikeStatus = !isLiked;
-
-    setIsLiked(newLikeStatus);
-
-    const postData = {
-      userId: userIdLogin || null,
-      movieId: movieId,
-    };
-
-    try {
-      if (isLiked) {
-        await userService.removeLike(postData);
-        if (socket) {
-          socket.emit("remove_liked", postData);
-        }
-      } else {
-        await userService.addLike(postData);
-        if (socket) {
-          socket.emit("add_liked", postData);
-        }
-      }
-      dispatch(
-        updateLikeStatus({
-          movieId,
-          isLiked: newLikeStatus,
-          positionVideo,
-        })
-      );
-    } catch (error) {
-      console.error("Error in like operation:", error);
-      setIsLiked(isLiked);
-    }
-  }, [isLiked, movieId, userIdLogin, socket, dispatch, positionVideo]);
 
   const currentLikeCount = useMemo(() => {
     if (countLiked !== undefined) return countLiked;
@@ -132,32 +89,33 @@ const OptionBottom: React.FC<any> = ({
             </span>
           </div>
         ) : null}
-        <div className="pointer-events-auto flex justify-end">
+        <div className="pointer-events-none flex items-center justify-end gap-1 text-gray-400">
           {showLiked && movieId && (
             <>
               {isLiked ? (
                 <ThumbUpIcon
-                  className="text-white font35  unlike_animation cursor-pointer"
-                  onClick={handleLikeClick}
+                  className="font35 text-gray-400"
+                  aria-disabled
                 />
               ) : (
                 <ThumbUpOffAltIcon
-                  className="text-white font35  cursor-pointer"
-                  onClick={handleLikeClick}
+                  className="font35 text-gray-400"
+                  aria-disabled
                 />
               )}
             </>
           )}
           {!endTime && currentLikeCount !== undefined && movieId ? (
-            <div className="text-gray-600 flex items-end justify-end gap-2">
-              <span className="font18 text-sm">{currentLikeCount}</span>
-              <span className=" pb-1">
-                <ThumbUpIcon className=" font25 unlike_animation cursor-pointer" />
+            <div className="flex items-center gap-1 leading-none text-gray-400">
+              <span className="text-sm font-semibold leading-none">
+                {currentLikeCount}
               </span>
+              <ThumbUpIcon
+                className="text-gray-400"
+                sx={{ fontSize: 18, display: "block" }}
+              />
             </div>
-          ) : (
-            <div> </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-export const PUBLIC_ROUTES = ["/login", "/signUp", "/forgot-password"];
+export const PUBLIC_ROUTES = ["/login", "/signUp", "/forgot-password", "/offline"];
 
 export const RESERVED_PATHS = [
   "login",
@@ -16,6 +16,8 @@ export const RESERVED_PATHS = [
   "messages",
   "videos",
   "support",
+  "offline",
+  "block-list",
   "privacy",
   "terms",
   "favicon.ico",
@@ -49,12 +51,26 @@ export function isProtectedRoute(pathname: string) {
     pathname.startsWith("/create") ||
     pathname.startsWith("/chat") ||
     pathname.startsWith("/settings") ||
+    pathname.startsWith("/support") ||
+    pathname.startsWith("/block-list") ||
     pathname === "/profile"
   );
 }
 
 export function showsChatAction(pathname: string) {
   return pathname.startsWith("/watch") || pathname.startsWith("/top");
+}
+
+export function isMainTabPath(pathname: string) {
+  return (
+    pathname === "/" ||
+    pathname === "/watch" ||
+    pathname === "/create" ||
+    pathname === "/top" ||
+    pathname === "/best" ||
+    pathname === "/profile" ||
+    pathname === "/home"
+  );
 }
 
 export function isTabActive(
@@ -92,6 +108,8 @@ export function pageTitleFromPath(pathname: string) {
   if (pathname.startsWith("/top") || pathname.startsWith("/best")) return "Top";
   if (pathname.startsWith("/chat")) return "Chat";
   if (pathname.startsWith("/settings")) return "Settings";
+  if (pathname.startsWith("/support")) return "Support & Contact";
+  if (pathname.startsWith("/block-list")) return "Block List";
   if (pathname.startsWith("/profile")) return "Profile";
   return "Clash Talent";
 }

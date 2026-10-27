@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowBack } from "@mui/icons-material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Mousewheel } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
@@ -21,6 +22,7 @@ const getKey = (v: any, i: number) =>
   `invite-${v?.inviteInserted?.id ?? v?.attachmentInserted?.id ?? i}`;
 
 export default function WatchPlayer({ inviteId }: { inviteId: string }) {
+  const router = useRouter();
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -124,15 +126,17 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
   return (
     <section
       aria-label="Match videos"
-      className="relative w-full bg-zinc-950 flex flex-col h-[calc(100svh-48px)] md:h-[calc(100vh-65px)]"
+      className="relative w-full bg-zinc-950 flex flex-col h-svh md:h-[calc(100vh-65px)]"
     >
-      <div className="absolute top-3 left-3 z-20">
-        <Link
-          href="/watch"
-          className="inline-flex items-center rounded-full bg-black/50 px-3 py-1.5 text-xs font-medium text-white hover:bg-black/70"
+      <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2 md:hidden">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          aria-label="Go back"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white hover:bg-black/65"
         >
-          Back to Watch
-        </Link>
+          <ArrowBack sx={{ fontSize: 18 }} />
+        </button>
       </div>
 
       {error && (

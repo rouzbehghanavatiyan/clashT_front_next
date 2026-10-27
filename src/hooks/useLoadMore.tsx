@@ -6,6 +6,7 @@ export function useLoadMore<T = any>(
   fetchFn: (params: { skip: number; take: number }) => Promise<any>,
   onSuccess: (newItems: T[], isFirstPage: boolean) => void,
   cachedDataLength: number = 0,
+  resetKey?: string | number,
 ) {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -51,10 +52,13 @@ export function useLoadMore<T = any>(
   }, [fetchFn, onSuccess]);
 
   useEffect(() => {
+    skipRef.current = cachedDataLength;
+    hasMoreRef.current = true;
+    setHasMore(true);
     if (cachedDataLength === 0) {
       loadMore();
     }
-  }, []);
+  }, [resetKey]);
 
   return { loading, hasMore, loadMore };
 }

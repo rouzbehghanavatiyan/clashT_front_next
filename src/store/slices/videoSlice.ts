@@ -8,6 +8,12 @@ import {
 import { socket } from "@/lib/socket";
 import { attachmentService } from "@/services/attachment.service";
 import { authService } from "@/services/auth.service";
+import {
+  cancelPendingInvite,
+  keepMatchedInvite,
+  setMatchReceiveHandler,
+  setPendingInviteId,
+} from "@/utils/pendingInvite";
 
 const initialState: any = {
   needProfileRefresh: false,
@@ -107,6 +113,19 @@ export const removeInviteThunk = createAsyncThunk(
   },
 );
 
+export const cancelMatchSearchThunk = createAsyncThunk(
+  "video/cancelMatchSearch",
+  async (_, { dispatch, getState }) => {
+    const state = getState() as any;
+    const inviteId =
+      Number(state?.video?.movieData?.inviteId) || undefined;
+    await cancelPendingInvite({ inviteId });
+    dispatch(setWaitingForMatch(false));
+    dispatch(RsetShowTimerButtn(false));
+    dispatch(updateMovieData({ inviteId: null }));
+  },
+);
+
 export const uploadFullProcessThunk = createAsyncThunk(
   "video/uploadFullProcess",
   async (
@@ -117,7 +136,9 @@ export const uploadFullProcessThunk = createAsyncThunk(
       const state = getState() as any;
       const userGender = state?.main?.userLogin?.user?.userGender;
       const userId =
-        state?.main?.userLogin?.user?.id || state?.main?.userLogin?.userId;
+        state?.main?.userLogin?.user?.id ||
+        state?.main?.userLogin?.userId ||
+        state?.main?.userId;
       const currentResizeMode = state.video.selectedResize || 1;
       const targetGender = state?.video?.movieData?.targetGender;
 
@@ -200,7 +221,7 @@ export const uploadFullProcessThunk = createAsyncThunk(
       formData.append("attachmentName", "movies");
 
       const attachRes = await attachmentService.addAttachment(formData);
-      if (attachRes?.status !== 0) {
+      if (attachRes?.data?.status !== 0) {
         throw new Error("Error uploading attachments");
       }
 
@@ -214,9 +235,14 @@ export const uploadFullProcessThunk = createAsyncThunk(
       console.log("Test rerender from: video sliceee");
       const inviteRes = await attachmentService.addInvite(requestData);
       const inviteData = inviteRes?.data?.data;
+      const pendingInviteId = Number(inviteData?.id);
+      dispatch(updateMovieData({ inviteId: pendingInviteId || null }));
+      if (pendingInviteId) setPendingInviteId(pendingInviteId);
       dispatch(setNeedProfileRefresh(true));
       dispatch(RsetIsLoading(false));
+      dispatch(setWaitingForMatch(true));
       dispatch(RsetShowTimerButtn(true));
+      if (!socket.connected) socket.connect();
       socket.emit("register_user", userId);
       socket.emit("add_invite_offline", {
         ...inviteData,
@@ -241,7 +267,8 @@ export const uploadFullProcessThunk = createAsyncThunk(
       };
 
       const handleReceiveInvite = async (data: any) => {
-        stopMatchTimer();
+        keepMatchedInvite();
+        dispatch(setWaitingForMatch(false));
         dispatch(RsetShowTimerButtn(false));
 
         const receiverUserId =
@@ -251,24 +278,24 @@ export const uploadFullProcessThunk = createAsyncThunk(
 
         // await attachmentService.notifyMatchedUser(receiverUserId);
 
-        socket.off("receive_invite", handleReceiveInvite);
         router.replace("/profile");
       };
 
-      socket.once("receive_invite", handleReceiveInvite);
+      setMatchReceiveHandler(handleReceiveInvite);
 
       if (inviteData?.userId !== 0) {
-        stopMatchTimer();
-        router.replace("/profile");
+        keepMatchedInvite();
+        dispatch(setWaitingForMatch(false));
         dispatch(RsetShowTimerButtn(false));
         // await attachmentService.notifyMatchedUser(inviteData?.userId);
-
-        socket.off("receive_invite", handleReceiveInvite);
+        router.replace("/profile");
       } else {
         startMatchTimer(() => {
-          socket.off("receive_invite", handleReceiveInvite);
+          void cancelPendingInvite({ inviteId: pendingInviteId });
+          dispatch(setWaitingForMatch(false));
           dispatch(RsetShowTimerButtn(false));
           dispatch(setShowTimeout(true));
+          dispatch(updateMovieData({ inviteId: null }));
 
           router.replace("/watch");
         });
@@ -281,7 +308,9 @@ export const uploadFullProcessThunk = createAsyncThunk(
       };
     } catch (error: any) {
       stopMatchTimer();
+      void cancelPendingInvite();
       dispatch(RsetIsLoading(false));
+      dispatch(setWaitingForMatch(false));
       dispatch(RsetShowTimerButtn(false));
 
       if (error?.response) {
@@ -389,6 +418,10 @@ const videoSlice = createSlice({
       })
       .addCase(removeInviteThunk.fulfilled, (state) => {
         state.movieData.inviteId = null;
+      })
+      .addCase(cancelMatchSearchThunk.fulfilled, (state) => {
+        state.movieData.inviteId = null;
+        state.isWaitingForMatch = false;
       });
   },
 });
@@ -406,6 +439,7 @@ export const {
   setShowTimeout,
   setNeedProfileRefresh,
   setShowDeactivatedModal,
+  setWaitingForMatch,
 } = videoSlice.actions;
 
 export default videoSlice.reducer;

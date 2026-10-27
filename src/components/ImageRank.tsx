@@ -99,16 +99,19 @@ const ImageRank: React.FC<ImageRankProps> = ({
   const hasValidImage =
     Boolean(imgSrc) && !imgSrc?.includes("undefined") && !imageError;
 
-  const handleClick = () => {
-    if (onClickDisable || !showProfile) return;
+  const isClickable = !onClickDisable && showProfile;
 
-    // پیدا کردن نام کاربری یا شناسه برای آدرس‌دهی سئومحور
+  const handleClick = (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+    if (!isClickable) return;
+
     const targetIdentifier =
-      userInfo?.userName || userInfo?.user?.userName;
+      userInfo?.userName ||
+      userInfo?.user?.userName ||
+      userName;
 
-    if (targetIdentifier) {
-      router.push(`/${encodeURIComponent(targetIdentifier)}`);
-    }
+    if (!targetIdentifier) return;
+    router.push(`/${encodeURIComponent(targetIdentifier)}`);
   };
 
   const displayName = userName
@@ -119,9 +122,22 @@ const ImageRank: React.FC<ImageRankProps> = ({
 
   return (
     <div
-      onClick={onClickDisable ? undefined : handleClick}
-      className={`inline-flex items-center gap-2 select-none ${
-        onClickDisable || !showProfile ? "" : "cursor-pointer group"
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={isClickable ? handleClick : undefined}
+      onPointerDown={isClickable ? (event) => event.stopPropagation() : undefined}
+      onKeyDown={
+        isClickable
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                handleClick(event);
+              }
+            }
+          : undefined
+      }
+      className={`inline-flex items-center gap-2 select-none pointer-events-auto ${
+        isClickable ? "cursor-pointer group" : ""
       } ${className}`}
     >
       {/* ظرف آواتار و مدال رتبه */}

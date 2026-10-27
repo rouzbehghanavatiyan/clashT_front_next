@@ -16,30 +16,59 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
   const router = useRouter();
   const isAuthPage = isPublicRoute(pathname);
 
+  const lockPageScroll = pathname.startsWith("/support");
+  const isWatchDetailPage = pathname.startsWith("/watch/");
+
   useEffect(() => {
     const token = getAccessToken();
     if (!token && isProtectedRoute(pathname)) {
       router.replace("/login");
       return;
     }
-    if (token && isAuthPage) {
+    if (token && isAuthPage && pathname !== "/offline") {
       router.replace("/");
     }
   }, [isAuthPage, pathname, router]);
+
+  useEffect(() => {
+    if (!lockPageScroll) return;
+    const html = document.documentElement;
+    const { overflow: htmlOverflow } = html.style;
+    const { overflow: bodyOverflow } = document.body.style;
+    html.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = htmlOverflow;
+      document.body.style.overflow = bodyOverflow;
+    };
+  }, [lockPageScroll]);
 
   if (isAuthPage) {
     return <main className="min-h-screen">{children}</main>;
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-50 text-gray-900">
+    <div
+      className={`flex bg-gray-50 text-gray-900 ${
+        lockPageScroll ? "h-screen overflow-hidden" : "min-h-screen"
+      }`}
+    >
       <Sidebar />
-      <div className="flex min-h-screen flex-1 flex-col min-w-0 md:pl-60">
+      <div
+        className={`flex flex-1 flex-col min-w-0 md:pl-60 ${
+          lockPageScroll ? "h-screen overflow-hidden" : "min-h-screen"
+        }`}
+      >
         <Header />
-        <main className="flex-1 pb-12 md:pb-0">{children}</main>
-        <Footer />
+        <main
+          className={`flex-1 min-h-0 ${
+            isWatchDetailPage ? "pb-0" : "pb-8 md:pb-0"
+          } ${lockPageScroll ? "overflow-hidden" : ""}`}
+        >
+          {children}
+        </main>
       </div>
-      <BottomTabBar />
+      {!isWatchDetailPage && <BottomTabBar />}
     </div>
   );
 };

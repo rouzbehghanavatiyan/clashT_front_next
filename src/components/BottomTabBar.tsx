@@ -56,13 +56,13 @@ export const BottomTabBar: React.FC = () => {
       aria-label="Main"
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/95 shadow-[0_-6px_16px_rgba(15,23,42,0.08)] backdrop-blur md:hidden"
     >
-      <div className="flex h-12 max-w-lg items-center justify-around px-2 mx-auto">
+      <div className="flex h-8 max-w-lg items-center justify-around px-2 mx-auto">
         {MAIN_TABS.map((tab) => {
           const isActive = isTabActive(tab.id, pathname, username);
           const href = tab.id === "profile" ? profileHref : tab.href;
           const icons = ICONS[tab.id];
 
-          const className = `flex flex-1 items-center justify-center py-1 transition-colors ${
+          const className = `flex flex-1 items-center justify-center py-0 transition-colors ${
             isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-800"
           }`;
           const content =
@@ -74,8 +74,7 @@ export const BottomTabBar: React.FC = () => {
               >
                 <ImageRank
                   imgSrc={avatarUrl || undefined}
-                  score={score}
-                  imgSize={24}
+                  imgSize={22}
                   userInfo={userLogin}
                   onClickDisable
                 />

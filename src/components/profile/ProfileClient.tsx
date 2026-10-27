@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useParams } from "next/navigation";
 import { useShowWatch } from "@/hooks/useShowWatch";
 import ProfileBio from "./ProfileBio";
 import { Icon } from "../Icon";
@@ -26,6 +27,7 @@ import { followService } from "@/services/follow.service";
 import { setNeedProfileRefresh } from "@/store/slices/videoSlice";
 import StringHelpers from "@/utils/StringHelpers";
 import { socket } from "@/lib/socket";
+import { SITE_URL } from "@/lib/env";
 import { withMatchEndAt, isMatchActive } from "@/utils/matchTimer";
 
 interface InitialUserData {
@@ -44,11 +46,44 @@ interface Props {
   initialUserData: InitialUserData;
 }
 
+function mapProfilePayload(d: any): InitialUserData {
+  const attachment = d?.avatar ?? d?.profile ?? null;
+  let avatarUrl: string | undefined;
+  try {
+    avatarUrl = attachment
+      ? StringHelpers.getProfile(attachment) || undefined
+      : undefined;
+  } catch {
+    avatarUrl = undefined;
+  }
+
+  return {
+    id: d?.userId ?? d?.id,
+    userName: d?.userName,
+    fullName: d?.fullName || d?.userName,
+    bio: d?.bio ?? "",
+    location: d?.location ?? "",
+    profile: attachment,
+    avatarUrl,
+    score: d?.score ?? 0,
+    followersCount: d?.followersCount ?? 0,
+    followingCount: d?.followingCount ?? 0,
+  };
+}
+
 const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
   const dispatch = useAppDispatch();
+  const params = useParams();
   const observerTarget = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLElement>(null);
   const expireTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const routeUsername = decodeURIComponent(
+    String(params?.username || initialUserData.userName || ""),
+  );
+
+  const [profileUser, setProfileUser] = useState<InitialUserData>(initialUserData);
+  const [isFetchingProfile, setIsFetchingProfile] = useState(false);
+  const [otherUserVideos, setOtherUserVideos] = useState<any[]>([]);
 
   const myVideosInRedux =
     useAppSelector((state) => state?.main?.profileVideo) || [];
@@ -68,13 +103,42 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     userLoginRef.current = userLogin;
   }, [userLogin]);
 
-  const myUserId = userLogin?.user?.id;
-  const targetUserId = initialUserData.id;
-  const isMyProfile = targetUserId === myUserId;
+  useEffect(() => {
+    if (!routeUsername) return;
 
-  const currentProfile = isMyProfile ? userLogin : initialUserData;
+    let cancelled = false;
+
+    const loadProfile = async () => {
+      setIsFetchingProfile(true);
+      setOtherUserVideos([]);
+      try {
+        const res = await userService.profile(routeUsername);
+        if (cancelled) return;
+        const d = res?.data?.data;
+        if (res?.data?.status === 0 && d) {
+          setProfileUser(mapProfilePayload(d));
+        }
+      } catch (error) {
+        console.error("[profile] client fetch failed:", error);
+      } finally {
+        if (!cancelled) setIsFetchingProfile(false);
+      }
+    };
+
+    loadProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [routeUsername]);
+
+  const myUserId = userLogin?.user?.id;
+  const targetUserId = profileUser.id;
+  const isMyProfile = String(targetUserId) === String(myUserId);
+
+  const currentProfile = isMyProfile ? userLogin : profileUser;
   const findImg =
-    StringHelpers.getProfile(initialUserData?.profile) ||
+    profileUser?.avatarUrl ||
+    StringHelpers.getProfile(profileUser?.profile) ||
     StringHelpers.getProfile(userLogin?.profile);
 
   const [refreshing, setRefreshing] = useState(false);
@@ -83,7 +147,6 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
   const [showComments, setShowComments] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const [commentPosition, setCommentPosition] = useState(0);
-  const [otherUserVideos, setOtherUserVideos] = useState<any[]>([]);
 
   const allVideoData = isMyProfile ? myVideosInRedux : otherUserVideos;
 
@@ -155,6 +218,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     fetchVideos,
     handleDataLoaded,
     allVideoData?.length || 0,
+    routeUsername,
   );
 
   const {
@@ -299,6 +363,17 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     [currentProfile],
   );
 
+  const profileUrl = `${SITE_URL}/${encodeURIComponent(profileUser.userName)}`;
+  const personSchema = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: profileUser.fullName || profileUser.userName,
+    alternateName: profileUser.userName,
+    description: profileUser.bio || undefined,
+    image: profileUser.avatarUrl || undefined,
+    url: profileUrl,
+  };
+
   return (
     <main
       ref={scrollContainerRef}
@@ -306,18 +381,24 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
       itemScope
       itemType="https://schema.org/ProfilePage"
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(personSchema).replace(/</g, "\\u003c"),
+        }}
+      />
       <header className="flex flex-col gap-4 p-2 bg-white dark:bg-gray-800 shadow-sm z-10">
         <ProfileHeader
           userImage={findImg}
-          userName={initialUserData.userName}
+          userName={profileUser.userName}
           isMyProfile={isMyProfile}
           score={currentProfile?.score || 0}
           currentProfile={currentProfileMemo}
           followersCount={
-            initialUserData?.followersCount ?? followerCountRedux?.count ?? 0
+            profileUser?.followersCount ?? followerCountRedux?.count ?? 0
           }
           followingCount={
-            initialUserData?.followingCount ?? followingCountRedux?.count ?? 0
+            profileUser?.followingCount ?? followingCountRedux?.count ?? 0
           }
         />
         <ProfileBio

@@ -1,16 +1,37 @@
-import { io, Socket } from "socket.io-client";
+import { io, type Socket } from "socket.io-client";
+import { SOCKET_URL } from "@/lib/env";
 
-const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+export { SITE_URL, API_URL, SOCKET_URL } from "@/lib/env";
 
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:8585";
+function createSocket(): Socket {
+  return io(SOCKET_URL, {
+    autoConnect: false,
+    transports: ["websocket"],
+    withCredentials: true,
+  });
+}
 
-export const API_URL =
-  process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "";
-
-export const socket: Socket = io(SOCKET_URL, {
-  autoConnect: false, // اتصال دستی در صورت نیاز
-  transports: ["websocket"],
-  withCredentials: true,
-});
+export const socket: Socket =
+  typeof window === "undefined"
+    ? ({
+        on() {
+          return this;
+        },
+        off() {
+          return this;
+        },
+        once() {
+          return this;
+        },
+        emit() {
+          return this;
+        },
+        connect() {
+          return this;
+        },
+        disconnect() {
+          return this;
+        },
+        connected: false,
+      } as unknown as Socket)
+    : createSocket();

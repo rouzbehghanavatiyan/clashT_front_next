@@ -12,7 +12,11 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 import CircularProgress from "@mui/material/CircularProgress";
 
-import { userService } from "@/services/user.service";
+import {
+  forgotPassword,
+  requestChangeEmail,
+  userService,
+} from "@/services/user.service";
 import { useAppSelector } from "@/store/reduxHook";
 import StringHelpers from "@/utils/StringHelpers";
 
@@ -156,7 +160,7 @@ export default function EditProfilePage() {
 
         try {
             setIsResetting(true);
-            const res: any = await userService.forgotPassword({ email });
+            const res: any = await forgotPassword({ email });
 
             if (res?.data?.status === 0) {
                 showFeedback(
@@ -196,7 +200,7 @@ export default function EditProfilePage() {
 
         try {
             setIsEmailUpdating(true);
-            const res: any = await userService.requestChangeEmail({ newEmail: email });
+            const res: any = await requestChangeEmail({ newEmail: email });
 
             if (res?.data?.status === 0) {
                 showFeedback(
@@ -231,20 +235,6 @@ export default function EditProfilePage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 flex flex-col">
-            {/* Header */}
-            <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-gray-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 px-4 py-3 backdrop-blur-md">
-                <button
-                    type="button"
-                    onClick={() => router.back()}
-                    className="rounded-full p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800"
-                    aria-label="Back"
-                >
-                    <ArrowBackIcon sx={{ fontSize: 22 }} />
-                </button>
-                <h1 className="text-lg font-semibold">Edit Profile</h1>
-            </header>
-
-            {/* Main Content */}
             <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6">
                 {/* Profile Picture Upload Section */}
                 <div className="flex flex-col items-center justify-center mb-8 gap-3">
@@ -282,7 +272,6 @@ export default function EditProfilePage() {
                 </div>
 
                 <div className="flex flex-col gap-6">
-                    {/* Section: Profile Info */}
                     <SectionCard
                         icon={<PersonOutlineIcon sx={{ fontSize: 22 }} />}
                         title="Profile Info"

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ZoomIn from "@mui/icons-material/ZoomIn";
+import ZoomOut from "@mui/icons-material/ZoomOut";
 import { userService } from "@/services/user.service";
 import StringHelpers from "@/utils/StringHelpers";
 import Dropdown from "@/components/DropDown";
@@ -16,6 +18,8 @@ const OptionTop: React.FC<any> = ({
   dropdownItems,
   userIdLogin,
   main,
+  onExpand,
+  isExpanded,
 }) => {
   const profile =
     positionVideo === 0
@@ -72,20 +76,19 @@ const OptionTop: React.FC<any> = ({
   };
 
   return (
-    <div className="flex-shrink-0 p-2 z-10 absolute top-0 left-0 right-0 bg_profile_watch">
+    <div className="absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/70 via-black/35 to-transparent p-2 pb-7">
       <div className="grid grid-cols-9 items-center w-full">
         <div className="flex col-span-5 justify-start">
           <ImageRank
-            userInfo={video}
-            positionVideo={positionVideo}
-            userNameStyle="text-gray-150"
+            userInfo={userInfo}
             userName={userInfo?.userName}
             imgSize={50}
             imgSrc={profile}
             score={score}
+            className="relative z-20 [&_span]:text-white [&_span]:drop-shadow-sm"
           />
         </div>
-        <div className="flex col-span-3 justify-center">
+        <div className="flex col-span-2 justify-center">
           {checkMyVideo && (
             <Follows
               title={localIsFollowed ? "Unfollow" : "Follow"}
@@ -94,7 +97,22 @@ const OptionTop: React.FC<any> = ({
             />
           )}
         </div>
-        <div className="flex col-span-1 justify-end ">
+        <div className="flex col-span-2 items-center justify-end gap-0.5">
+          <button
+            type="button"
+            aria-label={isExpanded ? "Exit fullscreen" : "View video fullscreen"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onExpand?.();
+            }}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/15"
+          >
+            {isExpanded ? (
+              <ZoomOut sx={{ fontSize: 20 }} />
+            ) : (
+              <ZoomIn sx={{ fontSize: 20 }} />
+            )}
+          </button>
           {checkMyVideo ? (
             <Dropdown
               isOpenOptions={openDropdowns[positionVideo]}
@@ -116,9 +134,7 @@ const OptionTop: React.FC<any> = ({
               position="right"
               className="ml-4"
             />
-          ) : (
-            <div> </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

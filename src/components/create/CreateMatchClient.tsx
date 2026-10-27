@@ -1,9 +1,19 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAppSelector } from "@/store/reduxHook";
+import ButtonTimer from "@/components/create/ButtonTimer";
 import { useCreateMediaPick } from "@/hooks/useCreateMediaPick";
+import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
+import {
+  cancelMatchSearchThunk,
+  updateMovieData,
+  uploadFullProcessThunk,
+} from "@/store/slices/videoSlice";
+import {
+  cancelPendingInvite,
+  getPendingInviteId,
+} from "@/utils/pendingInvite";
 
 type MatchGender = "random" | "male" | "female";
 
@@ -31,9 +41,9 @@ const activityOptions: ActivityOption[] = [
 ];
 
 const genderOptions: { label: string; value: MatchGender; desc: string }[] = [
-  { label: "Random Match", value: "random", desc: "Open to all contenders" },
-  { label: "Male Opponents", value: "male", desc: "Matched with males only" },
-  { label: "Female Opponents", value: "female", desc: "Matched with females only" },
+  { label: "Random", value: "random", desc: "Open to all contenders" },
+  { label: "Male", value: "male", desc: "Matched with males only" },
+  { label: "Female", value: "female", desc: "Matched with females only" },
 ];
 
 const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
@@ -44,25 +54,84 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
   onCancel,
 }) => {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const videoRef = useRef<HTMLVideoElement>(null);
   const storedSrc = useAppSelector((state) => state.video.videoSrc);
   const storedFile = useAppSelector((state) => state.video.videoFile);
+  const reduxLoading = useAppSelector((state) => state.video.isLoading);
+  const showTimer = useAppSelector((state) => state.main.showTimerButtn);
+  const userLogin = useAppSelector((state) => state.main.userLogin);
+  const userId =
+    userLogin?.user?.id || userLogin?.userId || userLogin?.id;
   const { openPicker, fileInput, error: pickerError } = useCreateMediaPick();
   const videoSrc = videoSrcProp || storedSrc;
   const isImage = Boolean(storedFile?.type?.startsWith("image/"));
   const coverImage = coverImageProp || (isImage ? storedSrc : "");
+  const uploading = isLoading || reduxLoading;
   const [selectedGender, setSelectedGender] = useState<MatchGender>("random");
   const [selectedActivity, setSelectedActivity] = useState<ActivityOption | null>(
     null,
   );
   const [activityError, setActivityError] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+
+  const handleCancelMatching = async () => {
+    if (canceling) return;
+    setCanceling(true);
+    try {
+      await dispatch(cancelMatchSearchThunk());
+    } finally {
+      setCanceling(false);
+    }
+  };
+
+  useEffect(() => {
+    const onPageLeave = () => {
+      if (!getPendingInviteId()) return;
+      void cancelPendingInvite({ keepalive: true });
+    };
+
+    window.addEventListener("pagehide", onPageLeave);
+    window.addEventListener("beforeunload", onPageLeave);
+
+    return () => {
+      window.removeEventListener("pagehide", onPageLeave);
+      window.removeEventListener("beforeunload", onPageLeave);
+      if (getPendingInviteId()) {
+        void dispatch(cancelMatchSearchThunk());
+      }
+    };
+  }, [dispatch]);
 
   const handleStartMatch = () => {
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+    if (!storedFile) {
+      window.alert("Please choose a photo or a video first.");
+      return;
+    }
     if (!selectedActivity) {
       setActivityError(true);
       return;
     }
     onAccept?.(selectedGender, selectedActivity.value, selectedActivity.id);
+    dispatch(
+      updateMovieData({
+        targetGender: selectedGender,
+        subSubCategoryId: selectedActivity.id,
+      }),
+    );
+    dispatch(
+      uploadFullProcessThunk({
+        allFormData: isImage
+          ? { imageCover: storedFile }
+          : { video: storedFile },
+        movieMeta: { title: "", desc: "" },
+        router,
+      }),
+    );
   };
 
   const handleCancel = () => {
@@ -78,13 +147,12 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
             <h1 className="text-xl lg:text-2xl font-bold tracking-tight text-white">
               Setup Your Clash Match
             </h1>
-            <p className="text-xs lg:text-sm text-slate-400 mt-1">
-              Review your talent video, configure rules, and challenge opponents.
-            </p>
           </div>
           <div className="flex items-center gap-2 bg-slate-800/80 px-3.5 py-1.5 rounded-full border border-slate-700 text-xs font-medium text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Ready to Publish
+            <span
+              className={`w-2 h-2 rounded-full ${showTimer ? "bg-amber-400 animate-pulse" : "bg-emerald-400 animate-pulse"}`}
+            />
+            {showTimer ? "Finding a match" : "Ready to Publish"}
           </div>
         </header>
 
@@ -130,12 +198,6 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
                 )}
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <p className="font-semibold text-slate-200 text-xs">Strict Match Rule</p>
-              <p className="text-slate-400 mt-0.5 text-xs">
-                Opponents will have 120s to respond once this match begins.
-              </p>
-            </div>
           </section>
 
           <section className="lg:col-span-7 p-6 lg:p-8 flex flex-col justify-between gap-8">
@@ -155,11 +217,10 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
                           setSelectedActivity(item);
                           setActivityError(false);
                         }}
-                        className={`p-3.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
-                          isSelected
+                        className={`p-3.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${isSelected
                             ? "bg-emerald-600/10 border-emerald-500 ring-2 ring-emerald-500/30 text-white"
                             : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
-                        }`}
+                          }`}
                       >
                         <span className="text-2xl mb-2">{item.icon}</span>
                         <span className="text-sm font-semibold">{item.label}</span>
@@ -186,11 +247,10 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
                         key={item.value}
                         type="button"
                         onClick={() => setSelectedGender(item.value)}
-                        className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                          isSelected
+                        className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${isSelected
                             ? "bg-blue-600/10 border-blue-500 ring-2 ring-blue-500/30 text-white"
                             : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
-                        }`}
+                          }`}
                       >
                         <p className="text-sm font-semibold">{item.label}</p>
                         <p className="text-xs text-slate-400 mt-1">{item.desc}</p>
@@ -202,21 +262,32 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
             </div>
 
             <div className="pt-6 border-t border-slate-800 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="px-6 py-2.5 rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-800 text-slate-300 font-semibold text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isLoading}
-                onClick={handleStartMatch}
-                className="px-8 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-sm"
-              >
-                {isLoading ? "Processing..." : "Launch Match"}
-              </button>
+              {showTimer ? (
+                <ButtonTimer
+                  show={showTimer}
+                  onCancel={handleCancelMatching}
+                  canceling={canceling}
+                />
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={uploading}
+                    className="px-6 py-2.5 rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-800 disabled:opacity-50 text-slate-300 font-semibold text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={uploading}
+                    onClick={handleStartMatch}
+                    className="px-8 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-sm"
+                  >
+                    {uploading ? "Processing..." : "Launch Match"}
+                  </button>
+                </>
+              )}
             </div>
           </section>
         </div>
