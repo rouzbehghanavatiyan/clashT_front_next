@@ -114,20 +114,20 @@ const OptionBottom: React.FC<any> = ({
           />
         </div>
         {endTime ? null : result === "Win" ? (
-          <div className="pointer-events-auto flex items-center justify-center text-green">
-            <span className="font15 rounded-lg border border-green px-2 font-bold">
+          <div className="pointer-events-auto flex items-center justify-center">
+            <span className="px-2 text-sm font-bold text-green-500">
               Win
             </span>
           </div>
         ) : result === "Loss" ? (
-          <div className="pointer-events-auto flex items-center justify-center text-red">
-            <span className="font15 rounded-lg border border-red px-2 font-bold">
+          <div className="pointer-events-auto flex items-center justify-center">
+            <span className="px-2 text-sm font-bold text-red-500">
               Loss
             </span>
           </div>
         ) : result === "Draw" ? (
-          <div className="pointer-events-auto flex items-center justify-center text-yellow">
-            <span className="font15 rounded-lg border border-yellow px-2 font-bold">
+          <div className="pointer-events-auto flex items-center justify-center">
+            <span className="px-2 text-sm font-bold text-yellow-400">
               Draw
             </span>
           </div>

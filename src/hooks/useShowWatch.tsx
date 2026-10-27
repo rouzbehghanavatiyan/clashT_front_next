@@ -11,6 +11,8 @@ import {
 import { useAppDispatch } from "@/store/reduxHook";
 import { attachmentService } from "@/services/attachment.service";
 
+const PAGE_SIZE = 6;
+
 interface UseShowWatchProps {
   inviteId: string | undefined;
   data: any[];
@@ -47,6 +49,7 @@ export const useShowWatch = ({
   const dispatch = useAppDispatch();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(
     null
@@ -57,19 +60,24 @@ export const useShowWatch = ({
 
   const [internalData, setInternalData] = useState<any[]>(externalData);
 
-  const paginationRef = useRef(pagination);
+  const paginationRef = useRef({ ...pagination, take: PAGE_SIZE });
   const isLoadingRef = useRef(isLoading);
+  const isFetchingMoreRef = useRef(isFetchingMore);
   const dataRef = useRef(internalData);
+  const didAutoPlayFirstRef = useRef(false);
+  const lastFetchSlideRef = useRef(0);
 
   useEffect(() => {
     isLoadingRef.current = isLoading;
-    paginationRef.current = pagination;
+    isFetchingMoreRef.current = isFetchingMore;
     dataRef.current = internalData;
-  }, [isLoading, pagination, internalData]);
+  }, [isLoading, isFetchingMore, internalData]);
 
   useEffect(() => {
-    setInternalData(externalData);
-  }, [externalData]);
+    if (internalData.length === 0 && externalData?.length > 0) {
+      setInternalData(externalData);
+    }
+  }, [externalData, internalData.length]);
 
   const defaultFetchNextPage = useCallback(
     async ({
@@ -99,22 +107,38 @@ export const useShowWatch = ({
   );
 
   const fetchNextPage = useCallback(async () => {
-    if (isLoadingRef.current || !paginationRef.current.hasMore || !inviteId)
+    if (
+      isLoadingRef.current ||
+      isFetchingMoreRef.current ||
+      !paginationRef.current.hasMore ||
+      !inviteId
+    ) {
       return [];
+    }
+
+    const isInitial = dataRef.current.length === 0;
 
     try {
-      setIsLoading(true);
+      if (isInitial) {
+        setIsLoading(true);
+        isLoadingRef.current = true;
+      } else {
+        setIsFetchingMore(true);
+        isFetchingMoreRef.current = true;
+      }
+
       const fetchFn = customFetchNextPage || defaultFetchNextPage;
-      const newData = await fetchFn({
+      const payload = await fetchFn({
         skip: paginationRef.current.skip,
-        take: paginationRef.current.take,
+        take: PAGE_SIZE,
         inviteId,
       });
+      const newData = Array.isArray(payload) ? payload : [];
 
       const nextPagination = {
-        take: paginationRef.current.take,
-        skip: paginationRef.current.skip + paginationRef.current.take,
-        hasMore: newData.length >= paginationRef.current.take,
+        take: PAGE_SIZE,
+        skip: paginationRef.current.skip + PAGE_SIZE,
+        hasMore: newData.length >= PAGE_SIZE,
       };
       paginationRef.current = nextPagination;
 
@@ -124,6 +148,8 @@ export const useShowWatch = ({
           dispatch(RsetShowWatch(newData));
           dispatch(setPaginationShowWatch(nextPagination));
         }
+      } else {
+        paginationRef.current.hasMore = false;
       }
 
       return newData;
@@ -132,6 +158,9 @@ export const useShowWatch = ({
       return [];
     } finally {
       setIsLoading(false);
+      setIsFetchingMore(false);
+      isLoadingRef.current = false;
+      isFetchingMoreRef.current = false;
     }
   }, [customFetchNextPage, defaultFetchNextPage, dispatch, inviteId, useRedux]);
 
@@ -185,11 +214,18 @@ export const useShowWatch = ({
         dataRef.current[realIndex]?.attachmentInserted?.attachmentId;
       if (topVideoId) setCurrentlyPlayingId(topVideoId);
 
+      const remaining = dataRef.current.length - realIndex;
+      const crossedThreeSlides =
+        realIndex > 0 && realIndex - lastFetchSlideRef.current >= 3;
+      const nearEnd = remaining <= 3;
+
       if (
-        realIndex % 3 === 0 &&
         paginationRef.current.hasMore &&
-        !isLoadingRef.current
+        !isLoadingRef.current &&
+        !isFetchingMoreRef.current &&
+        (crossedThreeSlides || nearEnd)
       ) {
+        lastFetchSlideRef.current = realIndex;
         fetchNextPage();
       }
     },
@@ -198,11 +234,11 @@ export const useShowWatch = ({
 
   const initializeSwiper = useCallback((swiper: any) => {
     setActiveSlideIndex(swiper.realIndex);
-    if (dataRef.current?.length > 0) {
-      setCurrentlyPlayingId(
-        dataRef.current[0]?.attachmentInserted?.attachmentId
-      );
-    }
+    if (didAutoPlayFirstRef.current || dataRef.current?.length === 0) return;
+    const firstId = dataRef.current[0]?.attachmentInserted?.attachmentId;
+    if (!firstId) return;
+    didAutoPlayFirstRef.current = true;
+    setCurrentlyPlayingId(firstId);
   }, []);
 
   const exposedFetchNextPage = useCallback(async () => {
@@ -226,20 +262,17 @@ export const useShowWatch = ({
   }, [customCleanup, dispatch, useRedux]);
 
   useEffect(() => {
-    if (
-      dataRef.current?.length > 0 &&
-      activeSlideIndex === 0 &&
-      !currentlyPlayingId
-    ) {
-      setCurrentlyPlayingId(
-        dataRef.current[0]?.attachmentInserted?.attachmentId
-      );
-    }
-  }, [internalData, activeSlideIndex, currentlyPlayingId]);
+    if (didAutoPlayFirstRef.current || activeSlideIndex !== 0) return;
+    const firstId = internalData[0]?.attachmentInserted?.attachmentId;
+    if (!firstId) return;
+    didAutoPlayFirstRef.current = true;
+    setCurrentlyPlayingId(firstId);
+  }, [internalData, activeSlideIndex]);
 
   return {
     data: internalData,
     isLoading,
+    isFetchingMore,
     openDropdowns,
     currentlyPlayingId,
     activeSlideIndex,
@@ -251,10 +284,13 @@ export const useShowWatch = ({
     fetchNextPage: exposedFetchNextPage,
     setOpenDropdowns,
     resetData: useCallback(() => {
+      didAutoPlayFirstRef.current = false;
+      lastFetchSlideRef.current = 0;
       setInternalData([]);
       setActiveSlideIndex(0);
       setCurrentlyPlayingId(null);
       setOpenDropdowns({});
+      setIsFetchingMore(false);
     }, []),
   };
 };

@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactPlayer from "react-player";
-import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 
 interface VideoProps {
   loop?: boolean;
@@ -45,7 +44,6 @@ const Video: React.FC<VideoProps> = ({
   const [ready, setReady] = useState(false);
   const [buffering, setBuffering] = useState(true);
   const [showControls, setShowControls] = useState(true);
-  const [seeking, setSeeking] = useState(false);
 
   const clearHideTimer = () => {
     if (hideTimerRef.current) {
@@ -95,16 +93,9 @@ const Video: React.FC<VideoProps> = ({
 
   const handleTimeUpdate = () => {
     const el = playerRef.current;
-    if (!el?.duration || seeking) return;
+    if (!el?.duration) return;
     setPlayed(el.currentTime / el.duration);
     setDuration(el.duration);
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fraction = Number(e.target.value);
-    setPlayed(fraction);
-    const el = playerRef.current;
-    if (el?.duration) el.currentTime = fraction * el.duration;
   };
 
   const currentTime = played * (duration || 0);
@@ -169,45 +160,22 @@ const Video: React.FC<VideoProps> = ({
         </div>
       )}
 
-      {!playing && ready && !buffering && (
-        <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center">
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 text-white shadow-[0_8px_30px_rgba(0,0,0,0.35)] ring-1 ring-white/30 backdrop-blur-md">
-            <PlayArrowRoundedIcon sx={{ fontSize: 42 }} />
-          </span>
-        </div>
-      )}
-
       <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-20 bg-gradient-to-t from-black/70 via-black/25 to-transparent transition-opacity duration-300 ${
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-20 bg-gradient-to-t from-black/35 via-black/10 to-transparent transition-opacity duration-300 ${
           showControls ? "opacity-100" : "opacity-0"
         }`}
       />
 
       <div
-        className={`absolute inset-x-0 bottom-0 z-[4] px-3 pb-2 pt-6 transition-opacity duration-300 ${
-          showControls
-            ? "opacity-100"
-            : "pointer-events-none opacity-0"
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[4] px-3 pb-2 pt-6 transition-opacity duration-300 ${
+          showControls ? "opacity-100" : "opacity-0"
         }`}
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium tabular-nums text-white/80">
+        <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium tabular-nums text-white/40">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step="any"
-          aria-label="Seek"
-          value={played}
-          onMouseDown={() => setSeeking(true)}
-          onTouchStart={() => setSeeking(true)}
-          onChange={handleSeek}
-          onMouseUp={() => setSeeking(false)}
-          onTouchEnd={() => setSeeking(false)}
+        <div
           className="video-seek"
           style={{ ["--played" as string]: `${played * 100}%` }}
         />

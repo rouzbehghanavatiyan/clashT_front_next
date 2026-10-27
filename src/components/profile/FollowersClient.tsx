@@ -101,7 +101,7 @@ export default function FollowersClient() {
                   </div>
                 </button>
                 {myUserId !== item?.id && (
-                  <span className="px-4 py-1.5 text-xs font-medium rounded-full bg-indigo-600 text-white">
+                  <span className="px-1 py-1.5 text-xs font-semibold text-white">
                     Follow
                   </span>
                 )}

@@ -83,7 +83,6 @@ export default function TopList() {
                     StringHelpers.getProfile(item?.avatar) ||
                     undefined
                   }
-                  userName={username}
                   onClickDisable
                 />
                 <div className="min-w-0">

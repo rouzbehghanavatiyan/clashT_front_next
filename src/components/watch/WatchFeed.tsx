@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CircularProgress from "@mui/material/CircularProgress";
-import RefreshIcon from "@mui/icons-material/Refresh";
+import ChatBubbleOutline from "@mui/icons-material/ChatBubbleOutline";
+import SearchRounded from "@mui/icons-material/SearchRounded";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import { attachmentService } from "@/services/attachment.service";
 import {
@@ -15,16 +17,38 @@ import {
 import { stopMatchTimer } from "@/components/TimerForFindMatch";
 import VideoGroup from "@/components/VideoGroup";
 
+const PULL_THRESHOLD = 64;
+
+function matchesSearch(item: any, query: string) {
+  if (!query) return true;
+  const haystack = [
+    item?.userInserted?.userName,
+    item?.userMatched?.userName,
+    item?.inviteInserted?.title,
+    item?.attachmentInserted?.title,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(query);
+}
+
 export default function WatchFeed() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { pagination, data } = useAppSelector((state) => state.main.watchVideo);
+  const unread =
+    useAppSelector((state) => state?.main?.unreadMessagesCount) || 0;
 
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [seed, setSeed] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [pullDistance, setPullDistance] = useState(0);
   const bottomObserverRef = useRef<HTMLDivElement | null>(null);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const pullRef = useRef({ startY: 0, active: false });
 
   useEffect(() => {
     setSeed(Math.floor(Math.random() * 1_000_000));
@@ -32,7 +56,7 @@ export default function WatchFeed() {
 
   const handleGetAllMatch = useCallback(
     async (reset = false, customSeed?: number) => {
-      if (loading) return;
+      if (loading && !reset) return;
       if (!reset && !pagination.hasMore) return;
       const activeSeed = customSeed ?? seed;
       if (activeSeed == null) return;
@@ -75,16 +99,16 @@ export default function WatchFeed() {
     [loading, pagination.hasMore, pagination.skip, pagination.take, seed, dispatch],
   );
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     if (refreshing) return;
     setRefreshing(true);
     const newSeed = Math.floor(Math.random() * 1_000_000);
     setSeed(newSeed);
     dispatch(resetWatchState());
-    dispatch(setPaginationWatch({ take: 10, skip: 0, hasMore: true }));
+    dispatch(setPaginationWatch({ take: 6, skip: 0, hasMore: true }));
     await handleGetAllMatch(true, newSeed);
     setRefreshing(false);
-  };
+  }, [dispatch, handleGetAllMatch, refreshing]);
 
   useEffect(() => {
     stopMatchTimer();
@@ -123,33 +147,104 @@ export default function WatchFeed() {
     router.push(`/watch/${inviteId}`);
   };
 
+  const query = search.trim().toLowerCase();
+  const visibleData = useMemo(
+    () => (data || []).filter((item: any) => matchesSearch(item, query)),
+    [data, query],
+  );
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const scroller = scrollerRef.current;
+    if (!scroller || scroller.scrollTop > 0 || refreshing) return;
+    pullRef.current.startY = e.touches[0].clientY;
+    pullRef.current.active = true;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!pullRef.current.active || refreshing) return;
+    const scroller = scrollerRef.current;
+    if (!scroller || scroller.scrollTop > 0) {
+      pullRef.current.active = false;
+      setPullDistance(0);
+      return;
+    }
+    const dy = e.touches[0].clientY - pullRef.current.startY;
+    if (dy > 0) {
+      setPullDistance(Math.min(dy * 0.45, 88));
+    } else {
+      setPullDistance(0);
+    }
+  };
+
+  const onTouchEnd = async () => {
+    if (!pullRef.current.active) return;
+    pullRef.current.active = false;
+    if (pullDistance >= PULL_THRESHOLD) {
+      setPullDistance(PULL_THRESHOLD);
+      await onRefresh();
+    }
+    setPullDistance(0);
+  };
+
+  const pulling = pullDistance > 8 || refreshing;
+
   return (
-    <div className="min-h-screen w-full bg-white text-gray-900 flex flex-col">
-      <div className="flex justify-end p-4 pb-0 max-w-7xl mx-auto w-full">
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={refreshing || loading}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-50"
-          title="Refresh list"
+    <div
+      ref={scrollerRef}
+      className="flex h-[calc(100svh-48px)] w-full flex-col overflow-y-auto overscroll-y-contain bg-white text-gray-900 md:h-auto md:min-h-screen md:overscroll-auto"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-gray-200 bg-white/95 px-3 py-2 backdrop-blur md:hidden">
+        <Link
+          href="/chat"
+          aria-label="Messages"
+          className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-800 hover:bg-gray-100"
         >
-          <RefreshIcon
-            className={refreshing ? "animate-spin" : ""}
+          <ChatBubbleOutline fontSize="small" />
+          {unread > 0 && (
+            <span className="absolute right-1 top-1 min-w-4 rounded-full bg-blue-600 px-1 text-center text-[10px] font-semibold leading-4 text-white">
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
+        </Link>
+        <label className="relative min-w-0 flex-1">
+          <span className="sr-only">Search matchups</span>
+          <SearchRounded
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             sx={{ fontSize: 18 }}
           />
-          <span>Refresh</span>
-        </button>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search"
+            className="h-10 w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+          />
+        </label>
+      </header>
+
+      <div
+        className="flex items-center justify-center overflow-hidden transition-[height] duration-150 md:hidden"
+        style={{ height: pulling ? pullDistance : 0 }}
+        aria-hidden={!pulling}
+      >
+        <CircularProgress size={22} />
       </div>
 
-      <section aria-label="Talent matchups" className="flex-1 w-full max-w-7xl mx-auto p-4 pb-16">
+      <section
+        aria-label="Talent matchups"
+        className="mx-auto w-full max-w-7xl flex-1 p-[3px] pb-16 md:p-4"
+      >
         {error && (
-          <p role="alert" className="mb-4 text-sm text-red-600">
+          <p role="alert" className="mb-4 px-4 pt-4 text-sm text-red-600 md:px-0 md:pt-0">
             {error}
           </p>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data?.map((item: any, index: number) => {
+        <div className="grid grid-cols-2 gap-[3px] lg:grid-cols-3">
+          {visibleData.map((item: any, index: number) => {
             const key = item?.inviteInserted?.id
               ? String(item.inviteInserted.id)
               : `watch-${index}`;
@@ -167,15 +262,17 @@ export default function WatchFeed() {
           })}
         </div>
 
-        {!loading && !error && data?.length === 0 && (
-          <p className="text-center text-sm text-gray-500 py-16">
-            No matchups yet. Pull to refresh or create a new clash.
+        {!loading && !error && visibleData.length === 0 && (
+          <p className="py-16 text-center text-sm text-gray-500">
+            {query
+              ? "No matchups match your search."
+              : "No matchups yet. Pull down to refresh or create a new clash."}
           </p>
         )}
 
         <div
           ref={bottomObserverRef}
-          className="w-full py-8 flex items-center justify-center min-h-[60px]"
+          className="flex min-h-[60px] w-full items-center justify-center py-8"
         >
           {loading && !refreshing && <CircularProgress size={28} />}
         </div>

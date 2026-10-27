@@ -2,6 +2,8 @@
 
 import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAppSelector } from "@/store/reduxHook";
+import { useCreateMediaPick } from "@/hooks/useCreateMediaPick";
 
 type MatchGender = "random" | "male" | "female";
 
@@ -35,14 +37,20 @@ const genderOptions: { label: string; value: MatchGender; desc: string }[] = [
 ];
 
 const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
-  videoSrc,
-  coverImage,
+  videoSrc: videoSrcProp,
+  coverImage: coverImageProp,
   isLoading = false,
   onAccept,
   onCancel,
 }) => {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const storedSrc = useAppSelector((state) => state.video.videoSrc);
+  const storedFile = useAppSelector((state) => state.video.videoFile);
+  const { openPicker, fileInput, error: pickerError } = useCreateMediaPick();
+  const videoSrc = videoSrcProp || storedSrc;
+  const isImage = Boolean(storedFile?.type?.startsWith("image/"));
+  const coverImage = coverImageProp || (isImage ? storedSrc : "");
   const [selectedGender, setSelectedGender] = useState<MatchGender>("random");
   const [selectedActivity, setSelectedActivity] = useState<ActivityOption | null>(
     null,
@@ -87,7 +95,8 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
                 Video Preview
               </span>
               <div className="relative aspect-[9/14] sm:aspect-video lg:aspect-[4/5] w-full bg-black rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
-                {videoSrc ? (
+                {fileInput}
+                {videoSrc && !isImage ? (
                   <video
                     ref={videoRef}
                     src={videoSrc}
@@ -99,18 +108,25 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={coverImage}
-                    alt="Video cover"
+                    alt="Selected photo"
                     className="w-full h-full object-contain"
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-slate-500 gap-3 p-6 text-center">
+                  <button
+                    type="button"
+                    onClick={openPicker}
+                    className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center"
+                  >
                     <p className="text-sm font-semibold text-slate-300">
-                      No Preview Available
+                      Choose a photo or video
                     </p>
                     <p className="text-xs text-slate-500">
-                      Maximum video duration: 60 seconds
+                      Videos must be under 1 minute
                     </p>
-                  </div>
+                    {pickerError && (
+                      <p className="text-xs font-medium text-rose-400">{pickerError}</p>
+                    )}
+                  </button>
                 )}
               </div>
             </div>

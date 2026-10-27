@@ -1,3 +1,5 @@
+import { getUserIdFromToken } from "@/utils/jwt";
+
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 
@@ -15,8 +17,11 @@ export const getAccessToken = () =>
 export const getRefreshToken = () =>
   isBrowser() ? localStorage.getItem(REFRESH_TOKEN_KEY) : null;
 
-export const getUserID = () =>
-  isBrowser() ? localStorage.getItem(REFRESH_TOKEN_KEY) : null;
+export const getUserID = () => {
+  const token = getAccessToken();
+  if (!token) return null;
+  return getUserIdFromToken(token);
+};
 
 export const removeTokens = () => {
   console.trace("removeTokens called");

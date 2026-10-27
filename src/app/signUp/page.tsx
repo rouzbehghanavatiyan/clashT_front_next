@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
-import logo from "../../public/assets/images/logocircle.png";
+import { SITE_LOGO } from "@/lib/seo";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
@@ -121,15 +121,15 @@ const SignUpForm: FC = () => {
         <form onSubmit={handleSignUp} className="space-y-5">
           {/* Logo */}
           <div className="flex flex-col items-center mb-6">
-            <Link href="/" className="mb-4">
-              <div className="relative w-24 h-24 rounded-full overflow-hidden">
-                <Image src={logo} alt="Logo" fill className="object-cover" />
+            <Link href="/" className="mb-4 flex items-center gap-3">
+              <div className="relative h-14 w-14 overflow-hidden rounded-full">
+                <Image src={SITE_LOGO} alt="Clash Talent logo" fill className="object-cover" />
               </div>
+              <h1 className="whitespace-nowrap text-2xl font-bold tracking-tight text-gray-800">
+                Clash<span className="text-blue-600">Talent</span>
+              </h1>
             </Link>
-            <h1 className="text-2xl font-bold text-gray-800 mt-4">
-              Clash Talent
-            </h1>
-            <p className="text-gray-600 mt-1">Create an Account</p>
+            <p className="text-gray-600">Create an Account</p>
           </div>
 
           {/* General error */}

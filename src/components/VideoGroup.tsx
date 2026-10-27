@@ -55,7 +55,7 @@ const VideoGroup = ({
             ref={containerRef}
             type="button"
             onClick={onPress}
-            className="group relative flex w-full flex-col overflow-hidden rounded-tr-2xl rounded-bl-2xl bg-zinc-900 text-left transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="group relative flex w-full flex-col gap-px overflow-hidden rounded-tr-2xl rounded-bl-2xl bg-zinc-900 text-left transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-2">
                 {matchTime && (
@@ -68,13 +68,13 @@ const VideoGroup = ({
                 )}
             </div>
 
-            <div className="relative h-36 w-full bg-zinc-800">
+            <div className="relative aspect-[4/5] w-full bg-zinc-800 lg:h-36 lg:aspect-auto">
                 {imageTop ? (
                     <Image
                         src={imageTop}
                         alt={`${group?.userInserted?.userName || "Challenger"} photo`}
                         fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover"
                     />
                 ) : (
@@ -84,13 +84,13 @@ const VideoGroup = ({
                 )}
             </div>
 
-            <div className="relative h-36 w-full bg-zinc-800">
+            <div className="relative aspect-[4/5] w-full bg-zinc-800 lg:h-36 lg:aspect-auto">
                 {imageBottom ? (
                     <Image
                         src={imageBottom}
                         alt={`${group?.userMatched?.userName || "Opponent"} photo`}
                         fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover"
                     />
                 ) : (

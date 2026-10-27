@@ -76,7 +76,7 @@ const OptionTop: React.FC<any> = ({
       <div className="grid grid-cols-9 items-center w-full">
         <div className="flex col-span-5 justify-start">
           <ImageRank
-            userInfo={userInfo}
+            userInfo={video}
             positionVideo={positionVideo}
             userNameStyle="text-gray-150"
             userName={userInfo?.userName}

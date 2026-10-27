@@ -36,7 +36,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
       <Sidebar />
       <div className="flex min-h-screen flex-1 flex-col min-w-0 md:pl-60">
         <Header />
-        <main className="flex-1 pb-20 md:pb-0">{children}</main>
+        <main className="flex-1 pb-12 md:pb-0">{children}</main>
         <Footer />
       </div>
       <BottomTabBar />

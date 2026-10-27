@@ -6,12 +6,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --app-font: var(--font-plus-jakarta), var(--font-vazirmatn), ui-sans-serif,
+    system-ui, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--app-font);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -22,55 +24,41 @@
   }
 }
 
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+  font-family: var(--app-font);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  letter-spacing: -0.011em;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.03em;
+  font-weight: 700;
 }
 
 .video-seek {
-  -webkit-appearance: none;
-  appearance: none;
   display: block;
   width: 100%;
-  height: 4px;
+  height: 3px;
   border-radius: 999px;
-  cursor: pointer;
+  pointer-events: none;
   background: linear-gradient(
     to right,
-    #ffffff var(--played, 0%),
-    rgba(255, 255, 255, 0.28) var(--played, 0%)
+    rgba(255, 255, 255, 0.42) var(--played, 0%),
+    rgba(255, 255, 255, 0.12) var(--played, 0%)
   );
-  transition: height 150ms ease;
-}
-
-.video-seek:hover,
-.group\/video:hover .video-seek {
-  height: 6px;
-}
-
-.video-seek::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  margin-top: -4px;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.16);
-}
-
-.video-seek::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border: 0;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.16);
-}
-
-.video-seek::-moz-range-track {
-  height: 4px;
-  border: 0;
-  background: transparent;
 }

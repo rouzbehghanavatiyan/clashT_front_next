@@ -7,9 +7,9 @@ import { Mousewheel } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
 import { attachmentService } from "@/services/attachment.service";
 import { VideoSlide } from "@/components/VideoSlide";
-import LoadingChild from "@/components/LoadingChild";
+import { HomeSlideSkeleton } from "@/components/home/HomeSlideSkeleton";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 6;
 
 function normalizeList(payload: any): any[] {
   if (Array.isArray(payload?.data)) return payload.data;
@@ -23,6 +23,7 @@ const getKey = (v: any, i: number) =>
 export default function WatchPlayer({ inviteId }: { inviteId: string }) {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [error, setError] = useState("");
   const [currentlyPlayingId, setCurrentlyPlayingId] = useState<any>(null);
   const [openDropdowns, setOpenDropdowns] = useState<Record<number, boolean>>(
@@ -39,7 +40,9 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
 
     loadingRef.current = true;
     const myRequestId = ++requestIdRef.current;
-    setIsLoading(true);
+    const isInitial = skipRef.current === 0;
+    if (isInitial) setIsLoading(true);
+    else setIsFetchingMore(true);
     setError("");
 
     try {
@@ -78,6 +81,7 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
       if (myRequestId === requestIdRef.current) {
         loadingRef.current = false;
         setIsLoading(false);
+        setIsFetchingMore(false);
       }
     }
   }, [inviteId]);
@@ -97,7 +101,12 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
     const current = data[swiper.activeIndex];
     setCurrentlyPlayingId(current?.attachmentInserted?.attachmentId ?? null);
     setOpenDropdowns({});
-    if (swiper.activeIndex >= data.length - 3) loadPage();
+    if (
+      swiper.activeIndex > 0 &&
+      (swiper.activeIndex % 3 === 0 || swiper.activeIndex >= data.length - 3)
+    ) {
+      loadPage();
+    }
   };
 
   const handleVideoPlay = (attachmentId: any) => {
@@ -115,7 +124,7 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
   return (
     <section
       aria-label="Match videos"
-      className="relative w-full bg-black flex flex-col h-[calc(100svh-98px)] md:h-[calc(100vh-65px)]"
+      className="relative w-full bg-zinc-950 flex flex-col h-[calc(100svh-48px)] md:h-[calc(100vh-65px)]"
     >
       <div className="absolute top-3 left-3 z-20">
         <Link
@@ -135,42 +144,49 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
         </div>
       )}
 
-      <Swiper
-        direction="vertical"
-        slidesPerView={1}
-        mousewheel={true}
-        onSlideChange={handleSlideChange}
-        modules={[Mousewheel]}
-        className="mySwiper w-full h-full"
-      >
-        {data.map((video, index) => (
-          <SwiperSlide key={getKey(video, index)}>
-            <VideoSlide
-              showLiked={false}
-              endTime={false}
-              showScore={true}
-              showResult={true}
-              showCountLiked={true}
-              video={video}
-              index={index}
-              currentlyPlayingId={currentlyPlayingId}
-              openDropdowns={openDropdowns}
-              onVideoPlay={handleVideoPlay}
-              toggleDropdown={toggleDropdown}
-              dropdownItems={dropdownItems}
-              setOpenDropdowns={setOpenDropdowns}
-            />
-          </SwiperSlide>
-        ))}
-      </Swiper>
+      {isLoading && data.length === 0 ? (
+        <HomeSlideSkeleton />
+      ) : (
+        <Swiper
+          direction="vertical"
+          slidesPerView={1}
+          mousewheel={true}
+          onSlideChange={handleSlideChange}
+          modules={[Mousewheel]}
+          className="mySwiper w-full h-full"
+        >
+          {data.map((video, index) => (
+            <SwiperSlide key={getKey(video, index)}>
+              <VideoSlide
+                showLiked={false}
+                endTime={false}
+                showScore={true}
+                showResult={true}
+                showCountLiked={true}
+                video={video}
+                index={index}
+                currentlyPlayingId={currentlyPlayingId}
+                openDropdowns={openDropdowns}
+                onVideoPlay={handleVideoPlay}
+                toggleDropdown={toggleDropdown}
+                dropdownItems={dropdownItems}
+                setOpenDropdowns={setOpenDropdowns}
+              />
+            </SwiperSlide>
+          ))}
+          {isFetchingMore && (
+            <SwiperSlide key="watch-loading-more">
+              <HomeSlideSkeleton />
+            </SwiperSlide>
+          )}
+        </Swiper>
+      )}
 
       {!isLoading && !error && data.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center text-white/80 text-sm">
           No videos found for this match.
         </div>
       )}
-
-      <LoadingChild isLoading={isLoading} />
     </section>
   );
 }

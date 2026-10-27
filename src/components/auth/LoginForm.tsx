@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isAxiosError } from "axios";
-import logo from "../../../public/assets/images/logocircle.png";
+import { SITE_LOGO } from "@/lib/seo";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 
@@ -110,22 +110,25 @@ const LoginForm: FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-900/5">
         <div className="mb-8 flex flex-col items-center">
-          <Link href="/login" className="mb-4 transition-transform hover:scale-105">
-            <div className="relative h-24 w-24 overflow-hidden rounded-full shadow-md ring-2 ring-blue-500/20">
+          <Link
+            href="/"
+            className="mb-4 flex items-center gap-3 transition-transform hover:scale-105"
+          >
+            <div className="relative h-14 w-14 overflow-hidden rounded-full shadow-md ring-2 ring-blue-500/20">
               <Image
-                src={logo}
+                src={SITE_LOGO}
                 alt="Clash Talent logo"
                 fill
-                sizes="96px"
+                sizes="56px"
                 priority
                 className="object-cover"
               />
             </div>
+            <h1 className="whitespace-nowrap text-2xl font-bold tracking-tight text-slate-800">
+              Clash<span className="text-blue-600">Talent</span>
+            </h1>
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-800">
-            Clash Talent
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">Sign in to your account</p>
+          <p className="text-sm text-slate-500">Sign in to your account</p>
         </div>
 
         {error && (

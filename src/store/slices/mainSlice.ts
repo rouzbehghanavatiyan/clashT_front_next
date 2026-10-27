@@ -68,6 +68,11 @@ const initialState: any = {
   userId: 0,
   socketConfig: null,
   userOnlines: null,
+  messageModal: {
+    show: false,
+    title: "",
+    icon: "",
+  },
 };
 
 const mainSlice = createSlice({
@@ -130,6 +135,11 @@ const mainSlice = createSlice({
     },
     RsetUserLogin: (state, action: PayloadAction<any>) => {
       state.userLogin = action.payload;
+      const userIdLogin =
+        action.payload?.user?.id ?? action.payload?.id ?? action.payload?.userId;
+      if (userIdLogin != null) {
+        state.userId = userIdLogin;
+      }
     },
     RsetUserId: (state, action: PayloadAction<any>) => {
       state.userId = action.payload;
@@ -234,6 +244,19 @@ const mainSlice = createSlice({
       state.homeMatch = { ...initialDataState };
       state.showWatchMatch = { ...initialDataState };
     },
+    RsetMessageModal: (
+      state,
+      action: PayloadAction<{
+        show?: boolean;
+        title?: string;
+        icon?: string;
+      }>,
+    ) => {
+      state.messageModal = {
+        ...state.messageModal,
+        ...action.payload,
+      };
+    },
   },
 });
 
@@ -282,6 +305,7 @@ export const {
   resetHomeMatch,
   RsetShowTimerButtn,
   RsetLastMatch,
+  RsetMessageModal,
 } = mainSlice.actions;
 
 export default mainSlice.reducer;

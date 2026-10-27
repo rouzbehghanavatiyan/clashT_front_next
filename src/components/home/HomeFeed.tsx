@@ -3,22 +3,19 @@
 import React, { useCallback, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Mousewheel } from "swiper/modules";
-import {
-  RsetHomeMatch,
-  setPaginationHomeMatch,
-} from "@/store/slices/mainSlice";
-import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
-import LoadingChild from "@/components/LoadingChild";
+import { useAppSelector } from "@/store/reduxHook";
 import { useShowWatch } from "@/hooks/useShowWatch";
 import { attachmentService } from "@/services/attachment.service";
 import { VideoSlide } from "@/components/VideoSlide";
+import { HomeSlideSkeleton } from "@/components/home/HomeSlideSkeleton";
+
+const PAGE_SIZE = 6;
 
 const HomeFeed: React.FC = () => {
   const loadingRef = useRef<HTMLDivElement>(null);
   const main = useAppSelector((state) => state.main);
-  const dispatch = useAppDispatch();
   const { pagination, data: reduxData } = main.homeMatch;
-  const userIdLogin = main?.userLogin?.user?.id;
+  const userIdLogin = main?.userLogin?.user?.id || main?.userId;
 
   const customFetchNextPage = useCallback(
     async (params: {
@@ -30,30 +27,22 @@ const HomeFeed: React.FC = () => {
       try {
         const res = await attachmentService.followerAttachmentList({
           skip: params.skip,
-          take: params.take,
+          take: PAGE_SIZE,
           userIdLogin,
         });
-        const items = res?.data?.data || [];
-        dispatch(RsetHomeMatch(items));
-        dispatch(
-          setPaginationHomeMatch({
-            take: params.take,
-            skip: params.skip + params.take,
-            hasMore: items.length > 0,
-          }),
-        );
-        return items;
+        return res?.data?.data || [];
       } catch (error) {
         console.error("Error fetching home feed:", error);
         return [];
       }
     },
-    [dispatch, userIdLogin],
+    [userIdLogin],
   );
 
   const {
     data,
     isLoading,
+    isFetchingMore,
     openDropdowns,
     setOpenDropdowns,
     currentlyPlayingId,
@@ -67,24 +56,31 @@ const HomeFeed: React.FC = () => {
     data: reduxData,
     pagination,
     customFetchNextPage,
+    useRedux: false,
+    customCleanup: () => {},
   });
+
+  const waitingForUser = !userIdLogin;
+  const showInitialSkeleton = waitingForUser || (isLoading && data.length === 0);
 
   return (
     <section
       aria-label="Home feed"
-      className="relative w-full bg-black mt-0 flex flex-col h-[calc(100svh-98px)] md:h-[calc(100vh-65px)]"
+      className="relative mt-0 flex h-[calc(100svh-48px)] w-full flex-col bg-zinc-950 md:h-[calc(100vh-65px)]"
     >
-      <Swiper
-        direction="vertical"
-        slidesPerView={1}
-        mousewheel={true}
-        onSlideChange={handleSlideChange}
-        modules={[Mousewheel]}
-        onInit={initializeSwiper}
-        className="mySwiper w-full h-full"
-      >
-        {!isLoading &&
-          data?.map((video: any, index: number) => (
+      {showInitialSkeleton ? (
+        <HomeSlideSkeleton />
+      ) : (
+        <Swiper
+          direction="vertical"
+          slidesPerView={1}
+          mousewheel={true}
+          onSlideChange={handleSlideChange}
+          modules={[Mousewheel]}
+          onInit={initializeSwiper}
+          className="mySwiper h-full w-full"
+        >
+          {data?.map((video: any, index: number) => (
             <SwiperSlide key={`video-${video.id || index}`}>
               <VideoSlide
                 showLiked={false}
@@ -103,13 +99,19 @@ const HomeFeed: React.FC = () => {
               />
             </SwiperSlide>
           ))}
-      </Swiper>
-      {!isLoading && (!data || data.length === 0) && (
-        <div className="absolute inset-0 flex items-center justify-center text-white/80 text-sm px-6 text-center">
+          {isFetchingMore && (
+            <SwiperSlide key="home-loading-more">
+              <HomeSlideSkeleton />
+            </SwiperSlide>
+          )}
+        </Swiper>
+      )}
+      {!showInitialSkeleton && !isLoading && (!data || data.length === 0) && (
+        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/80">
           Follow creators to see matchups in your home feed.
         </div>
       )}
-      <LoadingChild ref={loadingRef} isLoading={isLoading} />
+      <div ref={loadingRef} className="sr-only" />
     </section>
   );
 };

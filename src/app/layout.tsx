@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Vazirmatn, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { AppShell } from "@/components/AppShell";
 import { SessionRestorer } from "@/services/SessionRestorer";
-import { SITE_DESCRIPTION, SITE_NAME, absoluteUrl } from "@/lib/seo";
+import { SITE_DESCRIPTION, SITE_LOGO, SITE_NAME, absoluteUrl } from "@/lib/seo";
 import { SITE_URL } from "@/lib/socket";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+const vazirmatn = Vazirmatn({
+  variable: "--font-vazirmatn",
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -27,6 +35,11 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
+  icons: {
+    icon: SITE_LOGO,
+    shortcut: SITE_LOGO,
+    apple: SITE_LOGO,
+  },
   openGraph: {
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
@@ -36,7 +49,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: absoluteUrl("/assets/images/logocircle.png"),
+        url: absoluteUrl(SITE_LOGO),
         alt: SITE_NAME,
       },
     ],
@@ -45,7 +58,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    images: [absoluteUrl("/assets/images/logocircle.png")],
+    images: [absoluteUrl(SITE_LOGO)],
   },
 };
 
@@ -55,8 +68,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html
+      lang="en"
+      className={`${plusJakarta.variable} ${vazirmatn.variable} ${geistMono.variable}`}
+    >
+      <body className={`${plusJakarta.className} antialiased`}>
         <Providers>
           <SessionRestorer>
             <AppShell>{children}</AppShell>

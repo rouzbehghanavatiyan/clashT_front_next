@@ -32,14 +32,13 @@ const MessageModal: React.FC = () => {
           <span className="flex mt-10 justify-center">
             <Button
               variant={
-                main?.messageModal?.icon === "danger"
-                  ? "outLine_secondary"
-                  : "green"
+                main?.messageModal?.icon === "danger" ? "danger" : "primary"
               }
               onClick={() => dispatch(RsetMessageModal({ show: false }))}
-              label="Accept"
               className="flex border"
-            />
+            >
+              Accept
+            </Button>
           </span>
         </div>
       </Modal>

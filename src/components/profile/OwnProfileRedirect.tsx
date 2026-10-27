@@ -3,16 +3,15 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/store/reduxHook";
-import { getLoggedInUsername, profileHref } from "@/lib/navigation";
 
 export default function OwnProfileRedirect() {
   const router = useRouter();
   const userLogin = useAppSelector((state) => state?.main?.userLogin);
-  const username = getLoggedInUsername(userLogin);
+  const username = userLogin?.user?.userName ?? userLogin?.username;
 
   useEffect(() => {
     if (username) {
-      router.replace(profileHref(username));
+      router.replace(`/${encodeURIComponent(username)}`);
     }
   }, [username, router]);
 
