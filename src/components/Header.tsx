@@ -25,13 +25,20 @@ export const Header: React.FC = () => {
     : "/profile";
   const isWatchPage = pathname === "/watch";
   const isWatchDetailPage = pathname.startsWith("/watch/");
+  const isChatThreadPage = /^\/chat\/.+/.test(pathname);
+  const unread =
+    useAppSelector((state) => state?.main?.unreadMessagesCount) || 0;
   const showBack = !isMainTabPath(pathname);
-  const showOnMobile = showBack && !isWatchDetailPage;
+  const showOnMobile = showBack && !isWatchDetailPage && !isChatThreadPage;
 
   return (
     <header
-      className={`sticky top-0 z-40 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md overflow-visible ${
-        showOnMobile ? "block" : "hidden md:block"
+      className={`sticky top-0 z-40 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md overflow-visible dark:border-zinc-800 dark:bg-zinc-950/80 ${
+        isChatThreadPage
+          ? "hidden"
+          : showOnMobile
+            ? "block"
+            : "hidden md:block"
       }`}
     >
       <div className="h-16 px-4 sm:px-6 flex items-center justify-between overflow-visible">
@@ -41,7 +48,7 @@ export const Header: React.FC = () => {
               type="button"
               onClick={() => router.back()}
               aria-label="Go back"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 transition"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-800"
             >
               <ArrowBack />
             </button>
@@ -49,7 +56,7 @@ export const Header: React.FC = () => {
           {isWatchPage ? (
             <UserSearchInput className="w-full max-w-md" />
           ) : (
-            <h1 className="truncate text-lg font-semibold text-gray-900">
+            <h1 className="truncate text-lg font-semibold text-gray-900 dark:text-gray-100">
               {title}
             </h1>
           )}
@@ -60,14 +67,19 @@ export const Header: React.FC = () => {
             <Link
               href="/chat"
               aria-label="Open chat"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 transition"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-800"
             >
               <ChatBubbleOutline />
+              {unread > 0 && (
+                <span className="absolute right-1 top-1 min-w-4 rounded-full bg-blue-600 px-1 text-center text-[10px] font-semibold leading-4 text-white">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
             </Link>
             <Link
               href="/settings"
               aria-label="Open settings"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 transition"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-800"
             >
               <Settings />
             </Link>

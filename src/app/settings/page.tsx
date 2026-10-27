@@ -14,13 +14,13 @@ import { useAppDispatch } from "@/store/reduxHook";
 import { RsetUserId, RsetUserLogin } from "@/store/slices/mainSlice";
 import { removeTokens } from "@/services/tokenService";
 import { PWA_INSTALL_DISMISSED_KEY } from "@/lib/pwa";
+import { THEME_STORAGE_KEY } from "@/lib/theme";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function SettingPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
-
-    const [theme, setTheme] = useState<"light" | "dark">("light");
-    const isDark = theme === "dark";
+    const { setTheme, isDark } = useTheme();
 
     const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -29,12 +29,12 @@ export default function SettingPage() {
         try {
             setIsLoggingOut(true);
 
-            const savedTheme = localStorage.getItem("@app_theme");
+            const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
             const pwaDismissed = localStorage.getItem(PWA_INSTALL_DISMISSED_KEY);
             removeTokens();
             localStorage.clear();
             if (savedTheme) {
-                localStorage.setItem("@app_theme", savedTheme);
+                localStorage.setItem(THEME_STORAGE_KEY, savedTheme);
             }
             if (pwaDismissed) {
                 localStorage.setItem(PWA_INSTALL_DISMISSED_KEY, pwaDismissed);

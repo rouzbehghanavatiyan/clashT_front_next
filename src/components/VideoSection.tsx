@@ -124,7 +124,7 @@ const VideoSection: React.FC<any> = ({
       className={
         overlay
           ? "fixed inset-0 z-[300] flex h-svh w-full flex-col bg-black"
-          : "relative flex h-full min-h-0 w-full flex-col border-b border-white/10"
+          : "relative flex h-full min-h-0 w-full flex-col border-b border-black/5 dark:border-white/10"
       }
     >
       {!isExpanded && (

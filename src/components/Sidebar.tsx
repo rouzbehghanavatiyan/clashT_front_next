@@ -10,8 +10,8 @@ import {
   PlayCircleFilled,
   AddCircleOutline,
   AddCircle,
-  EmojiEventsOutlined,
-  EmojiEvents,
+  ShowChartOutlined,
+  ShowChart,
   PersonOutline,
   PersonRounded,
 } from "@mui/icons-material";
@@ -38,8 +38,8 @@ const ICONS: Record<
     active: <AddCircle />,
   },
   top: {
-    idle: <EmojiEventsOutlined />,
-    active: <EmojiEvents />,
+    idle: <ShowChartOutlined />,
+    active: <ShowChart />,
   },
   profile: {
     idle: <PersonOutline />,
@@ -53,8 +53,8 @@ export const Sidebar: React.FC = () => {
   const username = userLogin?.user?.userName ?? userLogin?.username;
 
   return (
-    <aside className="hidden md:flex md:flex-col fixed inset-y-0 left-0 z-40 w-60 border-r border-gray-200 bg-white">
-      <div className="h-16 flex items-center px-6 border-b border-gray-100">
+    <aside className="hidden md:flex md:flex-col fixed inset-y-0 left-0 z-40 w-60 border-r border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-zinc-800">
         <BrandLogo size={36} />
       </div>
       <nav aria-label="Main" className="flex-1 px-3 py-4 space-y-1">
@@ -63,8 +63,8 @@ export const Sidebar: React.FC = () => {
           const icons = ICONS[tab.id];
           const className = `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
             active
-              ? "bg-blue-50 text-blue-700"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-900 dark:hover:text-gray-100"
           }`;
           const content = (
             <>

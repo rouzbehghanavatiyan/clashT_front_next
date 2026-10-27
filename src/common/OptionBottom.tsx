@@ -62,8 +62,8 @@ const OptionBottom: React.FC<any> = ({
   }, [countLiked, video, positionVideo, isLiked, movieId]);
 
   return (
-    <div className="pointer-events-none absolute bottom-9 z-10 w-full">
-      <div className="mx-2 mb-4 flex justify-between">
+    <div className="pointer-events-none absolute inset-x-0 bottom-8 z-10 bg-gradient-to-t from-zinc-700/45 via-zinc-600/20 to-transparent px-2 pt-7 pb-2">
+      <div className="flex justify-between">
         <div className="pointer-events-auto flex items-end justify-start">
           <ChatBubbleOutlineIcon
             onClick={() => handleToggleComments(video)}

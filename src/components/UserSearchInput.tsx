@@ -147,7 +147,7 @@ export default function UserSearchInput({
       <label className="relative block min-w-0">
         <span className="sr-only">Search by username</span>
         <SearchRounded
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           sx={{ fontSize: compact ? 18 : 20 }}
         />
         <input
@@ -158,14 +158,14 @@ export default function UserSearchInput({
             if (searchQuery.trim()) setShowDropdown(true);
           }}
           placeholder="Search by username"
-          className={`w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 ${
+          className={`w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-blue-500 dark:focus:bg-zinc-900 ${
             compact ? "h-10" : "h-10"
           }`}
         />
       </label>
 
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-[60] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-[60] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
           {isLoading ? (
             <div className="flex items-center justify-center py-4">
               <CircularProgress size={22} />
@@ -181,7 +181,7 @@ export default function UserSearchInput({
                   key={item?.id ?? `${getUserName(item)}-${index}`}
                   type="button"
                   onClick={() => handleSelectUser(item)}
-                  className="flex w-full items-center gap-2.5 border-b border-gray-100 px-3 py-2.5 text-left last:border-b-0 hover:bg-gray-50"
+                  className="flex w-full items-center gap-2.5 border-b border-gray-100 px-3 py-2.5 text-left last:border-b-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
                 >
                   <ImageRank
                     imgSrc={StringHelpers.getProfile(item?.profile) || undefined}
@@ -189,7 +189,7 @@ export default function UserSearchInput({
                     imgSize={40}
                     onClickDisable
                   />
-                  <span className="truncate text-sm font-medium text-gray-900">
+                  <span className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                     {getUserName(item)}
                   </span>
                 </button>
@@ -201,7 +201,7 @@ export default function UserSearchInput({
               )}
             </div>
           ) : (
-            <div className="px-4 py-4 text-center text-[13px] text-gray-500">
+            <div className="px-4 py-4 text-center text-[13px] text-gray-500 dark:text-gray-400">
               Not found
             </div>
           )}

@@ -175,14 +175,14 @@ const SignUpForm: FC = () => {
   };
 
   const inputClass = (hasError?: string) =>
-    `w-full rounded-lg border px-4 py-2.5 text-sm transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 ${hasError
+    `w-full rounded-lg border px-4 py-2.5 text-sm transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 dark:bg-zinc-900 dark:text-gray-100 dark:disabled:bg-zinc-800 ${hasError
       ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-      : "border-slate-300 focus:border-blue-500 focus:ring-blue-500/20"
+      : "border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 dark:border-zinc-700"
     }`;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-900/5">
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4 dark:bg-zinc-950">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-900/5 dark:bg-zinc-900 dark:ring-white/10">
         <div className="mb-8 flex flex-col items-center">
           <BrandLogo
 
@@ -192,14 +192,14 @@ const SignUpForm: FC = () => {
             imageClassName="shadow-md ring-2 ring-blue-500/20"
             nameClassName="whitespace-nowrap text-2xl font-bold tracking-tight text-slate-800"
           />
-          <p className="text-sm text-slate-500">Create your account</p>
+          <p className="text-sm text-slate-500 dark:text-gray-400">Create your account</p>
         </div>
 
         <form onSubmit={handleSignUp} className="space-y-4">
           <div>
             <label
               htmlFor="username"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
+              className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-gray-300"
             >
               Username
             </label>
@@ -221,7 +221,7 @@ const SignUpForm: FC = () => {
           <div>
             <label
               htmlFor="email"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
+              className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-gray-300"
             >
               Email
             </label>
@@ -242,7 +242,7 @@ const SignUpForm: FC = () => {
           </div>
 
           <div>
-            <p className="mb-1.5 block text-sm font-medium text-slate-700">
+            <p className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-gray-300">
               Gender
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -274,7 +274,7 @@ const SignUpForm: FC = () => {
           <div>
             <label
               htmlFor="password"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
+              className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-gray-300"
             >
               Password
             </label>
@@ -313,7 +313,7 @@ const SignUpForm: FC = () => {
           <div>
             <label
               htmlFor="passwordConfirmation"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
+              className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-gray-300"
             >
               Confirm Password
             </label>

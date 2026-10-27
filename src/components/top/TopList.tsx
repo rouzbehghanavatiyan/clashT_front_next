@@ -36,8 +36,8 @@ export default function TopList() {
   return (
     <section aria-label="Top talents" className="max-w-3xl mx-auto p-4 pb-16">
       <header className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Top Talents</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Top Talents</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Highest scores across Clash Talent.
         </p>
       </header>
@@ -66,9 +66,9 @@ export default function TopList() {
           return (
             <li
               key={item?.id || item?.userId || `${username}-${index}`}
-              className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-3"
+              className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900"
             >
-              <span className="w-8 text-center text-sm font-bold text-gray-500">
+              <span className="w-8 text-center text-sm font-bold text-gray-500 dark:text-gray-400">
                 {index + 1}
               </span>
               <button
@@ -86,10 +86,10 @@ export default function TopList() {
                   onClickDisable
                 />
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">
+                  <p className="truncate font-semibold text-gray-900 dark:text-gray-100">
                     {item?.fullName || username || "Unknown"}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Score {item?.score ?? 0}
                   </p>
                 </div>

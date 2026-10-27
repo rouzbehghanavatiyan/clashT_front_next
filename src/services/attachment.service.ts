@@ -18,7 +18,7 @@ export const attachmentService = {
 
   addAttachment: (data: FormData) => api.post("/addAttachment", data),
 
-  addInvite: (data: FormData) => api.post("/addInvite", data),
+  addInvite: (postData: any) => api.post("/addInvite", postData),
 
   play: (path: string) => `${api.defaults.baseURL}/attachmentPlay?path=${path}`,
 
@@ -32,5 +32,3 @@ export const attachmentService = {
       `/followerAttachmentList?skip=${postData?.skip}&take=${postData?.take}&userId=${postData?.userIdLogin}`,
     ),
 };
-
-// کد پیکیری 4783979

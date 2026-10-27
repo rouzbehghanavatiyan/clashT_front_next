@@ -18,6 +18,7 @@ import {
 } from "@/services/tokenService";
 import { userService } from "@/services/user.service";
 import { getUserIdFromToken } from "@/utils/jwt";
+import { syncPushToken } from "@/services/notify.service";
 
 export function useAuthInitialization() {
   const dispatch = useAppDispatch();
@@ -75,6 +76,7 @@ export function useAuthInitialization() {
             }),
           );
           await loadUserMasterData(finalUserId);
+          void syncPushToken(finalUserId);
         } catch (apiError) {
           console.error("API call failed in loadCurrentUser", apiError);
           if (isAxiosError(apiError) && apiError.response?.status === 401) {
@@ -90,6 +92,7 @@ export function useAuthInitialization() {
               userId: userIdFromToken,
             }),
           );
+          void syncPushToken(userIdFromToken);
         }
       } catch (error) {
         console.error("loadCurrentUser error", error);

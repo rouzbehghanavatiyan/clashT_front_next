@@ -10,11 +10,12 @@ import {
 } from "@/store/slices/mainSlice";
 import { useAppDispatch } from "@/store/reduxHook";
 import { attachmentService } from "@/services/attachment.service";
+import { buildChatHref } from "@/lib/chat";
 
 const PAGE_SIZE = 6;
 
 interface UseShowWatchProps {
-  inviteId: string | undefined;
+  inviteId: string | number | undefined;
   data: any[];
   pagination: {
     skip: number;
@@ -24,8 +25,8 @@ interface UseShowWatchProps {
   customFetchNextPage?: (params: {
     skip: number;
     take: number;
-    inviteId: string | undefined;
-  }) => Promise<any[]>;
+    inviteId: string | number | undefined;
+  }) => Promise<any[] | void>;
   customCleanup?: () => void;
   useRedux?: boolean;
 }
@@ -35,6 +36,30 @@ interface DropdownItem {
   icon?: React.ReactNode;
   onClick?: () => void;
   divider?: boolean;
+}
+
+const itemKey = (item: any) =>
+  String(
+    item?.id ??
+      [
+        item?.inviteInserted?.id ?? "x",
+        item?.inviteMatched?.id ?? "x",
+        item?.attachmentInserted?.attachmentId ??
+          item?.attachmentInserted?.id ??
+          "x",
+      ].join("-"),
+  );
+
+function mergeUnique(prev: any[], next: any[]) {
+  const seen = new Set(prev.map(itemKey));
+  const fresh: any[] = [];
+  for (const item of next) {
+    const key = itemKey(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    fresh.push(item);
+  }
+  return [...prev, ...fresh];
 }
 
 export const useShowWatch = ({
@@ -52,20 +77,28 @@ export const useShowWatch = ({
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(
-    null
+    null,
   );
   const [openDropdowns, setOpenDropdowns] = useState<Record<number, boolean>>(
-    {}
+    {},
   );
 
-  const [internalData, setInternalData] = useState<any[]>(externalData);
+  const [internalData, setInternalData] = useState<any[]>(externalData || []);
 
-  const paginationRef = useRef({ ...pagination, take: PAGE_SIZE });
+  const paginationRef = useRef({
+    skip: pagination?.skip ?? 0,
+    take: PAGE_SIZE,
+    hasMore: pagination?.hasMore ?? true,
+  });
   const isLoadingRef = useRef(isLoading);
   const isFetchingMoreRef = useRef(isFetchingMore);
   const dataRef = useRef(internalData);
   const didAutoPlayFirstRef = useRef(false);
   const lastFetchSlideRef = useRef(0);
+  const inviteIdRef = useRef(inviteId);
+  const requestIdRef = useRef(0);
+  const customCleanupRef = useRef(customCleanup);
+  customCleanupRef.current = customCleanup;
 
   useEffect(() => {
     isLoadingRef.current = isLoading;
@@ -74,27 +107,38 @@ export const useShowWatch = ({
   }, [isLoading, isFetchingMore, internalData]);
 
   useEffect(() => {
-    if (internalData.length === 0 && externalData?.length > 0) {
-      setInternalData(externalData);
-    }
-  }, [externalData, internalData.length]);
+    if (inviteIdRef.current === inviteId) return;
+    inviteIdRef.current = inviteId;
+    requestIdRef.current += 1;
+    didAutoPlayFirstRef.current = false;
+    lastFetchSlideRef.current = 0;
+    setInternalData([]);
+    setActiveSlideIndex(0);
+    setCurrentlyPlayingId(null);
+    setOpenDropdowns({});
+    setIsLoading(false);
+    setIsFetchingMore(false);
+    isLoadingRef.current = false;
+    isFetchingMoreRef.current = false;
+    paginationRef.current = { skip: 0, take: PAGE_SIZE, hasMore: true };
+  }, [inviteId]);
 
   const defaultFetchNextPage = useCallback(
     async ({
       skip,
       take,
-      inviteId,
+      inviteId: nextInviteId,
     }: {
       skip: number;
       take: number;
-      inviteId: string | undefined;
+      inviteId: string | number | undefined;
     }) => {
-      if (!inviteId) return [];
+      if (!nextInviteId) return [];
       try {
         const res = await attachmentService.attachmentListByInviteId({
           skip,
           take,
-          inviteId,
+          inviteId: nextInviteId,
         });
         const payload = res?.data?.data ?? res?.data ?? [];
         return Array.isArray(payload) ? payload : [];
@@ -103,7 +147,7 @@ export const useShowWatch = ({
         return [];
       }
     },
-    []
+    [],
   );
 
   const fetchNextPage = useCallback(async () => {
@@ -111,12 +155,14 @@ export const useShowWatch = ({
       isLoadingRef.current ||
       isFetchingMoreRef.current ||
       !paginationRef.current.hasMore ||
-      !inviteId
+      inviteId == null ||
+      inviteId === ""
     ) {
       return [];
     }
 
     const isInitial = dataRef.current.length === 0;
+    const requestId = ++requestIdRef.current;
 
     try {
       if (isInitial) {
@@ -133,8 +179,11 @@ export const useShowWatch = ({
         take: PAGE_SIZE,
         inviteId,
       });
-      const newData = Array.isArray(payload) ? payload : [];
 
+      if (requestId !== requestIdRef.current) return [];
+      if (!Array.isArray(payload)) return [];
+
+      const newData = payload;
       const nextPagination = {
         take: PAGE_SIZE,
         skip: paginationRef.current.skip + PAGE_SIZE,
@@ -143,7 +192,7 @@ export const useShowWatch = ({
       paginationRef.current = nextPagination;
 
       if (newData.length > 0) {
-        setInternalData((prev) => [...prev, ...newData]);
+        setInternalData((prev) => mergeUnique(prev, newData));
         if (useRedux) {
           dispatch(RsetShowWatch(newData));
           dispatch(setPaginationShowWatch(nextPagination));
@@ -157,10 +206,12 @@ export const useShowWatch = ({
       console.error("Error fetching data:", error);
       return [];
     } finally {
-      setIsLoading(false);
-      setIsFetchingMore(false);
-      isLoadingRef.current = false;
-      isFetchingMoreRef.current = false;
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+        setIsFetchingMore(false);
+        isLoadingRef.current = false;
+        isFetchingMoreRef.current = false;
+      }
     }
   }, [customFetchNextPage, defaultFetchNextPage, dispatch, inviteId, useRedux]);
 
@@ -188,10 +239,15 @@ export const useShowWatch = ({
         {
           label: "Send message",
           icon: <EmailIcon className="text-gray-800 font20" />,
-        //   onClick: () =>
-        //     router.push(`/privateMessage?id=${userSenderId?.id}`, {
-        //       state: { userInfo: config },
-        //     }),
+          onClick: () => {
+            const href = buildChatHref({
+              id: userSenderId?.id ?? config.sender,
+              userName: config.userNameSender,
+              profile: config.userProfile,
+              score: isSender ? data?.scoreInserted : data?.scoreMatched,
+            });
+            if (href) router.push(href);
+          },
         },
         {
           label: "Report",
@@ -201,7 +257,7 @@ export const useShowWatch = ({
         { divider: true },
       ];
     },
-    [router]
+    [router],
   );
 
   const handleSlideChange = useCallback(
@@ -229,7 +285,7 @@ export const useShowWatch = ({
         fetchNextPage();
       }
     },
-    [fetchNextPage]
+    [fetchNextPage],
   );
 
   const initializeSwiper = useCallback((swiper: any) => {
@@ -246,20 +302,26 @@ export const useShowWatch = ({
   }, [fetchNextPage]);
 
   useEffect(() => {
-    if (inviteId && !isLoadingRef.current && internalData.length === 0) {
+    if (
+      inviteId != null &&
+      inviteId !== "" &&
+      !isLoadingRef.current &&
+      internalData.length === 0
+    ) {
       fetchNextPage();
     }
   }, [inviteId, fetchNextPage, internalData.length]);
 
   useEffect(() => {
     return () => {
-      if (customCleanup) {
-        customCleanup();
+      requestIdRef.current += 1;
+      if (customCleanupRef.current) {
+        customCleanupRef.current();
       } else if (useRedux) {
         dispatch(resetShowWatchState());
       }
     };
-  }, [customCleanup, dispatch, useRedux]);
+  }, [dispatch, useRedux]);
 
   useEffect(() => {
     if (didAutoPlayFirstRef.current || activeSlideIndex !== 0) return;
@@ -284,6 +346,7 @@ export const useShowWatch = ({
     fetchNextPage: exposedFetchNextPage,
     setOpenDropdowns,
     resetData: useCallback(() => {
+      requestIdRef.current += 1;
       didAutoPlayFirstRef.current = false;
       lastFetchSlideRef.current = 0;
       setInternalData([]);
@@ -291,6 +354,7 @@ export const useShowWatch = ({
       setCurrentlyPlayingId(null);
       setOpenDropdowns({});
       setIsFetchingMore(false);
+      paginationRef.current = { skip: 0, take: PAGE_SIZE, hasMore: true };
     }, []),
   };
 };

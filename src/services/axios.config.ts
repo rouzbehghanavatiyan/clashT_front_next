@@ -3,6 +3,7 @@ import axios, {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
 } from "axios";
+import { CHAT_API_URL } from "@/lib/env";
 import {
   getAccessToken,
   getRefreshToken,
@@ -14,6 +15,11 @@ export const baseURL = process.env.NEXT_PUBLIC_API_URL;
 
 export const api = axios.create({
   baseURL,
+  headers: { "Content-Type": "application/json" },
+});
+
+export const chatApi = axios.create({
+  baseURL: CHAT_API_URL,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -125,3 +131,4 @@ const setupInterceptors = (instance: AxiosInstance) => {
 };
 
 setupInterceptors(api);
+setupInterceptors(chatApi);

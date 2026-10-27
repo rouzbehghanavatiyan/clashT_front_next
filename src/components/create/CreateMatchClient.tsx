@@ -162,7 +162,7 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-3">
                 Video Preview
               </span>
-              <div className="relative aspect-[9/14] sm:aspect-video lg:aspect-[4/5] w-full bg-black rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+              <div className="relative aspect-[9/14] sm:aspect-video lg:aspect-[4/5] w-full bg-black rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 flex items-center justify-center">
                 {fileInput}
                 {videoSrc && !isImage ? (
                   <video

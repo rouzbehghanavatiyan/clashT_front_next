@@ -10,6 +10,7 @@ import LoadingChild from "../LoadingChild";
 import { RsetLastMatch } from "@/store/slices/mainSlice";
 import { useAppDispatch } from "@/store/reduxHook";
 import StringHelpers from "@/utils/StringHelpers";
+import { buildChatHref } from "@/lib/chat";
 import VideoSection from "../VideoSection";
 
 interface VideosProfileProps {
@@ -68,11 +69,14 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
           label: "Send message",
           icon: <EmailIcon className="text-gray-800 font20" />,
           onClick: () => {
-            // در Next.js استیت به صورت Query ارسال می‌شود یا از Redux استفاده می‌شود
-            const serializedInfo = encodeURIComponent(JSON.stringify(temp));
-            router.push(
-              `/chat/${userSenderId?.id}?userInfo=${serializedInfo}`,
-            );
+            const href = buildChatHref({
+              id: userSenderId?.id ?? temp.sender,
+              userName: temp.userNameSender,
+              profile: temp.userProfile,
+              score:
+                position === 0 ? data?.scoreInserted : data?.scoreMatched,
+            });
+            if (href) router.push(href);
           },
         },
         {
@@ -151,7 +155,7 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
                   <section
                     key={video?.id || index}
                     ref={index === 0 ? firstVideoRef : null}
-                    className={`flex pt-1 bg-white flex-col relative h-[calc(100vh-105px)] ${index === 0 ? "first-video scroll-mt-[60px]" : ""
+                    className={`flex pt-1 bg-black flex-col relative h-[calc(100vh-105px)] ${index === 0 ? "first-video scroll-mt-[60px]" : ""
                       }`}
                   >
                     <div className="flex-1 min-h-0">

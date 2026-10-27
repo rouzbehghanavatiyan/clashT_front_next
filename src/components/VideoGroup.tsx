@@ -55,7 +55,7 @@ const VideoGroup = ({
             ref={containerRef}
             type="button"
             onClick={onPress}
-            className="group relative flex w-full flex-col gap-px overflow-hidden rounded-tr-2xl rounded-bl-2xl bg-zinc-900 text-left transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="group relative flex w-full flex-col gap-px overflow-hidden rounded-tr-2xl rounded-bl-2xl bg-black text-left transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-2">
                 {matchTime && (
@@ -68,7 +68,7 @@ const VideoGroup = ({
                 )}
             </div>
 
-            <div className="relative aspect-[4/5] w-full bg-zinc-800 lg:h-36 lg:aspect-auto">
+            <div className="relative aspect-[4/5] w-full bg-black lg:h-36 lg:aspect-auto">
                 {imageTop ? (
                     <Image
                         src={imageTop}
@@ -84,7 +84,7 @@ const VideoGroup = ({
                 )}
             </div>
 
-            <div className="relative aspect-[4/5] w-full bg-zinc-800 lg:h-36 lg:aspect-auto">
+            <div className="relative aspect-[4/5] w-full bg-black lg:h-36 lg:aspect-auto">
                 {imageBottom ? (
                     <Image
                         src={imageBottom}

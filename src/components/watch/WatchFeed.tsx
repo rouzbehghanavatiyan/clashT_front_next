@@ -173,16 +173,16 @@ export default function WatchFeed() {
   return (
     <div
       ref={scrollerRef}
-      className="flex h-[calc(100svh-32px)] w-full flex-col overflow-y-auto overscroll-y-contain bg-white text-gray-900 md:h-auto md:min-h-screen md:overscroll-auto"
+      className="flex h-[calc(100svh-44px)] w-full flex-col overflow-y-auto overscroll-y-contain bg-white text-gray-900 md:h-auto md:min-h-screen md:overscroll-auto dark:bg-zinc-950 dark:text-gray-100"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3 md:hidden">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
         <Link
           href="/chat"
           aria-label="Messages"
-          className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-800 hover:bg-gray-100"
+          className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-800 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-zinc-800"
         >
           <ChatBubbleOutline fontSize="small" />
           {unread > 0 && (

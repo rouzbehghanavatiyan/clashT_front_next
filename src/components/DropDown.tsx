@@ -39,7 +39,12 @@ const Dropdown: React.FC<DropdownProps> = ({
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleItemClick = (item: DropdownItem) => {
+  const handleItemClick = (
+    item: DropdownItem,
+    event?: React.MouseEvent,
+  ) => {
+    event?.preventDefault();
+    event?.stopPropagation();
     if (item.onClick) {
       item.onClick(itemData);
     }
@@ -92,12 +97,13 @@ const Dropdown: React.FC<DropdownProps> = ({
 
       {isOpenOptions && (
         <div
-          className={`absolute ${position === "right" ? "right-0" : "left-0"} z-20 mt-2 ${
+          className={`absolute ${position === "right" ? "right-0" : "left-0"} z-50 mt-2 ${
             showRank ? "w-80" : "w-56"
           } origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none`}
           role="menu"
           aria-orientation="vertical"
           tabIndex={-1}
+          onClick={(event) => event.stopPropagation()}
         >
           <div className="py-1" role="none">
             {!showRank ? (
@@ -114,7 +120,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                         }`}
                         role="menuitem"
                         tabIndex={-1}
-                        onClick={() => handleItemClick(item)}
+                        onClick={(event) => handleItemClick(item, event)}
                       >
                         {item.icon && <span className="mr-2">{item.icon}</span>}
                         {item.label}
@@ -127,7 +133,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                       }`}
                       role="menuitem"
                       tabIndex={-1}
-                      onClick={() => handleItemClick(item)}
+                      onClick={(event) => handleItemClick(item, event)}
                     >
                       {item.icon && <span className="mr-2">{item.icon}</span>}
                       {item.label}
@@ -141,7 +147,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                   <div className="mb-4 pb-3 border-b border-gray-200">
                     <div
                       className="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-lg cursor-pointer"
-                      onClick={() => handleItemClick(rankScoreItem)}
+                      onClick={(event) => handleItemClick(rankScoreItem, event)}
                     >
                       <span className="text-lg font-bold text-gray-800 mb-1">
                         {rankScoreItem.icon}
@@ -159,7 +165,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                     <div
                       key={index}
                       className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors duration-200"
-                      onClick={() => handleItemClick(item)}
+                      onClick={(event) => handleItemClick(item, event)}
                     >
                       <div className="flex items-center justify-center w-12 h-12 mb-1">
                         {item.icon}

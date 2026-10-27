@@ -93,6 +93,7 @@ const initialState: any = {
     title: "",
     icon: "",
   },
+  loading: false,
 };
 
 const mainSlice = createSlice({
@@ -284,6 +285,15 @@ const mainSlice = createSlice({
         ...action.payload,
       };
     },
+    RsetLoading: (
+      state,
+      action: PayloadAction<{ value: boolean } | boolean>,
+    ) => {
+      state.loading =
+        typeof action.payload === "boolean"
+          ? action.payload
+          : Boolean(action.payload?.value);
+    },
   },
 });
 
@@ -333,6 +343,7 @@ export const {
   RsetShowTimerButtn,
   RsetLastMatch,
   RsetMessageModal,
+  RsetLoading,
 } = mainSlice.actions;
 
 export default mainSlice.reducer;

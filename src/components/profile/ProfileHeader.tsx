@@ -19,6 +19,7 @@ import { RsetUserLogin } from "@/store/slices/mainSlice";
 import Follows from "../Follows";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import StringHelpers from "@/utils/StringHelpers";
+import { buildChatHref } from "@/lib/chat";
 
 interface ProfileHeaderProps {
   userImage?: string;
@@ -134,17 +135,14 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
     };
 
     const handleSendMessage = () => {
-      const targetUserId = currentProfile?.user?.id || currentProfile?.id;
-      if (!targetUserId) return;
-
-      const chatParams = new URLSearchParams({
+      const href = buildChatHref({
+        id: currentProfile?.user?.id || currentProfile?.id,
         userName:
           currentProfile?.user?.userName ?? currentProfile?.userName ?? "",
-        profile: StringHelpers.getProfile(currentProfile?.profile) ?? "",
-        score: String(currentProfile?.score ?? 0),
+        profile: currentProfile?.profile,
+        score: currentProfile?.score ?? 0,
       });
-
-      router.push(`/chat/${targetUserId}?${chatParams.toString()}`);
+      if (href) router.push(href);
     };
 
     return (

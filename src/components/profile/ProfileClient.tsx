@@ -8,8 +8,8 @@ import React, {
   useState,
 } from "react";
 import { useParams } from "next/navigation";
-import { useShowWatch } from "@/hooks/useShowWatch";
 import ProfileBio from "./ProfileBio";
+import VideosProfile from "./VideosProfile";
 import { Icon } from "../Icon";
 import ProfileHeader from "./ProfileHeader";
 import { stopMatchTimer } from "../TimerForFindMatch";
@@ -25,7 +25,7 @@ import { attachmentService } from "@/services/attachment.service";
 import { userService } from "@/services/user.service";
 import { followService } from "@/services/follow.service";
 import { setNeedProfileRefresh } from "@/store/slices/videoSlice";
-import StringHelpers from "@/utils/StringHelpers";
+import { getImageUrl } from "@/utils/fileHelper";
 import { socket } from "@/lib/socket";
 import { SITE_URL } from "@/lib/env";
 import { withMatchEndAt, isMatchActive } from "@/utils/matchTimer";
@@ -36,7 +36,7 @@ interface InitialUserData {
   fullName?: string;
   bio?: string;
   avatarUrl?: string;
-  profile?: string;
+  profile?: any;
   score?: number;
   followersCount?: number;
   followingCount?: number;
@@ -47,22 +47,19 @@ interface Props {
 }
 
 function mapProfilePayload(d: any): InitialUserData {
-  const attachment = d?.avatar ?? d?.profile ?? null;
+  const attachment = d?.avatar ?? d?.profile ?? d?.user?.profile ?? null;
   let avatarUrl: string | undefined;
   try {
-    avatarUrl = attachment
-      ? StringHelpers.getProfile(attachment) || undefined
-      : undefined;
+    avatarUrl = getImageUrl(attachment) || getImageUrl(d) || undefined;
   } catch {
     avatarUrl = undefined;
   }
 
   return {
-    id: d?.userId ?? d?.id,
-    userName: d?.userName,
-    fullName: d?.fullName || d?.userName,
+    id: d?.user?.id ?? d?.userId ?? d?.id,
+    userName: d?.user?.userName ?? d?.userName,
+    fullName: d?.fullName || d?.user?.userName || d?.userName,
     bio: d?.bio ?? "",
-    location: d?.location ?? "",
     profile: attachment,
     avatarUrl,
     score: d?.score ?? 0,
@@ -76,13 +73,12 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
   const params = useParams();
   const observerTarget = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLElement>(null);
-  const expireTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const routeUsername = decodeURIComponent(
     String(params?.username || initialUserData.userName || ""),
   );
 
-  const [profileUser, setProfileUser] = useState<InitialUserData>(initialUserData);
-  const [isFetchingProfile, setIsFetchingProfile] = useState(false);
+  const [profileUser, setProfileUser] =
+    useState<InitialUserData>(initialUserData);
   const [otherUserVideos, setOtherUserVideos] = useState<any[]>([]);
 
   const myVideosInRedux =
@@ -109,7 +105,6 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     let cancelled = false;
 
     const loadProfile = async () => {
-      setIsFetchingProfile(true);
       setOtherUserVideos([]);
       try {
         const res = await userService.profile(routeUsername);
@@ -120,8 +115,6 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
         }
       } catch (error) {
         console.error("[profile] client fetch failed:", error);
-      } finally {
-        if (!cancelled) setIsFetchingProfile(false);
       }
     };
 
@@ -131,38 +124,25 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     };
   }, [routeUsername]);
 
-  const myUserId = userLogin?.user?.id;
+  const myUserId = userLogin?.user?.id ?? userLogin?.userId;
   const targetUserId = profileUser.id;
-  const isMyProfile = String(targetUserId) === String(myUserId);
+  const isMyProfile =
+    !!myUserId &&
+    !!targetUserId &&
+    String(targetUserId) === String(myUserId);
 
   const currentProfile = isMyProfile ? userLogin : profileUser;
   const findImg =
     profileUser?.avatarUrl ||
-    StringHelpers.getProfile(profileUser?.profile) ||
-    StringHelpers.getProfile(userLogin?.profile);
+    getImageUrl(profileUser?.profile) ||
+    getImageUrl(userLogin?.profile);
 
   const [refreshing, setRefreshing] = useState(false);
   const [percentage, setPercentage] = useState<number>(0);
   const [videoLikes, setVideoLikes] = useState<Record<string, number>>({});
-  const [showComments, setShowComments] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState<any>(null);
-  const [commentPosition, setCommentPosition] = useState(0);
 
   const allVideoData = isMyProfile ? myVideosInRedux : otherUserVideos;
 
-  const handleOpenComments = useCallback((video: any, position: number) => {
-    setSelectedVideo(video);
-    setCommentPosition(position ?? 0);
-    setShowComments(true);
-  }, []);
-
-  const handleCloseComments = useCallback(() => {
-    setShowComments(false);
-    setSelectedVideo(null);
-    setCommentPosition(0);
-  }, []);
-
-  // --- رفرش دیتای پروفایل ---
   const refreshMyProfileAttachment = useCallback(async () => {
     if (!isMyProfile || !myUserId) return;
     try {
@@ -176,22 +156,15 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     }
   }, [isMyProfile, myUserId, dispatch]);
 
-  // --- واکشی ویدیوها ---
   const fetchVideos = useCallback(
     async (paginationParams: { skip: number; take: number }) => {
-      if (
-        paginationParams.skip === 0 &&
-        isMyProfile &&
-        myVideosInRedux.length > 0
-      ) {
-        return null;
-      }
+      if (!targetUserId) return [];
       return await attachmentService.userAttachmentList({
         ...paginationParams,
         id: targetUserId,
       });
     },
-    [targetUserId, isMyProfile, myVideosInRedux.length],
+    [targetUserId],
   );
 
   const handleDataLoaded = useCallback(
@@ -201,9 +174,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
 
       if (isMyProfile) {
         dispatch(
-          RsetProfileVideo(
-            isFirstPage ? items : [...myVideosInRedux, ...items],
-          ),
+          RsetProfileVideo(isFirstPage ? items : [...myVideosInRedux, ...items]),
         );
       } else {
         setOtherUserVideos((prev) =>
@@ -218,26 +189,10 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     fetchVideos,
     handleDataLoaded,
     allVideoData?.length || 0,
-    routeUsername,
+    `${routeUsername}:${targetUserId || ""}`,
   );
 
-  const {
-    openDropdowns,
-    setOpenDropdowns,
-    currentlyPlayingId,
-    handleVideoPlay,
-    toggleDropdown,
-    dropdownItems,
-  } = useShowWatch({
-    inviteId: targetUserId,
-    data: allVideoData,
-    pagination: { skip: allVideoData.length, take: 10, hasMore },
-    customFetchNextPage: async () => {
-      if (!loading && hasMore) await loadMore();
-    },
-  });
-
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     if (!targetUserId) return;
     setRefreshing(true);
     try {
@@ -263,32 +218,47 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
 
       if (freshVideos && Array.isArray(freshVideos)) {
         const items = withMatchEndAt(freshVideos);
-        isMyProfile
-          ? dispatch(RsetProfileVideo(items))
-          : setOtherUserVideos(items);
+        if (isMyProfile) {
+          dispatch(RsetProfileVideo(items));
+        } else {
+          setOtherUserVideos(items);
+        }
       }
     } catch (error) {
       console.error("Profile refresh error:", error);
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [
+    targetUserId,
+    isMyProfile,
+    myUserId,
+    dispatch,
+    refreshMyProfileAttachment,
+  ]);
 
   useEffect(() => {
     refreshMyProfileAttachment();
   }, [refreshMyProfileAttachment]);
 
   useEffect(() => {
-    if (!isMyProfile) setOtherUserVideos([]);
-    if (targetUserId) onRefresh();
-  }, [targetUserId]);
+    if (!targetUserId) return;
+    followService
+      .followingLength(targetUserId)
+      .then((res: any) => dispatch(RsetFollowingLength(res?.data?.data)))
+      .catch(console.error);
+    followService
+      .followerLength(targetUserId)
+      .then((res: any) => dispatch(RsetFollowerLength(res?.data?.data)))
+      .catch(console.error);
+  }, [targetUserId, dispatch]);
 
   useEffect(() => {
     if (needProfileRefresh) {
       onRefresh();
       dispatch(setNeedProfileRefresh(false));
     }
-  }, [needProfileRefresh, dispatch]);
+  }, [needProfileRefresh, dispatch, onRefresh]);
 
   const itsMatchingWithTimer = useMemo(
     () => allVideoData?.some(isMatchActive),
@@ -298,9 +268,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
   useEffect(() => {
     if (!itsMatchingWithTimer) return;
     const timer = setTimeout(() => {
-      if (scrollContainerRef.current) {
-        window.scrollTo({ top: 230, behavior: "smooth" });
-      }
+      window.scrollTo({ top: 230, behavior: "smooth" });
     }, 300);
     return () => clearTimeout(timer);
   }, [itsMatchingWithTimer]);
@@ -315,20 +283,16 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     const handleRemoveLike = (data: { movieId: number }) => {
       setVideoLikes((prev) => ({
         ...prev,
-        [data.movieId]: (prev[data.movieId] || 0) - 1,
+        [data.movieId]: Math.max((prev[data.movieId] || 0) - 1, 0),
       }));
     };
 
-    if (socket?.on) {
-      socket.on("add_liked_response", handleAddLike);
-      socket.on("remove_liked_response", handleRemoveLike);
-    }
+    socket.on("add_liked_response", handleAddLike);
+    socket.on("remove_liked_response", handleRemoveLike);
     return () => {
       stopMatchTimer();
-      if (socket) {
-        socket.off("add_liked_response", handleAddLike);
-        socket.off("remove_liked_response", handleRemoveLike);
-      }
+      socket.off("add_liked_response", handleAddLike);
+      socket.off("remove_liked_response", handleRemoveLike);
     };
   }, []);
 
@@ -348,7 +312,8 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
       },
       { threshold: 0.1 },
     );
-    if (observerTarget.current) observer.observe(observerTarget.current);
+    const el = observerTarget.current;
+    if (el) observer.observe(el);
     return () => observer.disconnect();
   }, [loading, hasMore, loadMore]);
 
@@ -363,7 +328,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     [currentProfile],
   );
 
-  const profileUrl = `${SITE_URL}/${encodeURIComponent(profileUser.userName)}`;
+  const profileUrl = `${SITE_URL}/${encodeURIComponent(profileUser.userName || "")}`;
   const personSchema = {
     "@context": "https://schema.org",
     "@type": "Person",
@@ -374,10 +339,12 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     url: profileUrl,
   };
 
+  const showEmpty = allVideoData?.length === 0 && !loading && !refreshing;
+
   return (
     <main
       ref={scrollContainerRef}
-      className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 w-full"
+      className="flex min-h-screen w-full flex-col bg-gray-50 dark:bg-zinc-950"
       itemScope
       itemType="https://schema.org/ProfilePage"
     >
@@ -387,7 +354,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
           __html: JSON.stringify(personSchema).replace(/</g, "\\u003c"),
         }}
       />
-      <header className="flex flex-col gap-4 p-2 bg-white dark:bg-gray-800 shadow-sm z-10">
+      <header className="z-10 flex flex-col gap-4 bg-white p-2 shadow-sm dark:bg-zinc-900">
         <ProfileHeader
           userImage={findImg}
           userName={profileUser.userName}
@@ -409,24 +376,21 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
         />
       </header>
 
-      <section className="flex-1 w-full max-w-lg mx-auto py-4">
-        {allVideoData?.length === 0 && !loading ? (
-          <article
-            className="flex flex-col items-center justify-center mt-16 mx-5 px-6 py-9 shadow-lg rounded-2xl bg-white dark:bg-gray-800 cursor-pointer hover:scale-95 transition-transform"
-            onClick={() => isMyProfile && console.log("Open Media Picker")}
-          >
-            <div className="w-20 h-20 rounded-full border border-indigo-500 flex items-center justify-center shadow-md bg-indigo-50 dark:bg-indigo-900/20">
+      <section className="mx-auto w-full max-w-lg flex-1 py-4">
+        {showEmpty ? (
+          <article className="mx-5 mt-16 flex cursor-pointer flex-col items-center justify-center rounded-2xl bg-white px-6 py-9 shadow-lg transition-transform hover:scale-95 dark:bg-zinc-900">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full border border-indigo-500 bg-indigo-50 shadow-md dark:bg-indigo-900/20">
               <Icon
                 name="locationSearching"
                 fontSize="large"
                 className="text-indigo-600"
               />
             </div>
-            <div className="flex flex-col items-center gap-2 px-2 mt-4">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">
+            <div className="mt-4 flex flex-col items-center gap-2 px-2">
+              <h2 className="text-lg font-bold tracking-wide text-gray-800 dark:text-white">
                 No Matches Yet
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 text-center leading-relaxed">
+              <p className="text-center text-sm leading-relaxed text-gray-500 dark:text-gray-400">
                 {isMyProfile
                   ? "You haven't uploaded any videos yet. Get started right now!"
                   : "This user currently has no videos to display."}
@@ -434,18 +398,13 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
             </div>
           </article>
         ) : (
-          <div className="flex flex-col gap-4">
-          </div>
+          <VideosProfile
+            match={allVideoData}
+            videoLikes={videoLikes}
+            isLoading={loading || refreshing}
+            loadingRef={observerTarget}
+          />
         )}
-
-        <div
-          ref={observerTarget}
-          className="h-16 flex items-center justify-center py-4"
-        >
-          {loading && (
-            <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          )}
-        </div>
       </section>
     </main>
   );

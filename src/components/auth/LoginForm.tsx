@@ -22,6 +22,7 @@ import { userService } from "@/services/user.service";
 import { authService } from "@/services/auth.service";
 import { categoryService } from "@/services/category.service";
 import { followService } from "@/services/follow.service";
+import { syncPushToken } from "@/services/notify.service";
 
 const REMEMBER_KEY = "rememberedUsername";
 const LOCK_KEY = "loginLockUntil";
@@ -161,6 +162,7 @@ const LoginForm: FC = () => {
     if (rememberMe) localStorage.setItem(REMEMBER_KEY, username.trim());
     else localStorage.removeItem(REMEMBER_KEY);
 
+    void syncPushToken(userId);
     router.replace("/watch");
   };
 
@@ -276,14 +278,14 @@ const LoginForm: FC = () => {
   };
 
   const inputClass = (hasError?: string) =>
-    `w-full rounded-lg border px-4 py-2.5 text-sm transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 ${hasError
+    `w-full rounded-lg border px-4 py-2.5 text-sm transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 dark:bg-zinc-900 dark:text-gray-100 dark:disabled:bg-zinc-800 ${hasError
       ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-      : "border-slate-300 focus:border-blue-500 focus:ring-blue-500/20"
+      : "border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 dark:border-zinc-700"
     }`;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-900/5">
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4 dark:bg-zinc-950">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-900/5 dark:bg-zinc-900 dark:ring-white/10">
         <div className="mb-8 flex flex-col items-center">
           <BrandLogo
             size={64}
@@ -292,14 +294,14 @@ const LoginForm: FC = () => {
             imageClassName="shadow-md ring-2 ring-blue-500/20"
             nameClassName="whitespace-nowrap text-2xl font-bold tracking-tight text-slate-800"
           />
-          <p className="text-sm text-slate-500">Sign in to your account</p>
+          <p className="text-sm text-slate-500 dark:text-gray-400">Sign in to your account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label
               htmlFor="username"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
+              className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-gray-300"
             >
               Username
             </label>
@@ -328,7 +330,7 @@ const LoginForm: FC = () => {
           <div>
             <label
               htmlFor="password"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
+              className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-gray-300"
             >
               Password
             </label>
@@ -420,7 +422,7 @@ const LoginForm: FC = () => {
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl dark:bg-zinc-900"
             onClick={(e) => e.stopPropagation()}
           >
             <h2
@@ -429,7 +431,7 @@ const LoginForm: FC = () => {
             >
               {modalTitle}
             </h2>
-            <p className="mt-2 text-sm leading-5 text-slate-600">{modalMessage}</p>
+            <p className="mt-2 text-sm leading-5 text-slate-600 dark:text-gray-300">{modalMessage}</p>
             <div className="mt-5 flex items-center justify-end gap-3">
               {showResend && (
                 <Button

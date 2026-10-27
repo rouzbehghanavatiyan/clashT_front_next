@@ -98,17 +98,17 @@ const CommentRow = memo(
           onClickDisable
         />
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <div className="rounded-2xl border border-black/10 bg-white px-3 py-2">
-            <p className="text-[13px] font-bold text-neutral-900">
+          <div className="rounded-2xl border border-black/10 bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900">
+            <p className="text-[13px] font-bold text-neutral-900 dark:text-gray-100">
               {item?.userName || "Anonymous"}
             </p>
-            <p className="text-sm leading-5 text-neutral-900">{item?.desc}</p>
+            <p className="text-sm leading-5 text-neutral-900 dark:text-gray-200">{item?.desc}</p>
           </div>
           <div className="flex items-center px-1.5">
             <button
               type="button"
               onClick={() => onReply(item?.id, item?.userName)}
-              className="text-xs font-bold text-neutral-500 hover:text-neutral-800"
+              className="text-xs font-bold text-neutral-500 hover:text-neutral-800 dark:text-gray-400 dark:hover:text-gray-200"
             >
               Reply
             </button>
@@ -139,11 +139,11 @@ const CommentRow = memo(
                     onClickDisable
                   />
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <div className="rounded-[14px] border border-black/10 bg-white px-2.5 py-1.5">
-                      <p className="text-xs font-bold text-neutral-900">
+                    <div className="rounded-[14px] border border-black/10 bg-white px-2.5 py-1.5 dark:border-white/10 dark:bg-zinc-900">
+                      <p className="text-xs font-bold text-neutral-900 dark:text-gray-100">
                         {reply?.userName || "Anonymous"}
                       </p>
-                      <p className="text-[13px] leading-[18px] text-neutral-900">
+                      <p className="text-[13px] leading-[18px] text-neutral-900 dark:text-gray-200">
                         {reply?.desc}
                       </p>
                     </div>
@@ -392,13 +392,13 @@ const Comments: React.FC<CommentsProps> = ({
         }`}
       />
       <div
-        className="absolute inset-x-0 bottom-0 flex max-h-[78vh] flex-col overflow-hidden rounded-t-3xl bg-[#fafafa] transition-transform duration-200 ease-out"
+        className="absolute inset-x-0 bottom-0 flex max-h-[78vh] flex-col overflow-hidden rounded-t-3xl bg-[#fafafa] transition-transform duration-200 ease-out dark:bg-zinc-950"
         style={{
           height: `${SHEET_VH}vh`,
           transform: `translateY(${sheetOffset}px)`,
         }}
       >
-        <div className="shrink-0 border-b border-black/10 bg-white pt-2 pb-3">
+        <div className="shrink-0 border-b border-black/10 bg-white pt-2 pb-3 dark:border-white/10 dark:bg-zinc-900">
           <div
             className="flex cursor-grab justify-center pb-2.5 active:cursor-grabbing"
             onPointerDown={onHandlePointerDown}
@@ -406,13 +406,13 @@ const Comments: React.FC<CommentsProps> = ({
             onPointerUp={onHandlePointerUp}
             onPointerCancel={onHandlePointerUp}
           >
-            <div className="h-1 w-10 rounded-full bg-neutral-500/35" />
+            <div className="h-1 w-10 rounded-full bg-neutral-500/35 dark:bg-white/25" />
           </div>
           <div className="flex items-center justify-between px-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-[17px] font-bold text-neutral-900">Comments</h2>
+              <h2 className="text-[17px] font-bold text-neutral-900 dark:text-gray-100">Comments</h2>
               {totalCount > 0 && (
-                <span className="rounded-[10px] border border-black/10 bg-[#fafafa] px-2 py-0.5 text-xs font-bold text-neutral-500">
+                <span className="rounded-[10px] border border-black/10 bg-[#fafafa] px-2 py-0.5 text-xs font-bold text-neutral-500 dark:border-white/10 dark:bg-zinc-950 dark:text-gray-400">
                   {totalCount}
                 </span>
               )}
@@ -421,7 +421,7 @@ const Comments: React.FC<CommentsProps> = ({
               type="button"
               aria-label="Close"
               onClick={handleClose}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#fafafa]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#fafafa] dark:bg-zinc-800"
             >
               <Icon name="Close" size={18} className="text-neutral-500" />
             </button>
@@ -462,8 +462,8 @@ const Comments: React.FC<CommentsProps> = ({
               >
                 <Icon name="ChatBubbleOutline" size={32} sx={{ color: ACCENT }} />
               </div>
-              <p className="text-base font-bold text-neutral-900">No comments yet</p>
-              <p className="text-center text-[13px] text-neutral-500">
+              <p className="text-base font-bold text-neutral-900 dark:text-gray-100">No comments yet</p>
+              <p className="text-center text-[13px] text-neutral-500 dark:text-gray-400">
                 Be the first to share your thoughts.
               </p>
               <button
@@ -478,17 +478,17 @@ const Comments: React.FC<CommentsProps> = ({
           )}
         </div>
 
-        <div className="shrink-0 border-t border-black/10 bg-white pb-[max(0px,env(safe-area-inset-bottom))]">
+        <div className="shrink-0 border-t border-black/10 bg-white pb-[max(0px,env(safe-area-inset-bottom))] dark:border-white/10 dark:bg-zinc-900">
           {answerData && (
-            <div className="flex items-center justify-between bg-[#fafafa] px-4 py-2">
+            <div className="flex items-center justify-between bg-[#fafafa] px-4 py-2 dark:bg-zinc-950">
               <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 <span
                   className="h-[22px] w-[3px] rounded-sm"
                   style={{ backgroundColor: ACCENT }}
                 />
-                <p className="truncate text-[12.5px] text-neutral-500">
+                <p className="truncate text-[12.5px] text-neutral-500 dark:text-gray-400">
                   Replying to{" "}
-                  <span className="font-bold text-neutral-900">
+                  <span className="font-bold text-neutral-900 dark:text-gray-100">
                     @{answerData?.userName || "User"}
                   </span>
                 </p>
@@ -517,11 +517,9 @@ const Comments: React.FC<CommentsProps> = ({
               />
             </div>
             <div
-              className="flex flex-1 items-end gap-1.5 rounded-[22px] border py-1 pr-1.5 pl-3.5"
-              style={{
-                borderColor: isFocused ? ACCENT : "rgba(0,0,0,0.12)",
-                backgroundColor: "#fafafa",
-              }}
+              className={`flex flex-1 items-end gap-1.5 rounded-[22px] border bg-[#fafafa] py-1 pr-1.5 pl-3.5 dark:bg-zinc-950 ${
+                isFocused ? "border-indigo-600" : "border-black/10 dark:border-white/10"
+              }`}
             >
               <textarea
                 ref={inputRef}
@@ -544,7 +542,7 @@ const Comments: React.FC<CommentsProps> = ({
                     ? `Write a reply to @${answerData?.userName || "comment"}...`
                     : "Add a comment..."
                 }
-                className="max-h-[100px] min-h-[32px] flex-1 resize-none bg-transparent py-1.5 text-sm text-neutral-900 outline-none placeholder:text-neutral-500"
+                className="max-h-[100px] min-h-[32px] flex-1 resize-none bg-transparent py-1.5 text-sm text-neutral-900 outline-none placeholder:text-neutral-500 dark:text-gray-100 dark:placeholder:text-gray-500"
               />
               <button
                 type="button"

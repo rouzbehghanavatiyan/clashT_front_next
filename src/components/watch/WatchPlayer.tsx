@@ -126,7 +126,7 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
   return (
     <section
       aria-label="Match videos"
-      className="relative w-full bg-zinc-950 flex flex-col h-svh md:h-[calc(100vh-65px)]"
+      className="relative w-full bg-black flex flex-col h-svh md:h-[calc(100vh-65px)]"
     >
       <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2 md:hidden">
         <button
@@ -155,6 +155,7 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
           direction="vertical"
           slidesPerView={1}
           mousewheel={true}
+          noSwipingClass="swiper-no-swiping"
           onSlideChange={handleSlideChange}
           modules={[Mousewheel]}
           className="mySwiper w-full h-full"

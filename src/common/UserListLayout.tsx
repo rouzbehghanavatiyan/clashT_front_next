@@ -6,7 +6,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import CircularProgress from "@mui/material/CircularProgress";
 import ImageRank from "@/components/ImageRank";
 import Follows from "@/components/Follows";
-import StringHelpers from "@/utils/StringHelpers";
+import { getImageUrl } from "@/utils/fileHelper";
 
 interface UserListLayoutProps {
   title?: string;
@@ -27,6 +27,7 @@ interface UserListLayoutProps {
   onRefresh?: () => void;
   keyExtractor?: (item: any, index: number) => string;
   emptyActionTitle?: string;
+  ListEmptyComponent?: React.ReactNode | (() => React.ReactNode);
 }
 
 const getUserId = (user: any) =>
@@ -55,6 +56,7 @@ export default function UserListLayout({
   onRefresh,
   keyExtractor,
   emptyActionTitle = "Refresh",
+  ListEmptyComponent,
 }: UserListLayoutProps) {
   const router = useRouter();
 
@@ -84,7 +86,7 @@ export default function UserListLayout({
   };
 
   return (
-    <div className="flex h-full min-h-[60vh] flex-col bg-white">
+    <div className="flex h-full min-h-[60vh] flex-col bg-white dark:bg-zinc-950">
       {title ? (
         <div className="flex items-center gap-2 px-4 py-3 md:hidden">
           {onBack && (
@@ -92,12 +94,12 @@ export default function UserListLayout({
               type="button"
               onClick={onBack}
               aria-label="Go back"
-              className="rounded-full p-1.5 text-gray-700 hover:bg-gray-100"
+              className="rounded-full p-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-800"
             >
               ←
             </button>
           )}
-          <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h1>
         </div>
       ) : null}
 
@@ -106,42 +108,48 @@ export default function UserListLayout({
           <CircularProgress size={32} />
         </div>
       ) : data.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-4">
-          <p className="text-base font-semibold text-gray-500">{emptyMessage}</p>
-          {onRefresh && (
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={refreshing}
-              className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-75"
-            >
-              {refreshing ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <>
-                  <RefreshIcon sx={{ fontSize: 18 }} />
-                  {emptyActionTitle}
-                </>
-              )}
-            </button>
-          )}
-        </div>
+        ListEmptyComponent ? (
+          typeof ListEmptyComponent === "function" ? (
+            ListEmptyComponent()
+          ) : (
+            ListEmptyComponent
+          )
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-4">
+            <p className="text-base font-semibold text-gray-500 dark:text-gray-400">{emptyMessage}</p>
+            {onRefresh && (
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={refreshing}
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-75"
+              >
+                {refreshing ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <>
+                    <RefreshIcon sx={{ fontSize: 18 }} />
+                    {emptyActionTitle}
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )
       ) : (
         <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
           {data.map((user, index) => {
             const userId = getUserId(user);
             const userName =
               user?.userName || user?.userNameSender || "Unknown User";
-            const image =
-              StringHelpers.getProfile(user?.attachment || user?.profile) ||
-              "";
+            const image = getImageUrl(user) || "";
             const followed = isFollowed ? isFollowed(userId) : false;
             const key = (keyExtractor ?? defaultKeyExtractor)(user, index);
 
             return (
               <div
                 key={key}
-                className="flex w-full items-center justify-between border-b border-gray-100 bg-white px-4 py-3"
+                className="flex w-full items-center justify-between border-b border-gray-100 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950"
               >
                 <button
                   type="button"

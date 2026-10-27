@@ -76,7 +76,7 @@ const OptionTop: React.FC<any> = ({
   };
 
   return (
-    <div className="absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/70 via-black/35 to-transparent p-2 pb-7">
+    <div className="absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-zinc-700/45 via-zinc-600/20 to-transparent p-2 pb-7">
       <div className="grid grid-cols-9 items-center w-full">
         <div className="flex col-span-5 justify-start">
           <ImageRank
@@ -93,7 +93,6 @@ const OptionTop: React.FC<any> = ({
             <Follows
               title={localIsFollowed ? "Unfollow" : "Follow"}
               onFollowClick={() => handleFallowClick(video, positionVideo)}
-              bgColor="red"
             />
           )}
         </div>
@@ -125,12 +124,13 @@ const OptionTop: React.FC<any> = ({
               buttonIcon={
                 <MoreVertIcon
                   className="text-white font35 cursor-pointer"
-                  onClick={() =>
-                    toggleDropdown(positionVideo ? "top" : "bottom")
-                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleDropdown(positionVideo);
+                  }}
                 />
               }
-              items={dropdownItems(video)}
+              items={dropdownItems(video, positionVideo, userInfo)}
               position="right"
               className="ml-4"
             />

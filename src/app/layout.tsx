@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { SessionRestorer } from "@/services/SessionRestorer";
 import PwaRegister from "@/components/PwaRegister";
 import { SITE_DESCRIPTION, SITE_LOGO, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -97,8 +98,11 @@ export default function RootLayout({
       className={`${plusJakarta.variable} ${vazirmatn.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+      </head>
       <body
-        className={`${plusJakarta.className} antialiased`}
+        className={`${plusJakarta.className} antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
         <Providers>

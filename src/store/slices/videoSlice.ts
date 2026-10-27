@@ -7,6 +7,7 @@ import {
 } from "@/components/TimerForFindMatch";
 import { socket } from "@/lib/socket";
 import { attachmentService } from "@/services/attachment.service";
+import { sendUserNotif } from "@/services/notify.service";
 import { authService } from "@/services/auth.service";
 import {
   cancelPendingInvite,
@@ -235,6 +236,7 @@ export const uploadFullProcessThunk = createAsyncThunk(
       console.log("Test rerender from: video sliceee");
       const inviteRes = await attachmentService.addInvite(requestData);
       const inviteData = inviteRes?.data?.data;
+      console.log("inviteRes", inviteRes?.data);
       const pendingInviteId = Number(inviteData?.id);
       dispatch(updateMovieData({ inviteId: pendingInviteId || null }));
       if (pendingInviteId) setPendingInviteId(pendingInviteId);
@@ -254,15 +256,19 @@ export const uploadFullProcessThunk = createAsyncThunk(
       const notifyMatchedUser = async (rawReceiverId: any) => {
         const receiverUserId = Number(rawReceiverId);
         if (!receiverUserId || receiverUserId === currentUserId) {
+          console.warn(
+            "Could not resolve receiver userId for match notification",
+            rawReceiverId,
+          );
           return;
         }
         try {
-          // const res = await attachmentService.sendUserNotif({
-          //   userId: receiverUserId,
-          //   message: "A match has been found for your video",
-          // });
+          await sendUserNotif({
+            userId: receiverUserId,
+            message: "A match has been found for your video",
+          });
         } catch (error) {
-          console.log("❌ Error sending match notification", error);
+          console.log("Error sending match notification", error);
         }
       };
 
@@ -276,7 +282,7 @@ export const uploadFullProcessThunk = createAsyncThunk(
             ? Number(data?.userId)
             : Number(data?.senderUserId);
 
-        // await attachmentService.notifyMatchedUser(receiverUserId);
+        await notifyMatchedUser(receiverUserId);
 
         router.replace("/profile");
       };
@@ -287,7 +293,7 @@ export const uploadFullProcessThunk = createAsyncThunk(
         keepMatchedInvite();
         dispatch(setWaitingForMatch(false));
         dispatch(RsetShowTimerButtn(false));
-        // await attachmentService.notifyMatchedUser(inviteData?.userId);
+        await notifyMatchedUser(inviteData?.userId);
         router.replace("/profile");
       } else {
         startMatchTimer(() => {

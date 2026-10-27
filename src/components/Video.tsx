@@ -18,6 +18,18 @@ function playSafely(el: HTMLMediaElement | null) {
   }
 }
 
+function getMediaElement(
+  ref: React.RefObject<HTMLVideoElement | null>,
+): HTMLMediaElement | null {
+  const el = ref.current as any;
+  if (!el) return null;
+  if (typeof HTMLMediaElement !== "undefined" && el instanceof HTMLMediaElement) {
+    return el;
+  }
+  const nested = el.querySelector?.("video, audio");
+  return nested instanceof HTMLMediaElement ? nested : null;
+}
+
 interface VideoProps {
   loop?: boolean;
   playing?: boolean;
@@ -32,13 +44,6 @@ interface VideoProps {
   height?: string | number;
   onExitFullscreen?: () => void;
 }
-
-const formatTime = (seconds: number) => {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-};
 
 const Video: React.FC<VideoProps> = ({
   loop,
@@ -55,7 +60,9 @@ const Video: React.FC<VideoProps> = ({
   onExitFullscreen,
 }) => {
   const playerRef = useRef<HTMLVideoElement | null>(null);
+  const seekBarRef = useRef<HTMLDivElement | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seekingRef = useRef(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const isMuted = muted || !soundEnabled;
   const [played, setPlayed] = useState(0);
@@ -86,7 +93,7 @@ const Video: React.FC<VideoProps> = ({
   }, [url]);
 
   useLayoutEffect(() => {
-    const el = playerRef.current;
+    const el = getMediaElement(playerRef);
     if (!el) return;
     el.muted = isMuted;
     el.defaultMuted = isMuted;
@@ -113,17 +120,60 @@ const Video: React.FC<VideoProps> = ({
   };
 
   const syncDuration = () => {
-    const el = playerRef.current;
+    const el = getMediaElement(playerRef);
     if (el?.duration && Number.isFinite(el.duration)) {
       setDuration(el.duration);
     }
   };
 
   const handleTimeUpdate = () => {
-    const el = playerRef.current;
-    if (!el?.duration) return;
+    if (seekingRef.current) return;
+    const el = getMediaElement(playerRef);
+    if (!el?.duration || !Number.isFinite(el.duration)) return;
     setPlayed(el.currentTime / el.duration);
     setDuration(el.duration);
+  };
+
+  const seekToFraction = (fraction: number) => {
+    const next = Math.min(1, Math.max(0, fraction));
+    setPlayed(next);
+    const el = getMediaElement(playerRef);
+    if (!el?.duration || !Number.isFinite(el.duration)) return;
+    el.currentTime = next * el.duration;
+  };
+
+  const fractionFromClientX = (clientX: number) => {
+    const bar = seekBarRef.current;
+    if (!bar) return played;
+    const rect = bar.getBoundingClientRect();
+    if (rect.width <= 0) return played;
+    return (clientX - rect.left) / rect.width;
+  };
+
+  const beginSeek = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    seekingRef.current = true;
+    clearHideTimer();
+    setShowControls(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    seekToFraction(fractionFromClientX(e.clientX));
+  };
+
+  const moveSeek = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!seekingRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    seekToFraction(fractionFromClientX(e.clientX));
+  };
+
+  const endSeek = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!seekingRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    seekToFraction(fractionFromClientX(e.clientX));
+    seekingRef.current = false;
+    if (playing) scheduleHide();
   };
 
   const currentTime = played * (duration || 0);
@@ -162,7 +212,7 @@ const Video: React.FC<VideoProps> = ({
           autoPlay={playing && isMuted}
           onEnded={onEnded}
           onError={() => {
-            const el = playerRef.current;
+            const el = getMediaElement(playerRef);
             if (!playing || !el) return;
             el.muted = true;
             playSafely(el);
@@ -171,7 +221,7 @@ const Video: React.FC<VideoProps> = ({
             setReady(true);
             setBuffering(false);
             syncDuration();
-            const el = playerRef.current;
+            const el = getMediaElement(playerRef);
             if (playing && el) {
               el.muted = isMuted;
               playSafely(el);
@@ -190,7 +240,7 @@ const Video: React.FC<VideoProps> = ({
       </div>
 
       <div
-        className={`pointer-events-none absolute inset-0 bg-black/35 transition-opacity duration-300 ${
+        className={`pointer-events-none absolute inset-0 bg-black/10 transition-opacity duration-300 dark:bg-black/35 ${
           playing && ready ? "opacity-0" : "opacity-100"
         }`}
       />
@@ -222,17 +272,30 @@ const Video: React.FC<VideoProps> = ({
       />
 
       <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[4] px-3 pb-2 pt-6 transition-opacity duration-300 ${
-          showControls ? "opacity-100" : "opacity-0"
+        className={`absolute inset-x-0 bottom-0 z-[20] px-3 pb-2 pt-4 transition-opacity duration-300 ${
+          showControls ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium tabular-nums text-white/40">
-          <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration)}</span>
-        </div>
         <div
-          className="video-seek"
+          ref={seekBarRef}
+          role="slider"
+          tabIndex={0}
+          aria-label="Seek"
+          aria-valuemin={0}
+          aria-valuemax={Math.round(duration) || 0}
+          aria-valuenow={Math.round(currentTime)}
+          className="video-seek swiper-no-swiping"
           style={{ ["--played" as string]: `${played * 100}%` }}
+          onPointerDown={beginSeek}
+          onPointerMove={moveSeek}
+          onPointerUp={endSeek}
+          onPointerCancel={endSeek}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight") seekToFraction(played + 0.05);
+            if (e.key === "ArrowLeft") seekToFraction(played - 0.05);
+          }}
         />
       </div>
     </div>

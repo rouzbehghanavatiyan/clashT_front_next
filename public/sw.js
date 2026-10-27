@@ -1,4 +1,4 @@
-const CACHE_VERSION = "clash-talent-v3";
+const CACHE_VERSION = "clash-talent-v4";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 const OFFLINE_URL = "/offline";
@@ -90,6 +90,60 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       });
+    }),
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let payload = {
+    title: "Clash Talent",
+    body: "You have a new notification",
+    data: {},
+  };
+  try {
+    if (event.data) {
+      const parsed = event.data.json();
+      payload = {
+        title: parsed.title || parsed.notification?.title || payload.title,
+        body:
+          parsed.body ||
+          parsed.message ||
+          parsed.notification?.body ||
+          payload.body,
+        data: parsed.data || parsed,
+      };
+    }
+  } catch {
+    try {
+      payload.body = event.data?.text() || payload.body;
+    } catch {
+      // ignore
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-48.png",
+      data: payload.data,
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification?.data?.url || "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ("focus" in client) {
+          client.focus();
+          if ("navigate" in client && targetUrl) client.navigate(targetUrl);
+          return;
+        }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
     }),
   );
 });

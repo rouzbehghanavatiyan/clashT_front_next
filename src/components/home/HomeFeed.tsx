@@ -21,16 +21,18 @@ const HomeFeed: React.FC = () => {
     async (params: {
       skip: number;
       take: number;
-      inviteId: string | undefined;
+      inviteId: string | number | undefined;
     }) => {
-      if (!params.inviteId) return [];
+      const userId = params.inviteId ?? userIdLogin;
+      if (!userId) return [];
       try {
         const res = await attachmentService.followerAttachmentList({
           skip: params.skip,
-          take: PAGE_SIZE,
-          userIdLogin,
+          take: params.take || PAGE_SIZE,
+          userIdLogin: userId,
         });
-        return res?.data?.data || [];
+        const payload = res?.data?.data ?? res?.data ?? [];
+        return Array.isArray(payload) ? payload : [];
       } catch (error) {
         console.error("Error fetching home feed:", error);
         return [];
@@ -57,7 +59,6 @@ const HomeFeed: React.FC = () => {
     pagination,
     customFetchNextPage,
     useRedux: false,
-    customCleanup: () => { },
   });
 
   const waitingForUser = !userIdLogin;
@@ -66,7 +67,7 @@ const HomeFeed: React.FC = () => {
   return (
     <section
       aria-label="Home feed"
-      className="relative mt-0 flex h-[calc(100svh-32px)] w-full flex-col bg-zinc-950 md:h-[calc(100vh-65px)]"
+      className="relative mt-0 flex h-[calc(100svh-44px)] w-full flex-col bg-black md:h-[calc(100vh-65px)]"
     >
       {showInitialSkeleton ? (
         <HomeSlideSkeleton />
@@ -75,6 +76,7 @@ const HomeFeed: React.FC = () => {
           direction="vertical"
           slidesPerView={1}
           mousewheel={true}
+          noSwipingClass="swiper-no-swiping"
           onSlideChange={handleSlideChange}
           modules={[Mousewheel]}
           onInit={initializeSwiper}
@@ -107,7 +109,7 @@ const HomeFeed: React.FC = () => {
         </Swiper>
       )}
       {!showInitialSkeleton && !isLoading && (!data || data.length === 0) && (
-        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/80">
+        <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-sm text-gray-500 dark:text-gray-300">
           Follow creators to see matchups in your home feed.
         </div>
       )}

@@ -106,7 +106,7 @@ export function pageTitleFromPath(pathname: string) {
   if (pathname.startsWith("/watch")) return "Watch";
   if (pathname.startsWith("/create")) return "Create";
   if (pathname.startsWith("/top") || pathname.startsWith("/best")) return "Top";
-  if (pathname.startsWith("/chat")) return "Chat";
+  if (pathname.startsWith("/chat")) return "Messages";
   if (pathname.startsWith("/settings")) return "Settings";
   if (pathname.startsWith("/support")) return "Support & Contact";
   if (pathname.startsWith("/block-list")) return "Block List";

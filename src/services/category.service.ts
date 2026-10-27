@@ -1,9 +1,17 @@
 import { api } from "./axios.config";
 
+export const subCategoryList = async (
+  categoryId: number | string | null | undefined,
+) => {
+  return await api.get("/subCategoryList", {
+    params: { categoryId },
+  });
+};
+
 export const categoryService = {
   list: () => api.get("/categoryList"),
-  subCategories: (categoryId: number) =>
-    api.get(`/subCategoryList?categoryId=${categoryId}`),
+  subCategoryList,
+  subCategories: subCategoryList,
   subSubCategories: (subCatId: number) =>
     api.get(`/subSubCategoryList?subCategoryId=${subCatId}`),
 };

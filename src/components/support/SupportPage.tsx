@@ -86,18 +86,18 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-gray-50 text-gray-900">
+    <div className="flex h-full flex-col overflow-hidden bg-gray-50 text-gray-900 dark:bg-zinc-950 dark:text-gray-100">
       <main className="mx-auto flex h-full w-full max-w-2xl flex-1 flex-col gap-3 overflow-hidden p-4">
         <h1 className="text-lg font-semibold md:hidden">Support & Contact</h1>
 
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="rounded-full bg-gray-100 p-2 text-blue-600">
+            <div className="rounded-full bg-gray-100 p-2 text-blue-600 dark:bg-zinc-800 dark:text-blue-400">
               <MailOutlineIcon sx={{ fontSize: 20 }} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-gray-500">Official Support Email</p>
-              <p className="truncate text-sm font-semibold text-gray-900">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Official Support Email</p>
+              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {SUPPORT_EMAIL}
               </p>
             </div>
@@ -106,15 +106,15 @@ export default function SupportPage() {
             type="button"
             onClick={handleCopyEmail}
             aria-label="Copy support email"
-            className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+            className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
           >
             <ContentCopyIcon sx={{ fontSize: 18 }} />
           </button>
         </div>
 
         <div>
-          <h2 className="text-base font-bold text-gray-900">Send us a Message</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Send us a Message</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Fill out the form below and we&apos;ll get back to you as soon as
             possible.
           </p>
@@ -123,7 +123,7 @@ export default function SupportPage() {
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="support-subject"
-            className="text-xs font-semibold text-gray-700"
+            className="text-xs font-semibold text-gray-700 dark:text-gray-300"
           >
             Subject
           </label>
@@ -133,7 +133,7 @@ export default function SupportPage() {
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="e.g. Account issue, Feedback..."
-            className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-indigo-600"
+            className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-100"
           />
         </div>
 
@@ -141,14 +141,14 @@ export default function SupportPage() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Write your message or issue description here..."
-          className="h-[130px] w-full resize-none rounded-xl border border-gray-200 bg-white p-3 text-sm outline-none transition-colors focus:border-indigo-600"
+          className="h-[130px] w-full resize-none rounded-xl border border-gray-200 bg-white p-3 text-sm outline-none transition-colors focus:border-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-100"
         />
 
         <div className="mt-auto flex gap-3 pt-2">
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex-1 rounded-xl border border-gray-300 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100"
+            className="flex-1 rounded-xl border border-gray-300 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-zinc-700 dark:text-gray-200 dark:hover:bg-zinc-800"
           >
             Cancel
           </button>
@@ -170,7 +170,7 @@ export default function SupportPage() {
           onClick={() => setFeedbackOpen(false)}
         >
           <div
-            className="flex w-full max-w-xs flex-col items-center gap-3.5 rounded-2xl bg-white p-5 text-center shadow-xl"
+            className="flex w-full max-w-xs flex-col items-center gap-3.5 rounded-2xl bg-white p-5 text-center shadow-xl dark:bg-zinc-900"
             onClick={(e) => e.stopPropagation()}
           >
             {isSuccess ? (
@@ -178,10 +178,10 @@ export default function SupportPage() {
             ) : (
               <ErrorOutlineIcon sx={{ fontSize: 40, color: "#d32f2f" }} />
             )}
-            <h3 className="text-base font-extrabold text-gray-900">
+            <h3 className="text-base font-extrabold text-gray-900 dark:text-gray-100">
               {feedbackTitle}
             </h3>
-            <p className="text-sm text-gray-500">{feedbackMessage}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{feedbackMessage}</p>
             <button
               type="button"
               onClick={() => setFeedbackOpen(false)}
