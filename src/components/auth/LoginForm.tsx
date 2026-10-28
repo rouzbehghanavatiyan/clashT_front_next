@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { isAxiosError } from "axios";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
+import CloseIcon from "@mui/icons-material/Close";
 import { BrandLogo } from "@/components/BrandLogo";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
@@ -23,6 +25,7 @@ import { authService } from "@/services/auth.service";
 import { categoryService } from "@/services/category.service";
 import { followService } from "@/services/follow.service";
 import { syncPushToken } from "@/services/notify.service";
+import SupportForm from "@/components/support/SupportForm";
 
 const REMEMBER_KEY = "rememberedUsername";
 const LOCK_KEY = "loginLockUntil";
@@ -59,6 +62,7 @@ const LoginForm: FC = () => {
   const [modalIsError, setModalIsError] = useState(true);
   const [showResend, setShowResend] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(REMEMBER_KEY) ?? "";
@@ -386,7 +390,7 @@ const LoginForm: FC = () => {
               <span>Remember Me</span>
             </label>
             <Link
-              href="/forgot-password"
+              href="/forgotPassword"
               className="font-medium text-blue-600 transition hover:text-blue-700 hover:underline"
             >
               Forgot password?
@@ -413,8 +417,62 @@ const LoginForm: FC = () => {
               Sign up
             </Link>
           </p>
+
+          <div className="relative py-1">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-zinc-700" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-white px-3 text-xs text-slate-400 dark:bg-zinc-900">
+                or
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowSupportModal(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:shadow-md dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-200 dark:hover:border-blue-400/40 dark:hover:bg-zinc-800 dark:hover:text-blue-300"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+              <SupportAgentIcon sx={{ fontSize: 18 }} />
+            </span>
+            Contact Support
+          </button>
         </form>
       </div>
+
+      {showSupportModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+          onClick={() => setShowSupportModal(false)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:bg-zinc-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white">
+                  <SupportAgentIcon sx={{ fontSize: 20 }} />
+                </span>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-gray-100">
+                  Support & Contact
+                </h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Close support"
+                onClick={() => setShowSupportModal(false)}
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
+              >
+                <CloseIcon sx={{ fontSize: 20 }} />
+              </button>
+            </div>
+            <SupportForm showCancel={false} />
+          </div>
+        </div>
+      )}
 
       {showErrorModal && (
         <div

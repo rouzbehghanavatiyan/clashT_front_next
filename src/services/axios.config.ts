@@ -3,6 +3,12 @@ import axios, {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
 } from "axios";
+
+declare module "axios" {
+  interface AxiosRequestConfig {
+    skipAuth?: boolean;
+  }
+}
 import { CHAT_API_URL } from "@/lib/env";
 import {
   getAccessToken,
@@ -23,7 +29,10 @@ export const chatApi = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-type RetryConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+type RetryConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  skipAuth?: boolean;
+};
 
 let isRefreshing = false;
 let failedQueue: {
@@ -44,7 +53,9 @@ const redirectToLogin = () => {
 const setupInterceptors = (instance: AxiosInstance) => {
   instance.interceptors.request.use((config) => {
     const token = getAccessToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token && !config.skipAuth) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     if (typeof FormData !== "undefined" && config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     }
@@ -58,6 +69,7 @@ const setupInterceptors = (instance: AxiosInstance) => {
 
       if (
         !originalRequest ||
+        originalRequest.skipAuth ||
         error.response?.status !== 401 ||
         originalRequest._retry
       ) {

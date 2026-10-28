@@ -12,12 +12,15 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 import CircularProgress from "@mui/material/CircularProgress";
 
+import { attachmentService } from "@/services/attachment.service";
 import {
+  addProfile,
   forgotPassword,
   requestChangeEmail,
   userService,
 } from "@/services/user.service";
-import { useAppSelector } from "@/store/reduxHook";
+import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
+import { RsetUserLogin } from "@/store/slices/mainSlice";
 import StringHelpers from "@/utils/StringHelpers";
 
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
@@ -48,14 +51,17 @@ const SectionCard = ({ icon, title, subtitle, children }: SectionCardProps) => (
 
 export default function EditProfilePage() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const userLogin = useAppSelector((state) => state?.main?.userLogin);
+    const userId = userLogin?.user?.id || userLogin?.id;
 
     const [bio, setBio] = useState("");
     const [location, setLocation] = useState("");
     const [mail, setMail] = useState("");
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [avatarError, setAvatarError] = useState(false);
 
     const [resetEmail, setResetEmail] = useState("");
     const [newEmail, setNewEmail] = useState("");
@@ -108,6 +114,16 @@ export default function EditProfilePage() {
         if (file) {
             setSelectedFile(file);
             setSelectedImage(URL.createObjectURL(file));
+            setAvatarError(false);
+        }
+    };
+
+    const refreshProfile = async () => {
+        if (!userId) return;
+        const resProfileAttachment = await userService.profileAttachment(userId);
+        const { status, data } = resProfileAttachment?.data || {};
+        if (status === 0 && data) {
+            dispatch(RsetUserLogin(data));
         }
     };
 
@@ -122,21 +138,42 @@ export default function EditProfilePage() {
 
         try {
             setIsSubmitting(true);
-            const res = await userService.addProfile(postData);
+            const res = await addProfile(postData);
 
-            if (res?.data?.status === 0) {
-                showFeedback(
-                    "Success",
-                    res?.data?.message || "Profile updated successfully.",
-                    true
-                );
-            } else {
+            if (res?.data?.status !== 0) {
                 showFeedback(
                     "Error",
                     res?.data?.message || "Failed to update profile.",
                     false
                 );
+                return;
             }
+
+            if (selectedFile && userId) {
+                const formData = new FormData();
+                formData.append("formFile", selectedFile);
+                formData.append("attachmentId", String(userId));
+                formData.append("attachmentType", "pf");
+                formData.append("attachmentName", "profile");
+
+                const resAttachment = await attachmentService.addAttachment(formData);
+                if (resAttachment?.data?.status !== 0) {
+                    showFeedback(
+                        "Error",
+                        resAttachment?.data?.message || "Profile saved, but image upload failed.",
+                        false
+                    );
+                    return;
+                }
+            }
+
+            await refreshProfile();
+            setSelectedFile(null);
+            showFeedback(
+                "Success",
+                res?.data?.message || "Profile updated successfully.",
+                true
+            );
         } catch (error) {
             console.error("Error updating profile:", error);
             showFeedback(
@@ -229,9 +266,14 @@ export default function EditProfilePage() {
         }
     };
 
-    const avatarSrc =
-        selectedImage ||
-        (userLogin?.profile ? StringHelpers.getProfile(userLogin.profile) : "/default-avatar.png");
+    const profilePhotoUrl = userLogin?.profile
+        ? StringHelpers.getProfile(userLogin.profile)
+        : "";
+    const avatarSrc = selectedImage || profilePhotoUrl;
+    const hasAvatar =
+        Boolean(avatarSrc) &&
+        !avatarSrc.includes("undefined") &&
+        !avatarError;
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 flex flex-col">
@@ -247,16 +289,24 @@ export default function EditProfilePage() {
                     />
                     <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="group relative h-28 w-28 cursor-pointer overflow-hidden rounded-full border-2 border-gray-200 dark:border-zinc-700 shadow-md transition-all hover:opacity-90"
+                        className="group relative flex h-28 w-28 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-gray-200 bg-gray-100 dark:border-zinc-700 dark:bg-zinc-800 shadow-md transition-all hover:opacity-90"
                     >
-                        <Image
-                            src={avatarSrc}
-                            alt="Profile avatar"
-                            fill
-                            sizes="112px"
-                            className="object-cover"
-                            unoptimized={Boolean(selectedImage)}
-                        />
+                        {hasAvatar ? (
+                            <Image
+                                src={avatarSrc}
+                                alt="Profile avatar"
+                                fill
+                                sizes="112px"
+                                className="object-cover"
+                                unoptimized={Boolean(selectedImage)}
+                                onError={() => setAvatarError(true)}
+                            />
+                        ) : (
+                            <PersonOutlineIcon
+                                sx={{ fontSize: 56 }}
+                                className="text-gray-400 dark:text-gray-500"
+                            />
+                        )}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                             <CameraAltOutlinedIcon sx={{ color: "#fff", fontSize: 28 }} />
                         </div>

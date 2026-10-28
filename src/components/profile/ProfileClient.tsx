@@ -35,6 +35,8 @@ interface InitialUserData {
   userName: string;
   fullName?: string;
   bio?: string;
+  location?: string;
+  mail?: string;
   avatarUrl?: string;
   profile?: any;
   score?: number;
@@ -60,6 +62,8 @@ function mapProfilePayload(d: any): InitialUserData {
     userName: d?.user?.userName ?? d?.userName,
     fullName: d?.fullName || d?.user?.userName || d?.userName,
     bio: d?.bio ?? "",
+    location: d?.location ?? "",
+    mail: d?.mail ?? "",
     profile: attachment,
     avatarUrl,
     score: d?.score ?? 0,

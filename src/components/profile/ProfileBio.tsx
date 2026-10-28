@@ -115,9 +115,16 @@ const ProfileBio: React.FC<ProfileBioProps> = ({
   const activeBio = fetchedBioData?.bio ?? userLogin?.bio;
   const activeLocation = fetchedBioData?.location ?? userLogin?.location;
   const activeMail = fetchedBioData?.mail ?? userLogin?.mail;
-
   const hasProfileInfo = Boolean(activeBio || activeLocation || activeMail);
-  const shouldShowDetails = hasProfileInfo || isFetched;
+
+  const handleOpenLink = (url?: string | null) => {
+    if (!url) return;
+    const trimmed = url.trim();
+    const formattedUrl = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
+    window.open(formattedUrl, "_blank", "noopener,noreferrer");
+  };
 
   const getProfileUser = async () => {
     const targetUserId =
@@ -126,9 +133,9 @@ const ProfileBio: React.FC<ProfileBioProps> = ({
     try {
       setLoadingProfile(true);
       const res = await userService.showProfileByUser(targetUserId);
-      const resData = res?.data?.data || res?.data || res;
-      if (resData) {
-        setFetchedBioData(resData);
+      const resolvedData = res?.data?.data ?? res?.data ?? res;
+      if (resolvedData) {
+        setFetchedBioData(resolvedData);
       }
     } catch (error) {
       console.error("Error fetching profile info:", error);
@@ -137,6 +144,50 @@ const ProfileBio: React.FC<ProfileBioProps> = ({
       setIsFetched(true);
     }
   };
+
+  const renderBioDetails = () => (
+    <div className="mt-2 flex w-full flex-col gap-2">
+      {activeBio ? (
+        <p
+          itemProp="description"
+          className="mb-1 text-sm leading-5 text-gray-800 dark:text-gray-200"
+        >
+          {activeBio}
+        </p>
+      ) : null}
+      {activeLocation ? (
+        <div className="flex items-center gap-2">
+          <Icon name="LocationOn" size={16} className="text-gray-500" />
+          <span
+            itemProp="address"
+            className="text-sm text-gray-500 dark:text-gray-400"
+          >
+            {activeLocation}
+          </span>
+        </div>
+      ) : null}
+      {activeMail ? (
+        <button
+          type="button"
+          onClick={() => handleOpenLink(activeMail)}
+          className="flex items-center gap-2 text-left"
+        >
+          <Icon name="Language" size={16} className="text-[#007aff]" />
+          <span
+            itemProp="url"
+            className="text-sm font-semibold text-blue-600 dark:text-blue-400"
+          >
+            {activeMail}
+          </span>
+        </button>
+      ) : null}
+      {!hasProfileInfo && (
+        <span className="text-sm italic text-gray-500 dark:text-gray-400">
+          No bio information available.
+        </span>
+      )}
+    </div>
+  );
 
   return (
     <section
@@ -270,73 +321,40 @@ const ProfileBio: React.FC<ProfileBioProps> = ({
         </div>
       )}
 
-      {/* اطلاعات بیو و دکمه ویرایش (با نشانه‌گذاری سئو) */}
-      <div className="w-full mt-4 flex flex-col items-start gap-2.5">
+      <div className="mt-5 flex w-full flex-col items-start gap-3">
         {isMyProfile ? (
-          <div className="w-full flex justify-center">
-            <Link
-              href="/settings/editProfile"
-              className="inline-flex items-center justify-center px-4 py-1.5 rounded-full border border-pink-500 text-pink-500 hover:bg-pink-500/10 transition-colors text-xs font-semibold gap-1.5"
-            >
-              <Icon name="edit" size={14} className="text-pink-500" />
-              <span>Edit Profile</span>
-            </Link>
-          </div>
-        ) : shouldShowDetails ? (
-          <div className="w-full flex flex-col gap-1.5 text-right">
-            {activeBio && (
-              <p
-                itemProp="description"
-                className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed"
+          <>
+            <div className="flex w-full justify-center">
+              <Link
+                href="/settings/editProfile"
+                className="inline-flex items-center justify-center gap-1.5 rounded-md border border-pink-600 px-3 py-2 text-sm font-medium text-pink-600 transition-opacity hover:opacity-80"
               >
-                {activeBio}
-              </p>
-            )}
-
-            {activeLocation && (
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                <Icon name="location-on" size={15} className="text-gray-400" />
-                <span itemProp="address">{activeLocation}</span>
-              </div>
-            )}
-
-            {activeMail && (
-              <div className="flex items-center gap-1.5 text-xs">
-                <Icon name="language" size={15} className="text-blue-500" />
-                <a
-                  href={`mailto:${activeMail}`}
-                  itemProp="email"
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  {activeMail}
-                </a>
-              </div>
-            )}
-
-            {!hasProfileInfo && (
-              <span className="text-xs text-gray-400 italic">
-                No bio information available.
-              </span>
-            )}
-          </div>
-        ) : (
-          <div className="w-full flex justify-center">
+                <Icon name="edit" size={14} className="text-pink-600" />
+                <span>Edit Profile</span>
+              </Link>
+            </div>
+            {renderBioDetails()}
+          </>
+        ) : !isFetched ? (
+          <div className="flex w-full justify-center">
             <button
               type="button"
               onClick={getProfileUser}
               disabled={loadingProfile}
-              className="inline-flex items-center justify-center px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg transition-all text-xs font-medium gap-2 disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-white shadow-md transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {loadingProfile ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
-                <>
+                <span className="inline-flex items-center justify-center gap-2">
                   <Icon name="Visibility" size={16} className="text-white" />
-                  <span>Show Profile</span>
-                </>
+                  <span className="text-sm font-semibold">Show Profile</span>
+                </span>
               )}
             </button>
           </div>
+        ) : (
+          renderBioDetails()
         )}
       </div>
     </section>

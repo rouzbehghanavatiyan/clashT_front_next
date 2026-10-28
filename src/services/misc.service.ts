@@ -1,7 +1,11 @@
 import { api } from "./axios.config";
 
-export const supportConnect = async (data: any) => {
-  return await api.post(`/supportConnect`, data);
+export const supportConnect = async (data: {
+  subject: string;
+  description: string;
+  userEmail?: string;
+}) => {
+  return await api.post(`/supportConnect`, data, { skipAuth: true });
 };
 
 export const miscService = {

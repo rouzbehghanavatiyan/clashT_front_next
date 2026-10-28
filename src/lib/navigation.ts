@@ -1,8 +1,15 @@
-export const PUBLIC_ROUTES = ["/login", "/signUp", "/forgot-password", "/offline"];
+export const PUBLIC_ROUTES = [
+  "/login",
+  "/signUp",
+  "/forgotPassword",
+  "/forgot-password",
+  "/offline",
+];
 
 export const RESERVED_PATHS = [
   "login",
   "signUp",
+  "forgotPassword",
   "forgot-password",
   "watch",
   "create",

@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import BedtimeOutlinedIcon from "@mui/icons-material/BedtimeOutlined";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import BlockIcon from "@mui/icons-material/Block";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { useAppDispatch } from "@/store/reduxHook";
+import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import { RsetUserId, RsetUserLogin } from "@/store/slices/mainSlice";
+import { userService } from "@/services/user.service";
 import { removeTokens } from "@/services/tokenService";
 import { PWA_INSTALL_DISMISSED_KEY } from "@/lib/pwa";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
@@ -21,9 +23,47 @@ export default function SettingPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { setTheme, isDark } = useTheme();
+    const userLogin = useAppSelector((state) => state?.main?.userLogin);
+    const userId = userLogin?.user?.id || userLogin?.id || userLogin?.userId;
 
     const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    useEffect(() => {
+        if (!userId) return;
+        let cancelled = false;
+
+        const loadProfile = async () => {
+            try {
+                const res = await userService.profileAttachment(userId);
+                const profileData = res?.data?.data;
+                if (!cancelled && res?.data?.status === 0 && profileData) {
+                    dispatch(
+                        RsetUserLogin({
+                            ...(userLogin || {}),
+                            ...profileData,
+                            token: userLogin?.token,
+                            refreshToken: userLogin?.refreshToken,
+                            userId: userLogin?.userId ?? userId,
+                        }),
+                    );
+                }
+            } catch (error) {
+                console.error("Error loading profile attachment:", error);
+            }
+        };
+
+        loadProfile();
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userId, dispatch]);
+
+    const bio = userLogin?.bio?.trim();
+    const location = userLogin?.location?.trim();
+    const mail = userLogin?.mail?.trim();
+    const hasProfileDetails = Boolean(bio || location || mail);
 
     const handleLogoutConfirm = async () => {
         try {
@@ -75,16 +115,45 @@ export default function SettingPage() {
             <main className="mx-auto w-full max-w-2xl flex-1 p-4">
                 <div className="divide-y divide-gray-100 dark:divide-zinc-800 rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
                     {/* Profile */}
-                    <button
-                        onClick={() => handleCategoryClick("Profile")}
-                        className="flex w-full items-center justify-between p-4 transition-colors hover:bg-gray-50 dark:hover:bg-zinc-800/50"
-                    >
-                        <div className="flex items-center gap-3">
-                            <PersonOutlineIcon className="text-gray-500 dark:text-gray-400" sx={{ fontSize: 22 }} />
-                            <span className="text-sm font-medium">Profile</span>
-                        </div>
-                        <ChevronRightIcon className="text-gray-400" sx={{ fontSize: 20 }} />
-                    </button>
+                    <div>
+                        <button
+                            onClick={() => handleCategoryClick("Profile")}
+                            className="flex w-full items-center justify-between p-4 transition-colors hover:bg-gray-50 dark:hover:bg-zinc-800/50"
+                        >
+                            <div className="flex items-center gap-3">
+                                <PersonOutlineIcon className="text-gray-500 dark:text-gray-400" sx={{ fontSize: 22 }} />
+                                <span className="text-sm font-medium">Profile</span>
+                            </div>
+                            <ChevronRightIcon className="text-gray-400" sx={{ fontSize: 20 }} />
+                        </button>
+                        {hasProfileDetails && (
+                            <div
+                                dir="ltr"
+                                className="flex flex-row flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-4 text-xs text-gray-500 dark:text-gray-400"
+                            >
+                                {bio && (
+                                    <span className="inline-flex min-w-0 items-center gap-1.5">
+                                        <PersonOutlineIcon sx={{ fontSize: 14 }} />
+                                        <span className="truncate font-medium text-gray-700 dark:text-gray-200">
+                                            {bio}
+                                        </span>
+                                    </span>
+                                )}
+                                {location && (
+                                    <span className="inline-flex min-w-0 items-center gap-1.5">
+                                        <PlaceOutlinedIcon sx={{ fontSize: 14 }} />
+                                        <span className="truncate">{location}</span>
+                                    </span>
+                                )}
+                                {mail && (
+                                    <span className="inline-flex min-w-0 items-center gap-1.5">
+                                        <LanguageOutlinedIcon sx={{ fontSize: 14 }} />
+                                        <span className="truncate">{mail}</span>
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
                     {/* Theme Switcher */}
                     <div className="flex items-center justify-between p-4">

@@ -16,6 +16,10 @@ export const forgotPassword = async (data: any) => {
   return await api.post(`/forgotPassword`, data);
 };
 
+export const addProfile = async (data: any) => {
+  return await api.put(`/addProfile`, data);
+};
+
 export const userService = {
   list: () => api.get("/userList"),
   followerList: (userId: number) => api.get(`/followerList?userId=${userId}`),
@@ -31,7 +35,7 @@ export const userService = {
     api.delete(`/removeFollower`, { data: postData }),
   addFollower: (data: any) => api.post("/addFollower", data),
   profile: (username: any) => api.get(`/profile/${username}`),
-  addProfile: (data: any) => api.put(`/addProfile/${data}`),
+  addProfile,
   forgotPassword,
   requestChangeEmail,
   blockListByUser,

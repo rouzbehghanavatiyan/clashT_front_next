@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useCallback, useRef } from "react";
+import Link from "next/link";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Mousewheel } from "swiper/modules";
 import { useAppSelector } from "@/store/reduxHook";
@@ -109,8 +112,26 @@ const HomeFeed: React.FC = () => {
         </Swiper>
       )}
       {!showInitialSkeleton && !isLoading && (!data || data.length === 0) && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-sm text-gray-500 dark:text-gray-300">
-          Follow creators to see matchups in your home feed.
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-950/90 px-6">
+          <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-900 px-6 py-8 text-center shadow-xl">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-800 text-gray-400">
+              <InsertDriveFileOutlinedIcon sx={{ fontSize: 28 }} />
+            </div>
+            <p className="text-sm leading-relaxed text-gray-400">
+              Respectfully, there are currently{" "}
+              <span className="text-base font-extrabold text-white">
+                no followers
+              </span>{" "}
+              on your profile.
+            </p>
+            <Link
+              href="/watch"
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+            >
+              Watch
+              <ArrowForwardIcon sx={{ fontSize: 18 }} />
+            </Link>
+          </div>
         </div>
       )}
       <div ref={loadingRef} className="sr-only" />
