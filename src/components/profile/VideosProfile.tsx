@@ -1,9 +1,8 @@
 "use client";
 
-import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react";
-import ThumbUpIcon from "@mui/icons-material/ThumbUp";
-import ReportIcon from "@mui/icons-material/Report";
+import React, { forwardRef, useEffect, useState } from "react";
 import EmailIcon from "@mui/icons-material/Email";
+import ReportIcon from "@mui/icons-material/Report";
 import TurnedInNotIcon from "@mui/icons-material/TurnedInNot";
 import { useRouter } from "next/navigation";
 import LoadingChild from "../LoadingChild";
@@ -11,45 +10,26 @@ import { RsetLastMatch } from "@/store/slices/mainSlice";
 import { useAppDispatch } from "@/store/reduxHook";
 import StringHelpers from "@/utils/StringHelpers";
 import { buildChatHref } from "@/lib/chat";
-import VideoSection from "../VideoSection";
+import VideosProfileItem from "./VideosProfileItem";
 
 interface VideosProfileProps {
   isLoading: boolean;
   match: any[];
   videoLikes: Record<string, number>;
   loadingRef: React.RefObject<HTMLDivElement | null> | any;
+  onMatchExpired?: () => void;
 }
 
 const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
-  ({ loadingRef, isLoading, match, videoLikes }, ref) => {
+  ({ loadingRef, isLoading, match, videoLikes, onMatchExpired }, ref) => {
     const [openDropdowns, setOpenDropdowns] = useState<
       Record<string | number, boolean>
     >({});
+    const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(
+      null,
+    );
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const firstVideoRef = useRef<HTMLDivElement>(null);
-
-    const videoGroupsWithLikes = useMemo(() => {
-      return match?.map((video: any) => {
-        const parentLikes =
-          (videoLikes[video?.attachmentInserted?.attachmentId] || 0) +
-          (video.likeInserted || 0);
-        const childLikes = video.child
-          ? (videoLikes[video.attachmentMatched?.attachmentId] || 0) +
-          (video.likeMatched || 0)
-          : 0;
-
-        return {
-          ...video,
-          parentLikes,
-          childLikes,
-          parentMovieId: video?.attachmentInserted?.attachmentId,
-          childMovieId: video?.attachmentMatched?.attachmentId,
-          likeInserted: video?.likeInserted,
-          likeMatched: video?.likeMatched,
-        };
-      });
-    }, [match, videoLikes]);
 
     const dropdown = (data: any, position: number, userSenderId: any) => {
       const temp = {
@@ -94,133 +74,41 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
     };
 
     const toggleDropdown = (video: any, index: number) => {
-      setOpenDropdowns((prev: any) => {
-        if (index === 0 || index === 1) {
-          return {
-            ...prev,
-            [index]: !prev[index],
-          };
-        }
-        return prev;
-      });
+      setOpenDropdowns((prev) => ({
+        ...prev,
+        [index]: !prev[index],
+      }));
     };
 
     useEffect(() => {
-      if (videoGroupsWithLikes?.length > 0) {
-        dispatch(RsetLastMatch(videoGroupsWithLikes?.[0]));
+      if (match?.length > 0) {
+        dispatch(RsetLastMatch(match[0]));
       }
-    }, [videoGroupsWithLikes, dispatch]);
+    }, [match, dispatch]);
 
     return (
       <div ref={ref}>
-        <div className="col-span-12 justify-center flex md:col-span-12 lg:col-span-12 border-t-[1px]">
-          <div className="grid grid-cols-1 w-full">
-            {false ? (
-              "GGGGGG"
-              // [...Array(videoGroupsWithLikes?.length || 3)].map((_, index) => (
-              //   <div key={`skeleton-${index}`} className="bg-black">
-              //     <VideoItemSkeleton section="itsProfile" />
-              //   </div>
-              // ))
-            ) : videoGroupsWithLikes?.length === 0 ? (
-              <div className="flex h-[calc(50vh-100px)] justify-center items-center">
-                <span className="font-bold">Empty videos</span>
-              </div>
-            ) : (
-              videoGroupsWithLikes?.map((video: any, index: number) => {
-                const parentLikes =
-                  (videoLikes[video?.parentMovieId] || 0) +
-                  (video?.likeInserted || 0);
-                const childLikes =
-                  (videoLikes[video?.childMovieId] || 0) +
-                  (video?.likeMatched || 0);
-                const endTime =
-                  video?.inviteMatched?.insertDate !== -1 ||
-                  video?.inviteInserted?.insertDate !== -1;
-                const startTime = video?.inviteMatched?.insertDate;
-                const resultInserted =
-                  video?.likeInserted > video?.likeMatched
-                    ? "Win"
-                    : video?.likeInserted < video?.likeMatched
-                      ? "Loss"
-                      : "Draw";
-                const resultMatched =
-                  video?.likeInserted < video?.likeMatched
-                    ? "Win"
-                    : video?.likeInserted > video?.likeMatched
-                      ? "Loss"
-                      : "Draw";
-
-                return (
-                  <section
-                    key={video?.id || index}
-                    ref={index === 0 ? firstVideoRef : null}
-                    className={`flex pt-1 bg-black flex-col relative h-[calc(100vh-105px)] ${index === 0 ? "first-video scroll-mt-[60px]" : ""
-                      }`}
-                  >
-                    <div className="flex-1 min-h-0">
-                      <VideoSection
-                        endTime={endTime}
-                        score={video?.scoreInserted}
-                        result={resultInserted}
-                        toggleDropdown={() => toggleDropdown(video, 0)}
-                        countLiked={parentLikes}
-                        video={video}
-                        dropdownItems={() =>
-                          dropdown(video, 0, video?.userInserted)
-                        }
-                        setOpenDropdowns={setOpenDropdowns}
-                        openDropdowns={openDropdowns}
-                        positionVideo={0}
-                      />
-                      {endTime && (
-                        <div className="absolute top-28 right-5 z-50 flex gap-1 text-white justify-center items-end">
-                          {parentLikes}
-                          <ThumbUpIcon className="font25 text-white" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* {endTime && (
-                      <div className="w-full absolute top-2/4 z-50">
-                        <div className="w-5/6 ms-8 flex rounded-full items-center justify-center text-white">
-                          <Timer
-                            video={video}
-                            startTime={startTime}
-                            duration={3600}
-                            active={true}
-                            onComplete={() => { }}
-                          />
-                        </div>
-                      </div>
-                    )} */}
-
-                    <div className="flex-1 min-h-0 relative">
-                      <VideoSection
-                        endTime={endTime}
-                        score={video?.scoreMatched}
-                        result={resultMatched}
-                        toggleDropdown={() => toggleDropdown(video, 1)}
-                        countLiked={childLikes}
-                        video={video}
-                        dropdownItems={() =>
-                          dropdown(video, 1, video?.userMatched)
-                        }
-                        openDropdowns={openDropdowns}
-                        setOpenDropdowns={setOpenDropdowns}
-                        positionVideo={1}
-                      />
-                      {endTime && (
-                        <div className="absolute top-28 right-5 z-50 flex gap-1 text-white justify-center items-end">
-                          {childLikes}
-                          <ThumbUpIcon className="font25 text-white" />
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                );
-              })
-            )}
+        <div className="flex w-full justify-center border-t border-gray-100 dark:border-zinc-800">
+          <div className="grid w-full grid-cols-1">
+            {match?.map((video: any, index: number) => (
+              <VideosProfileItem
+                key={
+                  video?.inviteInserted?.id ??
+                  video?.inviteMatched?.id ??
+                  video?.id ??
+                  index
+                }
+                video={video}
+                videoLikes={videoLikes}
+                currentlyPlayingId={currentlyPlayingId}
+                onPlay={setCurrentlyPlayingId}
+                onMatchExpired={onMatchExpired}
+                openDropdowns={openDropdowns}
+                setOpenDropdowns={setOpenDropdowns}
+                toggleDropdown={toggleDropdown}
+                dropdownItems={dropdown}
+              />
+            ))}
           </div>
         </div>
         <LoadingChild ref={loadingRef} isLoading={isLoading} />

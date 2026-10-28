@@ -14,6 +14,12 @@ import {
   cancelPendingInvite,
   getPendingInviteId,
 } from "@/utils/pendingInvite";
+import { getCreateMediaFile } from "@/utils/createMediaFile";
+import SportsSoccerIcon from "@mui/icons-material/SportsSoccer";
+import FitnessCenterIcon from "@mui/icons-material/FitnessCenter";
+import SportsMmaIcon from "@mui/icons-material/SportsMma";
+import SkateboardingIcon from "@mui/icons-material/Skateboarding";
+import SportsScoreIcon from "@mui/icons-material/SportsScore";
 
 type MatchGender = "random" | "male" | "female";
 
@@ -21,7 +27,7 @@ interface ActivityOption {
   label: string;
   value: string;
   id: number;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 interface CreateMatchPageProps {
@@ -32,12 +38,39 @@ interface CreateMatchPageProps {
   onCancel?: () => void;
 }
 
+const activityIconSx = { fontSize: 28 };
+
 const activityOptions: ActivityOption[] = [
-  { label: "Ball Sports", id: 1010, value: "ball_sports", icon: "⚽" },
-  { label: "Fitness & Gym", id: 1004, value: "fitness", icon: "🏋️" },
-  { label: "Combat & Boxing", id: 1011, value: "combat", icon: "🥊" },
-  { label: "Street & Urban", id: 2040, value: "urban", icon: "🛹" },
-  { label: "Other Sports", id: 2041, value: "otherSport", icon: "🎯" },
+  {
+    label: "Ball Sports",
+    id: 1010,
+    value: "ball_sports",
+    icon: <SportsSoccerIcon sx={activityIconSx} />,
+  },
+  {
+    label: "Fitness & Gym",
+    id: 1004,
+    value: "fitness",
+    icon: <FitnessCenterIcon sx={activityIconSx} />,
+  },
+  {
+    label: "Combat & Boxing",
+    id: 1011,
+    value: "combat",
+    icon: <SportsMmaIcon sx={activityIconSx} />,
+  },
+  {
+    label: "Street & Urban",
+    id: 2040,
+    value: "urban",
+    icon: <SkateboardingIcon sx={activityIconSx} />,
+  },
+  {
+    label: "Other Sports",
+    id: 2041,
+    value: "otherSport",
+    icon: <SportsScoreIcon sx={activityIconSx} />,
+  },
 ];
 
 const genderOptions: { label: string; value: MatchGender; desc: string }[] = [
@@ -57,15 +90,18 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
   const dispatch = useAppDispatch();
   const videoRef = useRef<HTMLVideoElement>(null);
   const storedSrc = useAppSelector((state) => state.video.videoSrc);
-  const storedFile = useAppSelector((state) => state.video.videoFile);
+  const videoMimeType = useAppSelector((state) => state.video.videoMimeType);
   const reduxLoading = useAppSelector((state) => state.video.isLoading);
   const showTimer = useAppSelector((state) => state.main.showTimerButtn);
   const userLogin = useAppSelector((state) => state.main.userLogin);
   const userId =
     userLogin?.user?.id || userLogin?.userId || userLogin?.id;
   const { openPicker, fileInput, error: pickerError } = useCreateMediaPick();
+  const storedFile = getCreateMediaFile();
   const videoSrc = videoSrcProp || storedSrc;
-  const isImage = Boolean(storedFile?.type?.startsWith("image/"));
+  const isImage = Boolean(
+    videoMimeType?.startsWith("image/") || storedFile?.type?.startsWith("image/"),
+  );
   const coverImage = coverImageProp || (isImage ? storedSrc : "");
   const uploading = isLoading || reduxLoading;
   const [selectedGender, setSelectedGender] = useState<MatchGender>("random");
@@ -125,9 +161,10 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
     );
     dispatch(
       uploadFullProcessThunk({
-        allFormData: isImage
-          ? { imageCover: storedFile }
-          : { video: storedFile },
+        allFormData: {
+          title: "",
+          description: "",
+        },
         movieMeta: { title: "", desc: "" },
         router,
       }),
@@ -222,7 +259,7 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
                             : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
                           }`}
                       >
-                        <span className="text-2xl mb-2">{item.icon}</span>
+                        <span className="mb-2 inline-flex">{item.icon}</span>
                         <span className="text-sm font-semibold">{item.label}</span>
                       </button>
                     );

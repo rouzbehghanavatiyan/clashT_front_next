@@ -203,8 +203,8 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
                 </Link>
               </div>
             ) : (
-              <div className="flex items-center gap-3 mt-3">
-                <div className="min-w-[100px]">
+              <div className="mt-3 flex flex-nowrap items-center gap-3">
+                <div className="shrink-0">
                   <Follows
                     onFollowClick={handleFollowClick}
                     title={localIsFollowed ? "Unfollow" : "Follow"}
@@ -214,7 +214,7 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
                 <button
                   type="button"
                   onClick={handleSendMessage}
-                  className="min-w-[100px] px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded-md shadow-sm transition-colors text-center"
+                  className="shrink-0 whitespace-nowrap px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded-md shadow-sm transition-colors text-center"
                 >
                   Send message
                 </button>

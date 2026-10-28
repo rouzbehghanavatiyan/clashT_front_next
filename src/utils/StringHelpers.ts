@@ -7,6 +7,12 @@ export default class StringHelpers {
 
   static getProfile = (data: any): string => {
     if (!data) return "";
-    return `${StringHelpers.baseURL}/${data.attachmentType}/${data.fileName}${data.ext}`;
+    const type = String(data.attachmentType || "").replace(/^\/+|\/+$/g, "");
+    const ext = data.ext == null ? "" : String(data.ext);
+    const fileName = String(data.fileName || "")
+      .replace(/[\u00a0\u202f]/g, " ")
+      .trim();
+    if (!type || !fileName) return "";
+    return `${StringHelpers.baseURL}/${type}/${encodeURIComponent(fileName)}${ext}`;
   };
 }

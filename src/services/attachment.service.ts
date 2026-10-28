@@ -24,8 +24,10 @@ export const attachmentService = {
 
   removeInvite,
 
-  userAttachmentList: (params: any) =>
-    api.get(`/userAttachmentList`, { params }),
+  userAttachmentList: (postData: any) =>
+    api.get(
+      `/userAttachmentList?skip=${postData?.skip}&take=${postData?.take}&userId=${postData?.id}`,
+    ),
 
   followerAttachmentList: (postData: any) =>
     api.get(

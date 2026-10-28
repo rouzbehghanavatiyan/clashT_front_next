@@ -29,6 +29,7 @@ import { getImageUrl } from "@/utils/fileHelper";
 import { socket } from "@/lib/socket";
 import { SITE_URL } from "@/lib/env";
 import { withMatchEndAt, isMatchActive } from "@/utils/matchTimer";
+import { useCreateMediaPick } from "@/hooks/useCreateMediaPick";
 
 interface InitialUserData {
   id: number;
@@ -40,6 +41,7 @@ interface InitialUserData {
   avatarUrl?: string;
   profile?: any;
   score?: number;
+  isFollowedByMe?: boolean;
   followersCount?: number;
   followingCount?: number;
 }
@@ -67,6 +69,7 @@ function mapProfilePayload(d: any): InitialUserData {
     profile: attachment,
     avatarUrl,
     score: d?.score ?? 0,
+    isFollowedByMe: d?.isFollowedByMe,
     followersCount: d?.followersCount ?? 0,
     followingCount: d?.followingCount ?? 0,
   };
@@ -77,6 +80,12 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
   const params = useParams();
   const observerTarget = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLElement>(null);
+  const hasAutoScrolledRef = useRef(false);
+  const expireTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const onRefreshRef = useRef<() => void>(() => {});
+  const { openPicker, fileInput } = useCreateMediaPick();
   const routeUsername = decodeURIComponent(
     String(params?.username || initialUserData.userName || ""),
   );
@@ -162,17 +171,27 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
 
   const fetchVideos = useCallback(
     async (paginationParams: { skip: number; take: number }) => {
+      if (
+        paginationParams.skip === 0 &&
+        isMyProfile &&
+        myVideosInRedux.length > 0
+      ) {
+        return null;
+      }
       if (!targetUserId) return [];
       return await attachmentService.userAttachmentList({
         ...paginationParams,
         id: targetUserId,
       });
     },
-    [targetUserId],
+    [targetUserId, isMyProfile, myVideosInRedux.length],
   );
 
   const handleDataLoaded = useCallback(
     (newItems: any[], isFirstPage: boolean) => {
+      if (!newItems?.length && isFirstPage && isMyProfile && myVideosInRedux.length > 0) {
+        return;
+      }
       if (!newItems) return;
       const items = withMatchEndAt(newItems);
 
@@ -196,9 +215,17 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     `${routeUsername}:${targetUserId || ""}`,
   );
 
+  const handleMatchExpired = useCallback(() => {
+    clearTimeout(expireTimerRef.current);
+    expireTimerRef.current = setTimeout(() => onRefreshRef.current(), 3000);
+  }, []);
+
+  useEffect(() => () => clearTimeout(expireTimerRef.current), []);
+
   const onRefresh = useCallback(async () => {
     if (!targetUserId) return;
     setRefreshing(true);
+    hasAutoScrolledRef.current = false;
     try {
       const promises: Promise<any>[] = [
         attachmentService.userAttachmentList({
@@ -241,9 +268,20 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     refreshMyProfileAttachment,
   ]);
 
+  onRefreshRef.current = onRefresh;
+
   useEffect(() => {
     refreshMyProfileAttachment();
   }, [refreshMyProfileAttachment]);
+
+  useEffect(() => {
+    if (!isMyProfile) {
+      setOtherUserVideos([]);
+    }
+    if (targetUserId) {
+      onRefresh();
+    }
+  }, [targetUserId]);
 
   useEffect(() => {
     if (!targetUserId) return;
@@ -269,13 +307,25 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     [allVideoData],
   );
 
+  const firstActiveIndex = useMemo(() => {
+    if (!allVideoData?.length) return -1;
+    return allVideoData.findIndex(
+      (item: any) => Number(item?.matchRemainingSeconds) > 0,
+    );
+  }, [allVideoData]);
+
   useEffect(() => {
-    if (!itsMatchingWithTimer) return;
+    if (firstActiveIndex < 0 || hasAutoScrolledRef.current) return;
     const timer = setTimeout(() => {
-      window.scrollTo({ top: 230, behavior: "smooth" });
+      const nodes = scrollContainerRef.current?.querySelectorAll("article");
+      nodes?.[firstActiveIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      hasAutoScrolledRef.current = true;
     }, 300);
     return () => clearTimeout(timer);
-  }, [itsMatchingWithTimer]);
+  }, [firstActiveIndex]);
 
   useEffect(() => {
     const handleAddLike = (data: { movieId: number }) => {
@@ -381,23 +431,34 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
       </header>
 
       <section className="mx-auto w-full max-w-lg flex-1 py-4">
+        {fileInput}
         {showEmpty ? (
-          <article className="mx-5 mt-16 flex cursor-pointer flex-col items-center justify-center rounded-2xl bg-white px-6 py-9 shadow-lg transition-transform hover:scale-95 dark:bg-zinc-900">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full border border-indigo-500 bg-indigo-50 shadow-md dark:bg-indigo-900/20">
+          <article
+            className={`mx-5 mt-16 flex flex-col items-center justify-center rounded-2xl bg-white px-6 py-9 shadow-lg dark:bg-zinc-900 ${
+              isMyProfile
+                ? "cursor-pointer transition-transform hover:scale-95"
+                : ""
+            }`}
+            onClick={() => {
+              if (!isMyProfile) return;
+              openPicker();
+            }}
+          >
+            <div className="flex h-[76px] w-[76px] items-center justify-center rounded-full border border-indigo-600 bg-indigo-500/10 shadow-md">
               <Icon
                 name="locationSearching"
-                fontSize="large"
+                size={32}
                 className="text-indigo-600"
               />
             </div>
-            <div className="mt-4 flex flex-col items-center gap-2 px-2">
+            <div className="mt-5 flex flex-col items-center gap-2 px-2">
               <h2 className="text-lg font-bold tracking-wide text-gray-800 dark:text-white">
                 No Matches Yet
               </h2>
               <p className="text-center text-sm leading-relaxed text-gray-500 dark:text-gray-400">
                 {isMyProfile
-                  ? "You haven't uploaded any videos yet. Get started right now!"
-                  : "This user currently has no videos to display."}
+                  ? "You haven't matched with any users yet. Start exploring and create your first match!"
+                  : "This user doesn't have any video matches right now."}
               </p>
             </div>
           </article>
@@ -407,6 +468,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
             videoLikes={videoLikes}
             isLoading={loading || refreshing}
             loadingRef={observerTarget}
+            onMatchExpired={handleMatchExpired}
           />
         )}
       </section>

@@ -45,7 +45,7 @@ const VideoSection: React.FC<any> = ({
   openDropdowns,
   isPlaying,
   positionVideo,
-  countLiked,
+  countLiked: countLikedProp,
 }) => {
   const main = useAppSelector((state) => state?.main);
   const [commentUserInfo, setCommentUserInfo] = useState<any>({});
@@ -164,7 +164,8 @@ const VideoSection: React.FC<any> = ({
               externalIsLiked={externalIsLiked}
               positionVideo={positionVideo}
               countLiked={
-                positionVideo === 0 ? video?.likeInserted : video?.likeMatched
+                countLikedProp ??
+                (positionVideo === 0 ? video?.likeInserted : video?.likeMatched)
               }
             />
           )}

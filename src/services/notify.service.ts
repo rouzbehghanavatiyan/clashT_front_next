@@ -34,8 +34,9 @@ async function ensureServiceWorker() {
 }
 
 export const createSubscription = async () => {
-  const url = `${notifBaseURL}/public-key`;
-  return await api.get(url);
+  if (!notifBaseURL) return null;
+  const url = `${notifBaseURL.replace(/\/$/, "")}/public-key`;
+  return await api.get(url, { skipAuth: true });
 };
 
 export const saveSubscription = async (postData: {
@@ -80,7 +81,6 @@ export const registerForPushNotifications = async () => {
     const keyRes = await createSubscription();
     const publicKey = extractPublicKey(keyRes?.data);
     if (!publicKey) {
-      console.warn("Could not read VAPID public key.");
       return null;
     }
 
@@ -95,7 +95,10 @@ export const registerForPushNotifications = async () => {
     const webPushToken = JSON.stringify(subscription.toJSON());
     return webPushToken;
   } catch (error: any) {
-    console.error("Error generating push token:", error.message || error);
+    const status = error?.response?.status;
+    if (status !== 404 && status !== 501) {
+      console.warn("Push token is unavailable:", error.message || error);
+    }
     return null;
   }
 };
@@ -105,7 +108,6 @@ export const syncPushToken = async (userId: string | number) => {
   try {
     const deviceToken = await registerForPushNotifications();
     if (!deviceToken) {
-      console.warn("Could not get push token from device.");
       return;
     }
 

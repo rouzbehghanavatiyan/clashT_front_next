@@ -179,6 +179,7 @@ export default function WatchFeed() {
       onTouchEnd={onTouchEnd}
     >
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
+        <UserSearchInput className="min-w-0 flex-1" compact />
         <Link
           href="/chat"
           aria-label="Messages"
@@ -191,7 +192,6 @@ export default function WatchFeed() {
             </span>
           )}
         </Link>
-        <UserSearchInput className="min-w-0 flex-1" compact />
         <PwaInstallButton variant="header" />
       </header>
 

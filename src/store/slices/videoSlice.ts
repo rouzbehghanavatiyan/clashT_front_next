@@ -15,11 +15,13 @@ import {
   setMatchReceiveHandler,
   setPendingInviteId,
 } from "@/utils/pendingInvite";
+import { clearCreateMediaFile, getCreateMediaFile } from "@/utils/createMediaFile";
 
 const initialState: any = {
   needProfileRefresh: false,
   videoSrc: null,
-  videoFile: null,
+  videoMimeType: null,
+  videoFileName: null,
   showTimeout: false,
   isLoading: false,
   selectedResize: 1,
@@ -83,21 +85,6 @@ export const loginUser = createAsyncThunk(
         err.response?.data?.message || "Server error",
       );
     }
-  },
-);
-
-export const prepareVideoFileThunk = createAsyncThunk(
-  "video/prepareFile",
-  async (fileAsset: any) => {
-    let src = "";
-    if (typeof window !== "undefined") {
-      if (fileAsset instanceof Blob || fileAsset instanceof File) {
-        src = URL.createObjectURL(fileAsset);
-      } else {
-        src = fileAsset?.uri || "";
-      }
-    }
-    return { file: fileAsset, src };
   },
 );
 
@@ -174,46 +161,23 @@ export const uploadFullProcessThunk = createAsyncThunk(
       }
 
       const formData = new FormData();
+      const mediaFile = getCreateMediaFile();
+      const mimeType = state.video.videoMimeType || mediaFile?.type || "";
+      const fileName =
+        state.video.videoFileName ||
+        mediaFile?.name ||
+        (mimeType.startsWith("image/") ? "cover.png" : "video.mp4");
 
-      // تنظیم ویدیو برای FormData وب (File/Blob)
-      if (allFormData?.video) {
-        if (
-          typeof window !== "undefined" &&
-          (allFormData.video instanceof File ||
-            allFormData.video instanceof Blob)
-        ) {
+      if (mediaFile) {
+        formData.append("FormFile", mediaFile, fileName);
+      } else if (allFormData?.video || allFormData?.imageCover) {
+        const fallback = allFormData.video || allFormData.imageCover;
+        if (fallback instanceof File || fallback instanceof Blob) {
           formData.append(
             "FormFile",
-            allFormData.video,
-            (allFormData.video as File).name || "video.mp4",
+            fallback,
+            (fallback as File).name || fileName,
           );
-        } else {
-          formData.append("FormFile", {
-            uri: allFormData.video.uri,
-            name: allFormData.video.name || "video.mp4",
-            type: allFormData.video.type || "video/mp4",
-          } as any);
-        }
-      }
-
-      // تنظیم کاور برای FormData وب (File/Blob)
-      if (allFormData?.imageCover) {
-        if (
-          typeof window !== "undefined" &&
-          (allFormData.imageCover instanceof File ||
-            allFormData.imageCover instanceof Blob)
-        ) {
-          formData.append(
-            "FormFile",
-            allFormData.imageCover,
-            (allFormData.imageCover as File).name || "cover.png",
-          );
-        } else {
-          formData.append("FormFile", {
-            uri: allFormData.imageCover.uri,
-            name: allFormData.imageCover.name || "cover.png",
-            type: allFormData.imageCover.type || "image/png",
-          } as any);
         }
       }
 
@@ -360,6 +324,14 @@ const videoSlice = createSlice({
     setVideoSrc(state, action: PayloadAction<string>) {
       state.videoSrc = action.payload;
     },
+    setPreparedMedia(
+      state,
+      action: PayloadAction<{ src: string; mimeType: string; fileName: string }>,
+    ) {
+      state.videoSrc = action.payload.src;
+      state.videoMimeType = action.payload.mimeType;
+      state.videoFileName = action.payload.fileName;
+    },
     setMovieData(state, action: PayloadAction<any>) {
       state.movieData = action?.payload;
     },
@@ -375,7 +347,10 @@ const videoSlice = createSlice({
     updateMovieData(state, action: PayloadAction<Partial<any>>) {
       state.movieData = { ...state.movieData, ...action.payload };
     },
-    resetVideoState: () => initialState,
+    resetVideoState: () => {
+      clearCreateMediaFile();
+      return initialState;
+    },
     setMovieMeta: (state, action) => {
       state.movieData.title = action.payload.title ?? state.movieData.title;
       state.movieData.desc = action.payload.desc ?? state.movieData.desc;
@@ -396,10 +371,6 @@ const videoSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(prepareVideoFileThunk.fulfilled, (state, action) => {
-        state.videoFile = action.payload.file;
-        state.videoSrc = action.payload.src;
-      })
       .addCase(uploadFullProcessThunk.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -441,6 +412,7 @@ export const {
   RsetIsLoading,
   updateMovieData,
   setVideoSrc,
+  setPreparedMedia,
   RsetSelectedResize,
   setShowTimeout,
   setNeedProfileRefresh,

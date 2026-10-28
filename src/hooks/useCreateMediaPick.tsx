@@ -3,7 +3,8 @@
 import { useCallback, useRef, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/store/reduxHook";
-import { prepareVideoFileThunk } from "@/store/slices/videoSlice";
+import { setPreparedMedia } from "@/store/slices/videoSlice";
+import { createMediaObjectUrl } from "@/utils/createMediaFile";
 import { getVideoDuration } from "@/utils/media";
 
 const MAX_VIDEO_SECONDS = 60;
@@ -53,7 +54,14 @@ export function useCreateMediaPick() {
       }
 
       setError("");
-      await dispatch(prepareVideoFileThunk(file));
+      const src = createMediaObjectUrl(file);
+      dispatch(
+        setPreparedMedia({
+          src,
+          mimeType: file.type,
+          fileName: file.name,
+        }),
+      );
       router.push("/create");
     },
     [dispatch, router],

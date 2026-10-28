@@ -10,6 +10,17 @@ export const makeStore = () =>
       video: videoSlice,
       chat: chatSlice,
     },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        serializableCheck: {
+          ignoredActions: [
+            "video/uploadFullProcess/pending",
+            "video/uploadFullProcess/fulfilled",
+            "video/uploadFullProcess/rejected",
+          ],
+          ignoredActionPaths: ["meta.arg.router"],
+        },
+      }),
   });
 
 export type AppStore = ReturnType<typeof makeStore>;
