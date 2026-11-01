@@ -24,10 +24,13 @@ export const attachmentService = {
 
   removeInvite,
 
-  userAttachmentList: (postData: any) =>
-    api.get(
-      `/userAttachmentList?skip=${postData?.skip}&take=${postData?.take}&userId=${postData?.id}`,
-    ),
+  userAttachmentList: (postData: any) => {
+    const skip = Number(postData?.skip) || 0;
+    const take = Number(postData?.take) || 3;
+    return api.get(
+      `/userAttachmentList?skip=${skip}&take=${take}&userId=${postData?.id}`,
+    );
+  },
 
   followerAttachmentList: (postData: any) =>
     api.get(

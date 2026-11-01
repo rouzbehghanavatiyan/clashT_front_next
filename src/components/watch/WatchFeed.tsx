@@ -35,6 +35,10 @@ export default function WatchFeed() {
   const bottomObserverRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const pullRef = useRef({ startY: 0, active: false });
+  const pullDistanceRef = useRef(0);
+  const refreshingRef = useRef(false);
+  const skipSeedLoadRef = useRef(false);
+  const onRefreshRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     setSeed(Math.floor(Math.random() * 1_000_000));
@@ -86,27 +90,96 @@ export default function WatchFeed() {
   );
 
   const onRefresh = useCallback(async () => {
-    if (refreshing) return;
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
+    skipSeedLoadRef.current = true;
     setRefreshing(true);
-    const newSeed = Math.floor(Math.random() * 1_000_000);
-    setSeed(newSeed);
-    dispatch(resetWatchState());
-    dispatch(setPaginationWatch({ take: 6, skip: 0, hasMore: true }));
-    await handleGetAllMatch(true, newSeed);
-    setRefreshing(false);
-  }, [dispatch, handleGetAllMatch, refreshing]);
+    try {
+      const newSeed = Math.floor(Math.random() * 1_000_000);
+      setSeed(newSeed);
+      dispatch(resetWatchState());
+      dispatch(setPaginationWatch({ take: 6, skip: 0, hasMore: true }));
+      await handleGetAllMatch(true, newSeed);
+    } finally {
+      skipSeedLoadRef.current = false;
+      refreshingRef.current = false;
+      setRefreshing(false);
+    }
+  }, [dispatch, handleGetAllMatch]);
+
+  onRefreshRef.current = onRefresh;
 
   useEffect(() => {
     stopMatchTimer();
   }, []);
 
   useEffect(() => {
-    if (seed == null) return;
+    if (seed == null || skipSeedLoadRef.current) return;
     if (!data || data.length === 0) {
       handleGetAllMatch(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed]);
+
+  useEffect(() => {
+    const isAtTop = () => {
+      const el = scrollerRef.current;
+      const innerTop = !el || el.scrollTop <= 2;
+      const pageTop = window.scrollY <= 2 && document.documentElement.scrollTop <= 2;
+      return innerTop && pageTop;
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (refreshingRef.current || !isAtTop()) return;
+      pullRef.current.startY = e.touches[0].clientY;
+      pullRef.current.active = true;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!pullRef.current.active || refreshingRef.current) return;
+      if (!isAtTop()) {
+        pullRef.current.active = false;
+        pullDistanceRef.current = 0;
+        setPullDistance(0);
+        return;
+      }
+      const touch = e.touches[0];
+      const dy = touch.clientY - pullRef.current.startY;
+      if (dy <= 0) {
+        pullDistanceRef.current = 0;
+        setPullDistance(0);
+        return;
+      }
+      if (dy > 8) e.preventDefault();
+      const next = Math.min(dy * 0.55, 100);
+      pullDistanceRef.current = next;
+      setPullDistance(next);
+    };
+
+    const onTouchEnd = async () => {
+      if (!pullRef.current.active) return;
+      pullRef.current.active = false;
+      if (pullDistanceRef.current >= PULL_THRESHOLD) {
+        setPullDistance(56);
+        await onRefreshRef.current();
+      }
+      pullDistanceRef.current = 0;
+      setPullDistance(0);
+    };
+
+    const optsPassive = { capture: true, passive: true } as const;
+    const optsActive = { capture: true, passive: false } as const;
+    document.addEventListener("touchstart", onTouchStart, optsPassive);
+    document.addEventListener("touchmove", onTouchMove, optsActive);
+    document.addEventListener("touchend", onTouchEnd, optsPassive);
+    document.addEventListener("touchcancel", onTouchEnd, optsPassive);
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart, optsPassive);
+      document.removeEventListener("touchmove", onTouchMove, optsActive);
+      document.removeEventListener("touchend", onTouchEnd, optsPassive);
+      document.removeEventListener("touchcancel", onTouchEnd, optsPassive);
+    };
+  }, []);
 
   useEffect(() => {
     if (loading || !pagination.hasMore) return;
@@ -135,48 +208,12 @@ export default function WatchFeed() {
 
   const visibleData = data || [];
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    const scroller = scrollerRef.current;
-    if (!scroller || scroller.scrollTop > 0 || refreshing) return;
-    pullRef.current.startY = e.touches[0].clientY;
-    pullRef.current.active = true;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!pullRef.current.active || refreshing) return;
-    const scroller = scrollerRef.current;
-    if (!scroller || scroller.scrollTop > 0) {
-      pullRef.current.active = false;
-      setPullDistance(0);
-      return;
-    }
-    const dy = e.touches[0].clientY - pullRef.current.startY;
-    if (dy > 0) {
-      setPullDistance(Math.min(dy * 0.45, 88));
-    } else {
-      setPullDistance(0);
-    }
-  };
-
-  const onTouchEnd = async () => {
-    if (!pullRef.current.active) return;
-    pullRef.current.active = false;
-    if (pullDistance >= PULL_THRESHOLD) {
-      setPullDistance(PULL_THRESHOLD);
-      await onRefresh();
-    }
-    setPullDistance(0);
-  };
-
   const pulling = pullDistance > 8 || refreshing;
 
   return (
     <div
       ref={scrollerRef}
-      className="flex h-[calc(100svh-44px)] w-full flex-col overflow-y-auto overscroll-y-contain bg-white text-gray-900 md:h-auto md:min-h-screen md:overscroll-auto dark:bg-zinc-950 dark:text-gray-100"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
+      className="flex h-full min-h-0 w-full flex-col overflow-y-auto overscroll-y-contain bg-white text-gray-900 dark:bg-zinc-950 dark:text-gray-100"
     >
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
         <UserSearchInput className="min-w-0 flex-1" compact />
@@ -196,8 +233,8 @@ export default function WatchFeed() {
       </header>
 
       <div
-        className="flex items-center justify-center overflow-hidden transition-[height] duration-150 md:hidden"
-        style={{ height: pulling ? pullDistance : 0 }}
+        className="flex items-center justify-center overflow-hidden transition-[height] duration-150"
+        style={{ height: refreshing ? 56 : pulling ? pullDistance : 0 }}
         aria-hidden={!pulling}
       >
         <CircularProgress size={22} />
@@ -213,7 +250,7 @@ export default function WatchFeed() {
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-[3px] lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-[3px] lg:grid-cols-4">
           {visibleData.map((item: any, index: number) => {
             const key = [
               item?.inviteInserted?.id ?? "x",

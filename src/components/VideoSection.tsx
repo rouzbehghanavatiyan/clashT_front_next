@@ -46,6 +46,11 @@ const VideoSection: React.FC<any> = ({
   isPlaying,
   positionVideo,
   countLiked: countLikedProp,
+  videoLikes,
+  profileWatch = false,
+  inviteWatch = false,
+  itsHome = false,
+  showCountLiked,
 }) => {
   const main = useAppSelector((state) => state?.main);
   const [commentUserInfo, setCommentUserInfo] = useState<any>({});
@@ -54,7 +59,6 @@ const VideoSection: React.FC<any> = ({
   const [nativeFs, setNativeFs] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const userIdLogin = main?.userLogin?.user?.id;
-  const socket = main?.socketConfig;
   const isExpanded = overlay || nativeFs;
 
   const handleToggleComments = (videoData: any) => {
@@ -154,7 +158,6 @@ const VideoSection: React.FC<any> = ({
           />
           {!isExpanded && (
             <OptionBottom
-              socket={socket}
               userIdLogin={userIdLogin}
               handleToggleComments={handleToggleComments}
               video={video}
@@ -167,6 +170,11 @@ const VideoSection: React.FC<any> = ({
                 countLikedProp ??
                 (positionVideo === 0 ? video?.likeInserted : video?.likeMatched)
               }
+              videoLikes={videoLikes}
+              profileWatch={profileWatch}
+              inviteWatch={inviteWatch}
+              itsHome={itsHome}
+              showCountLiked={showCountLiked}
             />
           )}
         </div>

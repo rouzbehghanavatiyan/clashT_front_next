@@ -9,6 +9,7 @@ import type { Swiper as SwiperType } from "swiper";
 import { attachmentService } from "@/services/attachment.service";
 import { VideoSlide } from "@/components/VideoSlide";
 import { HomeSlideSkeleton } from "@/components/home/HomeSlideSkeleton";
+import { isMatchActive } from "@/utils/matchTimer";
 
 const PAGE_SIZE = 6;
 
@@ -163,11 +164,12 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
           {data.map((video, index) => (
             <SwiperSlide key={getKey(video, index)}>
               <VideoSlide
-                showLiked={false}
-                endTime={false}
+                showLiked
+                endTime={isMatchActive(video) || Boolean(video?.matchEndAt)}
                 showScore={true}
                 showResult={true}
                 showCountLiked={true}
+                inviteWatch
                 video={video}
                 index={index}
                 currentlyPlayingId={currentlyPlayingId}

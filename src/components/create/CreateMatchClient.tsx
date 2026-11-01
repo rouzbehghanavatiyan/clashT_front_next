@@ -15,6 +15,7 @@ import {
   getPendingInviteId,
 } from "@/utils/pendingInvite";
 import { getCreateMediaFile } from "@/utils/createMediaFile";
+import { captureVideoCover } from "@/utils/media";
 import SportsSoccerIcon from "@mui/icons-material/SportsSoccer";
 import FitnessCenterIcon from "@mui/icons-material/FitnessCenter";
 import SportsMmaIcon from "@mui/icons-material/SportsMma";
@@ -139,7 +140,7 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
     };
   }, [dispatch]);
 
-  const handleStartMatch = () => {
+  const handleStartMatch = async () => {
     if (!userId) {
       router.push("/login");
       return;
@@ -159,11 +160,29 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
         subSubCategoryId: selectedActivity.id,
       }),
     );
+
+    let imageCover: File | null = isImage ? storedFile : null;
+    if (!isImage) {
+      try {
+        imageCover = await captureVideoCover(storedFile);
+      } catch (error) {
+        console.error("Error preparing media/thumbnail:", error);
+      }
+    }
+
     dispatch(
       uploadFullProcessThunk({
         allFormData: {
           title: "",
           description: "",
+          imageCover,
+          ...(isImage
+            ? {
+                image: storedFile,
+              }
+            : {
+                video: storedFile,
+              }),
         },
         movieMeta: { title: "", desc: "" },
         router,

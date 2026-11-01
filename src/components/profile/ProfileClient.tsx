@@ -151,6 +151,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     getImageUrl(userLogin?.profile);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [pageEpoch, setPageEpoch] = useState(0);
   const [percentage, setPercentage] = useState<number>(0);
   const [videoLikes, setVideoLikes] = useState<Record<string, number>>({});
 
@@ -171,20 +172,14 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
 
   const fetchVideos = useCallback(
     async (paginationParams: { skip: number; take: number }) => {
-      if (
-        paginationParams.skip === 0 &&
-        isMyProfile &&
-        myVideosInRedux.length > 0
-      ) {
-        return null;
-      }
       if (!targetUserId) return [];
       return await attachmentService.userAttachmentList({
-        ...paginationParams,
+        skip: Number(paginationParams.skip) || 0,
+        take: Number(paginationParams.take) || 3,
         id: targetUserId,
       });
     },
-    [targetUserId, isMyProfile, myVideosInRedux.length],
+    [targetUserId],
   );
 
   const handleDataLoaded = useCallback(
@@ -212,7 +207,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
     fetchVideos,
     handleDataLoaded,
     allVideoData?.length || 0,
-    `${routeUsername}:${targetUserId || ""}`,
+    `${routeUsername}:${targetUserId || ""}:${pageEpoch}`,
   );
 
   const handleMatchExpired = useCallback(() => {
@@ -230,7 +225,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
       const promises: Promise<any>[] = [
         attachmentService.userAttachmentList({
           skip: 0,
-          take: 10,
+          take: 3,
           id: targetUserId,
         }),
         followService
@@ -254,6 +249,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
         } else {
           setOtherUserVideos(items);
         }
+        setPageEpoch((n) => n + 1);
       }
     } catch (error) {
       console.error("Profile refresh error:", error);
@@ -410,7 +406,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
       />
       <header className="z-10 flex flex-col gap-4 bg-white p-2 shadow-sm dark:bg-zinc-900">
         <ProfileHeader
-          userImage={findImg}
+          userImage={findImg || undefined}
           userName={profileUser.userName}
           isMyProfile={isMyProfile}
           score={currentProfile?.score || 0}

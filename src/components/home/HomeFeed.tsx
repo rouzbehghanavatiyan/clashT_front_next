@@ -11,6 +11,7 @@ import { useShowWatch } from "@/hooks/useShowWatch";
 import { attachmentService } from "@/services/attachment.service";
 import { VideoSlide } from "@/components/VideoSlide";
 import { HomeSlideSkeleton } from "@/components/home/HomeSlideSkeleton";
+import { isMatchActive } from "@/utils/matchTimer";
 
 const PAGE_SIZE = 6;
 
@@ -88,11 +89,12 @@ const HomeFeed: React.FC = () => {
           {data?.map((video: any, index: number) => (
             <SwiperSlide key={`video-${video.id || index}`}>
               <VideoSlide
-                showLiked={false}
-                endTime={false}
+                showLiked
+                endTime={isMatchActive(video) || Boolean(video?.matchEndAt)}
                 showScore={true}
                 showResult={true}
                 showCountLiked={true}
+                itsHome
                 video={video}
                 index={index}
                 currentlyPlayingId={currentlyPlayingId}

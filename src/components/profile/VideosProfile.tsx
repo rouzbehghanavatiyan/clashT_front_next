@@ -92,12 +92,17 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
           <div className="grid w-full grid-cols-1">
             {match?.map((video: any, index: number) => (
               <VideosProfileItem
-                key={
-                  video?.inviteInserted?.id ??
-                  video?.inviteMatched?.id ??
-                  video?.id ??
-                  index
-                }
+                key={[
+                  video?.inviteInserted?.id ?? "x",
+                  video?.inviteMatched?.id ?? "x",
+                  video?.attachmentInserted?.attachmentId ??
+                    video?.attachmentInserted?.id ??
+                    "x",
+                  video?.attachmentMatched?.attachmentId ??
+                    video?.attachmentMatched?.id ??
+                    "x",
+                  index,
+                ].join("-")}
                 video={video}
                 videoLikes={videoLikes}
                 currentlyPlayingId={currentlyPlayingId}

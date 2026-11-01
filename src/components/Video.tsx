@@ -198,6 +198,7 @@ const Video: React.FC<VideoProps> = ({
           }
         }}
       >
+        {url ? (
         <ReactPlayer
           ref={playerRef}
           src={url}
@@ -237,6 +238,7 @@ const Video: React.FC<VideoProps> = ({
           onLoadedMetadata={syncDuration}
           onTimeUpdate={handleTimeUpdate}
         />
+        ) : null}
       </div>
 
       <div
@@ -266,13 +268,13 @@ const Video: React.FC<VideoProps> = ({
       )}
 
       <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-20 bg-gradient-to-t from-black/35 via-black/10 to-transparent transition-opacity duration-300 ${
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-6 bg-gradient-to-t from-black/25 to-transparent transition-opacity duration-300 ${
           showControls ? "opacity-100" : "opacity-0"
         }`}
       />
 
       <div
-        className={`absolute inset-x-0 bottom-0 z-[20] px-3 pb-2 pt-4 transition-opacity duration-300 ${
+        className={`absolute inset-x-0 bottom-0 z-[5] transition-opacity duration-300 ${
           showControls ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >

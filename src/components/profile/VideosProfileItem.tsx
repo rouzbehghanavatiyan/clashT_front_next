@@ -1,11 +1,10 @@
 "use client";
 
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import VideoSection from "@/components/VideoSection";
 import MatchInfoCard, {
   type MatchResult,
 } from "@/components/profile/MatchInfoCard";
-import TimerTornoment from "@/components/profile/TimerTornoment";
 
 type VideosProfileItemProps = {
   video: any;
@@ -33,7 +32,10 @@ const VideosProfileItem = ({
   dropdownItems,
 }: VideosProfileItemProps) => {
   const endAt = video?.matchEndAt ?? null;
-  const showTimer = Boolean(endAt);
+  const [matchEnded, setMatchEnded] = useState(
+    () => !endAt || endAt <= Date.now(),
+  );
+  const isLive = Boolean(endAt && endAt > Date.now() && !matchEnded);
   const insertedId = video?.attachmentInserted?.attachmentId;
   const matchedId = video?.attachmentMatched?.attachmentId;
   const inviteId = video?.inviteInserted?.id ?? video?.inviteMatched?.id;
@@ -94,31 +96,39 @@ const VideosProfileItem = ({
     ],
   );
 
+  const playIds = videoSections.map(
+    (section) =>
+      `${inviteId}-${section.attachment?.attachmentId ?? section.attachment?.id ?? "x"}-${section.position}`,
+  );
+
   const handleComplete = useCallback(() => {
-    const isAnyPlaying =
-      currentlyPlayingId === `${inviteId}-0` ||
-      currentlyPlayingId === `${inviteId}-1`;
+    setMatchEnded(true);
+    const isAnyPlaying = playIds.some((id) => currentlyPlayingId === id);
     if (isAnyPlaying) onPlay?.(null);
     onMatchExpired?.();
-  }, [currentlyPlayingId, inviteId, onPlay, onMatchExpired]);
+  }, [currentlyPlayingId, playIds, onPlay, onMatchExpired]);
 
   return (
     <article className="mt-2.5">
-      <div className="relative mx-auto w-full max-w-[360px] overflow-hidden bg-black sm:max-w-[420px]">
+      <div className="relative mx-auto flex h-[calc(100svh-7.5rem)] max-h-[720px] min-h-[480px] w-full max-w-[360px] flex-col overflow-hidden bg-black sm:max-w-[420px]">
         {videoSections.map((section) => {
-          const videoId = `${inviteId}-${section.position}`;
+          const videoId = playIds[section.position];
           const isPlaying = currentlyPlayingId === videoId;
           return (
             <div
               key={videoId}
-              className="relative aspect-[200/345] w-full"
+              className="relative min-h-0 w-full flex-1"
             >
               <VideoSection
                 showLiked
-                endTime={showTimer}
+                endTime={isLive}
                 score={section.score}
                 result={section.result}
-                countLiked={section.likeCount}
+                countLiked={
+                  section.position === 0
+                    ? (video?.likeInserted ?? 0)
+                    : (video?.likeMatched ?? 0)
+                }
                 isLiked={section.isLiked}
                 video={video}
                 positionVideo={section.position}
@@ -130,21 +140,12 @@ const VideosProfileItem = ({
                 }
                 openDropdowns={openDropdowns}
                 setOpenDropdowns={setOpenDropdowns}
+                videoLikes={videoLikes}
+                profileWatch
               />
             </div>
           );
         })}
-        {showTimer && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
-            <div className="pointer-events-auto flex w-[83%] items-center justify-center">
-              <TimerTornoment
-                endAt={endAt}
-                active
-                onComplete={handleComplete}
-              />
-            </div>
-          </div>
-        )}
       </div>
       <div className="mx-auto w-full max-w-[360px] sm:max-w-[420px]">
         <MatchInfoCard
@@ -162,7 +163,9 @@ const VideosProfileItem = ({
             score: video?.scoreMatched ?? 0,
             result: resultMatched,
           }}
-          isLive={showTimer}
+          isLive={isLive}
+          endAt={endAt}
+          onTimerComplete={handleComplete}
         />
       </div>
     </article>

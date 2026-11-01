@@ -2,6 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const PAGE_SIZE = 3;
 
+function parseList<T>(res: any): T[] {
+  if (Array.isArray(res?.data?.data)) return res.data.data;
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res)) return res;
+  return [];
+}
+
 export function useLoadMore<T = any>(
   fetchFn: (params: { skip: number; take: number }) => Promise<any>,
   onSuccess: (newItems: T[], isFirstPage: boolean) => void,
@@ -13,7 +20,11 @@ export function useLoadMore<T = any>(
 
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
-  const skipRef = useRef(cachedDataLength);
+  const skipRef = useRef(0);
+  const fetchFnRef = useRef(fetchFn);
+  const onSuccessRef = useRef(onSuccess);
+  fetchFnRef.current = fetchFn;
+  onSuccessRef.current = onSuccess;
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
@@ -21,24 +32,21 @@ export function useLoadMore<T = any>(
     loadingRef.current = true;
     setLoading(true);
 
+    const skip = skipRef.current;
+    const take = PAGE_SIZE;
+    const isFirstPage = skip === 0;
+
     try {
-      const res = await fetchFn({ skip: skipRef.current, take: PAGE_SIZE });
+      let list = parseList<T>(await fetchFnRef.current({ skip, take }));
 
-      console.log("Raw Response Data:", res?.data?.data);
+      if (list.length === 0) {
+        list = parseList<T>(await fetchFnRef.current({ skip, take }));
+      }
 
-      const list: T[] = Array.isArray(res?.data?.data)
-        ? res.data.data
-        : Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res)
-            ? res
-            : [];
+      onSuccessRef.current(list, isFirstPage);
 
-      onSuccess(list, skipRef.current === 0);
-      
-      skipRef.current += list.length;
-      const more = list.length === PAGE_SIZE;
-
+      skipRef.current = skip + take;
+      const more = list.length === take;
       hasMoreRef.current = more;
       setHasMore(more);
     } catch (err) {
@@ -49,16 +57,18 @@ export function useLoadMore<T = any>(
       loadingRef.current = false;
       setLoading(false);
     }
-  }, [fetchFn, onSuccess]);
+  }, []);
 
   useEffect(() => {
-    skipRef.current = cachedDataLength;
+    skipRef.current = 0;
     hasMoreRef.current = true;
     setHasMore(true);
     if (cachedDataLength === 0) {
-      loadMore();
+      void loadMore();
+    } else {
+      skipRef.current = Math.ceil(cachedDataLength / PAGE_SIZE) * PAGE_SIZE;
     }
-  }, [resetKey]);
+  }, [resetKey, loadMore]);
 
   return { loading, hasMore, loadMore };
 }

@@ -19,7 +19,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
 
   const isChatPage = pathname.startsWith("/chat");
   const isChatThreadPage = /^\/chat\/.+/.test(pathname);
-  const lockPageScroll = pathname.startsWith("/support") || isChatPage;
+  const isWatchListPage = pathname === "/watch";
+  const lockPageScroll =
+    pathname.startsWith("/support") || isChatPage || isWatchListPage;
   const isWatchDetailPage = pathname.startsWith("/watch/");
   const hideBottomChrome = isWatchDetailPage || isChatThreadPage;
 
@@ -67,7 +69,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
         <main
           className={`flex-1 min-h-0 ${
             hideBottomChrome ? "pb-0" : "pb-11 md:pb-0"
-          } ${lockPageScroll ? "overflow-hidden" : ""}`}
+          } ${lockPageScroll ? "flex h-full flex-col overflow-hidden" : ""}`}
         >
           {children}
         </main>

@@ -97,7 +97,11 @@ const ImageRank: React.FC<ImageRankProps> = ({
   const rankSize = Math.floor(imgSize * 0.6);
 
   const hasValidImage =
-    Boolean(imgSrc) && !imgSrc?.includes("undefined") && !imageError;
+    typeof imgSrc === "string" &&
+    imgSrc.trim() !== "" &&
+    imgSrc !== "null" &&
+    !imgSrc.includes("undefined") &&
+    !imageError;
 
   const isClickable = !onClickDisable && showProfile;
 

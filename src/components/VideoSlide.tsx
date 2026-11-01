@@ -11,6 +11,10 @@ interface VideoSlideProps {
   showResult: boolean;
   showLiked: boolean;
   showCountLiked: boolean;
+  itsHome?: boolean;
+  inviteWatch?: boolean;
+  profileWatch?: boolean;
+  videoLikes?: Record<string, number>;
   onVideoPlay: (attachmentId: string) => void;
   toggleDropdown: (index: number) => void;
   dropdownItems: (data: any, position: number, userSenderId: any) => any[];
@@ -32,6 +36,10 @@ export const VideoSlide: React.FC<VideoSlideProps> = ({
   showResult,
   showLiked,
   showCountLiked,
+  itsHome = false,
+  inviteWatch = false,
+  profileWatch = false,
+  videoLikes,
 }) => {
   const resultInserted =
     video?.likeInserted > video?.likeMatched
@@ -77,10 +85,9 @@ export const VideoSlide: React.FC<VideoSlideProps> = ({
         return (
           <div key={sectionIndex} className="h-1/2 relative">
             <VideoSection
-              externalIsLiked={showLiked ? true : false}
               score={showScore ? section?.score : null}
               result={showResult ? section?.result : null}
-              showLiked={showLiked ? true : false}
+              showLiked={showLiked}
               countLiked={showCountLiked ? section?.likeCount : null}
               endTime={endTime}
               video={video}
@@ -96,6 +103,11 @@ export const VideoSlide: React.FC<VideoSlideProps> = ({
               openDropdowns={openDropdowns}
               positionVideo={section.position}
               isLiked={section.isLiked}
+              itsHome={itsHome}
+              inviteWatch={inviteWatch}
+              profileWatch={profileWatch}
+              videoLikes={videoLikes}
+              showCountLiked={showCountLiked}
             />
           </div>
         );

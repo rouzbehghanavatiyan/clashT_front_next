@@ -16,6 +16,16 @@ import {
   setPendingInviteId,
 } from "@/utils/pendingInvite";
 import { clearCreateMediaFile, getCreateMediaFile } from "@/utils/createMediaFile";
+import { captureVideoCover } from "@/utils/media";
+import {
+  fileExtension,
+  makeMovieAttachmentName,
+} from "@/utils/fileHelper";
+
+function toBlob(value: unknown): Blob | File | null {
+  if (value instanceof File || value instanceof Blob) return value;
+  return null;
+}
 
 const initialState: any = {
   needProfileRefresh: false,
@@ -160,28 +170,56 @@ export const uploadFullProcessThunk = createAsyncThunk(
         throw new Error("Error in recording initial movie information");
       }
 
-      const formData = new FormData();
       const mediaFile = getCreateMediaFile();
-      const mimeType = state.video.videoMimeType || mediaFile?.type || "";
-      const fileName =
+      const videoBlob = toBlob(allFormData?.video) || mediaFile;
+      const coverBlob = toBlob(allFormData?.imageCover);
+      const mimeType =
+        (videoBlob instanceof File ? videoBlob.type : "") ||
+        state.video.videoMimeType ||
+        mediaFile?.type ||
+        "";
+      const isImage = mimeType.startsWith("image/") && !toBlob(allFormData?.video);
+      const movieId = String(movieDataRes?.id);
+      const originalName =
+        (videoBlob instanceof File && videoBlob.name) ||
         state.video.videoFileName ||
         mediaFile?.name ||
-        (mimeType.startsWith("image/") ? "cover.png" : "video.mp4");
+        (isImage ? "cover.png" : "video.mp4");
+      const videoName = `${makeMovieAttachmentName("video", movieId)}${fileExtension(originalName, ".mp4")}`;
+      const coverName = `${makeMovieAttachmentName("cover", movieId)}.png`;
 
-      if (mediaFile) {
-        formData.append("FormFile", mediaFile, fileName);
-      } else if (allFormData?.video || allFormData?.imageCover) {
-        const fallback = allFormData.video || allFormData.imageCover;
-        if (fallback instanceof File || fallback instanceof Blob) {
-          formData.append(
-            "FormFile",
-            fallback,
-            (fallback as File).name || fileName,
+      let coverFile = coverBlob;
+      if (!coverFile && videoBlob && !isImage) {
+        try {
+          coverFile = await captureVideoCover(
+            videoBlob instanceof File
+              ? videoBlob
+              : new File([videoBlob], videoName, {
+                  type: mimeType || "video/mp4",
+                }),
           );
+        } catch (coverError) {
+          console.error("Failed to capture video cover:", coverError);
         }
       }
+      if (!coverFile && isImage) {
+        coverFile = videoBlob || mediaFile;
+      }
 
-      formData.append("attachmentId", String(movieDataRes?.id));
+      const formData = new FormData();
+      if (videoBlob && !isImage) {
+        formData.append("formFile", videoBlob, videoName);
+      } else if (coverFile) {
+        formData.append("formFile", coverFile, coverName);
+      } else {
+        throw new Error("No video or cover file to upload");
+      }
+
+      if (coverFile && videoBlob && !isImage) {
+        formData.append("imageCover", coverFile, coverName);
+      }
+
+      formData.append("attachmentId", movieId);
       formData.append("attachmentType", "mo");
       formData.append("attachmentName", "movies");
 

@@ -55,7 +55,7 @@ async function fetchUserProfile(rawUsername: string): Promise<UserProfileData | 
     let avatarUrl: string | undefined;
     try {
       avatarUrl = attachment
-        ? (StringHelpers.getProfile(attachment) ?? undefined)
+        ? StringHelpers.getProfile(attachment) || undefined
         : undefined;
     } catch {
       avatarUrl = undefined;
