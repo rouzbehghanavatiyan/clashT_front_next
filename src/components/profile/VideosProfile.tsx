@@ -18,10 +18,11 @@ interface VideosProfileProps {
   videoLikes: Record<string, number>;
   loadingRef: React.RefObject<HTMLDivElement | null> | any;
   onMatchExpired?: () => void;
+  isMyProfile?: boolean;
 }
 
 const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
-  ({ loadingRef, isLoading, match, videoLikes, onMatchExpired }, ref) => {
+  ({ loadingRef, isLoading, match, videoLikes, onMatchExpired, isMyProfile = false }, ref) => {
     const [openDropdowns, setOpenDropdowns] = useState<
       Record<string | number, boolean>
     >({});
@@ -112,6 +113,7 @@ const VideosProfile = forwardRef<HTMLDivElement, VideosProfileProps>(
                 setOpenDropdowns={setOpenDropdowns}
                 toggleDropdown={toggleDropdown}
                 dropdownItems={dropdown}
+                profileWatch={isMyProfile}
               />
             ))}
           </div>

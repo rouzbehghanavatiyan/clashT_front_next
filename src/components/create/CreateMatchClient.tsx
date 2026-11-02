@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ButtonTimer from "@/components/create/ButtonTimer";
 import { useCreateMediaPick } from "@/hooks/useCreateMediaPick";
@@ -10,10 +10,7 @@ import {
   updateMovieData,
   uploadFullProcessThunk,
 } from "@/store/slices/videoSlice";
-import {
-  cancelPendingInvite,
-  getPendingInviteId,
-} from "@/utils/pendingInvite";
+import { getPendingInviteId } from "@/utils/pendingInvite";
 import { getCreateMediaFile } from "@/utils/createMediaFile";
 import { captureVideoCover } from "@/utils/media";
 import SportsSoccerIcon from "@mui/icons-material/SportsSoccer";
@@ -122,21 +119,6 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
     }
   };
 
-  useEffect(() => {
-    const onPageLeave = () => {
-      if (!getPendingInviteId()) return;
-      void cancelPendingInvite({ keepalive: true });
-    };
-
-    window.addEventListener("pagehide", onPageLeave);
-    window.addEventListener("beforeunload", onPageLeave);
-
-    return () => {
-      window.removeEventListener("pagehide", onPageLeave);
-      window.removeEventListener("beforeunload", onPageLeave);
-    };
-  }, [dispatch]);
-
   const handleStartMatch = async () => {
     if (!userId) {
       router.push("/login");
@@ -176,6 +158,8 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
           ...(isImage ? { image: storedFile } : { video: storedFile }),
         },
         movieMeta: { title: "", desc: "" },
+        targetGender: selectedGender,
+        subSubCategoryId: selectedActivity.id,
         router,
       }),
     );

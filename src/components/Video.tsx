@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import ReactPlayer from "react-player";
 import ZoomOut from "@mui/icons-material/ZoomOut";
+import { isImageMediaUrl } from "@/utils/fileHelper";
 
 function playSafely(el: HTMLMediaElement | null) {
   if (!el) return;
@@ -198,7 +199,15 @@ const Video: React.FC<VideoProps> = ({
           }
         }}
       >
-        {url ? (
+        {url && isImageMediaUrl(url) ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={url}
+            alt=""
+            className={`pointer-events-none h-full w-full object-contain ${className ?? ""}`}
+            style={{ width: "100%", height: "100%", ...style }}
+          />
+        ) : url ? (
         <ReactPlayer
           ref={playerRef}
           src={url}

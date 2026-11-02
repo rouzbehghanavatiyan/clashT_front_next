@@ -30,6 +30,7 @@ export function getImageUrl(data: any): string {
 
 function toCoverPath(value: string) {
   return value
+    .replace(/\/mo\//g, "/co/")
     .replace(/(^|\/)video_/g, "$1cover_")
     .replace(/\.mp4$/i, ".png");
 }
@@ -42,11 +43,17 @@ function toCoverAttachment(attachment: any) {
     ext === ".mov" ||
     ext === ".webm" ||
     fileName.startsWith("video_");
-  if (!isVideo) return attachment;
+  if (!isVideo) {
+    return {
+      ...attachment,
+      attachmentType: attachment?.attachmentType || "co",
+    };
+  }
   return {
     ...attachment,
     fileName: fileName.replace(/^video_/, "cover_"),
     ext: ".png",
+    attachmentType: "co",
   };
 }
 
@@ -72,7 +79,12 @@ export function makeMovieAttachmentName(
 
 export function makeCoverFileName(movieId: string | number) {
   const guid = randomFromAlphabet(32, "0123456789abcdef");
-  return `cover_${Date.now()}_${movieId}_${guid}.png`;
+  return `cover_${Date.now()}_${movieId}_${guid}`;
+}
+
+export function isImageMediaUrl(url?: string | null) {
+  if (!url) return false;
+  return /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(url);
 }
 
 export function fileExtension(name?: string | null, fallback = ".mp4") {

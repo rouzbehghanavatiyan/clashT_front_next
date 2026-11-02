@@ -2,8 +2,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
-import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
-import ThumbUpIcon from "@mui/icons-material/ThumbUp";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import StarIcon from "@mui/icons-material/Star";
 import { userService } from "@/services/user.service";
 import { socket } from "@/lib/socket";
 import { fixNumberCount } from "@/utils/fileHelper";
@@ -221,12 +221,12 @@ const OptionBottom: React.FC<OptionBottomProps> = ({
                 type="button"
                 onClick={handleLikeClick}
                 className="pointer-events-auto p-2 text-white"
-                aria-label={isLiked ? "Unlike" : "Like"}
+                aria-label={isLiked ? "Remove vote" : "Vote"}
               >
                 {isLiked ? (
-                  <ThumbUpIcon sx={{ fontSize: 20 }} />
+                  <StarIcon sx={{ fontSize: 22, color: "#facc15" }} />
                 ) : (
-                  <ThumbUpOffAltIcon sx={{ fontSize: 20 }} />
+                  <StarBorderIcon sx={{ fontSize: 22 }} />
                 )}
               </button>
             )}
@@ -241,9 +241,9 @@ const OptionBottom: React.FC<OptionBottomProps> = ({
               <div
                 className="flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1"
                 aria-disabled="true"
-                title="Liking is disabled after the match ends"
+                title="Voting is disabled after the match ends"
               >
-                <ThumbUpIcon sx={{ fontSize: 18, color: "#9ca3af" }} />
+                <StarIcon sx={{ fontSize: 18, color: "#9ca3af" }} />
                 <span className="min-w-[1ch] text-sm font-bold tabular-nums text-white">
                   {fixNumberCount(localLikeCount)}
                 </span>

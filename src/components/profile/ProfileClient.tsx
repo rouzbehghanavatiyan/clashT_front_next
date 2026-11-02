@@ -465,6 +465,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
             isLoading={loading || refreshing}
             loadingRef={observerTarget}
             onMatchExpired={handleMatchExpired}
+            isMyProfile={isMyProfile}
           />
         )}
       </section>

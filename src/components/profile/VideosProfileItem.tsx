@@ -18,6 +18,7 @@ type VideosProfileItemProps = {
   >;
   toggleDropdown?: (video: any, index: number) => void;
   dropdownItems?: (data: any, position: number, userSenderId: any) => any[];
+  profileWatch?: boolean;
 };
 
 const VideosProfileItem = ({
@@ -30,6 +31,7 @@ const VideosProfileItem = ({
   setOpenDropdowns,
   toggleDropdown,
   dropdownItems,
+  profileWatch = false,
 }: VideosProfileItemProps) => {
   const endAt = video?.matchEndAt ?? null;
   const [matchEnded, setMatchEnded] = useState(
@@ -141,7 +143,7 @@ const VideosProfileItem = ({
                 openDropdowns={openDropdowns}
                 setOpenDropdowns={setOpenDropdowns}
                 videoLikes={videoLikes}
-                profileWatch
+                profileWatch={profileWatch}
               />
             </div>
           );

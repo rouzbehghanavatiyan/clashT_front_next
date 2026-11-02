@@ -13,6 +13,9 @@ export default class StringHelpers {
       .replace(/[\u00a0\u202f]/g, " ")
       .trim();
     if (!type || !fileName) return "";
-    return `${StringHelpers.baseURL}/${type}/${encodeURIComponent(fileName)}${ext}`;
+    const extNorm = ext && !ext.startsWith(".") ? `.${ext}` : ext;
+    const alreadyHasExt = /\.[a-z0-9]+$/i.test(fileName);
+    const suffix = alreadyHasExt ? "" : extNorm;
+    return `${StringHelpers.baseURL}/${type}/${encodeURIComponent(fileName)}${suffix}`;
   };
 }

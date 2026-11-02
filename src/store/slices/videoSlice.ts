@@ -9,13 +9,11 @@ import { socket } from "@/lib/socket";
 import { attachmentService } from "@/services/attachment.service";
 import { sendUserNotif } from "@/services/notify.service";
 import { authService } from "@/services/auth.service";
+import { cancelPendingInvite } from "@/utils/pendingInvite";
 import {
-  cancelPendingInvite,
-  keepMatchedInvite,
-  setMatchReceiveHandler,
-  setPendingInviteId,
-} from "@/utils/pendingInvite";
-import { clearCreateMediaFile, getCreateMediaFile } from "@/utils/createMediaFile";
+  clearCreateMediaFile,
+  getCreateMediaFile,
+} from "@/utils/createMediaFile";
 import { captureVideoCover } from "@/utils/media";
 import {
   fileExtension,
@@ -116,8 +114,7 @@ export const cancelMatchSearchThunk = createAsyncThunk(
   "video/cancelMatchSearch",
   async (_, { dispatch, getState }) => {
     const state = getState() as any;
-    const inviteId =
-      Number(state?.video?.movieData?.inviteId) || undefined;
+    const inviteId = Number(state?.video?.movieData?.inviteId) || undefined;
     await cancelPendingInvite({ inviteId });
     dispatch(setWaitingForMatch(false));
     dispatch(RsetShowTimerButtn(false));
@@ -128,30 +125,48 @@ export const cancelMatchSearchThunk = createAsyncThunk(
 export const uploadFullProcessThunk = createAsyncThunk(
   "video/uploadFullProcess",
   async (
-    { segments, mode, allFormData, movieMeta, router }: any,
+    {
+      segments,
+      mode,
+      allFormData,
+      movieMeta,
+      router,
+      targetGender: targetGenderArg,
+      subSubCategoryId: subSubCategoryIdArg,
+    }: any,
     { rejectWithValue, dispatch, getState },
   ) => {
     try {
       const state = getState() as any;
-      const userGender = state?.main?.userLogin?.user?.userGender;
+      const login = state?.main?.userLogin;
+      const rawUserGender = Number(
+        login?.user?.userGender ??
+          login?.user?.gender ??
+          login?.userGender ??
+          login?.gender,
+      );
+      const postUserGender = rawUserGender === 2 ? 2 : 1;
       const userId =
-        state?.main?.userLogin?.user?.id ||
-        state?.main?.userLogin?.userId ||
-        state?.main?.userId;
+        login?.user?.id || login?.userId || login?.id || state?.main?.userId;
       const currentResizeMode = state.video.selectedResize || 1;
-      const targetGender = state?.video?.movieData?.targetGender;
+      const targetGender =
+        targetGenderArg ?? state?.video?.movieData?.targetGender;
 
-      const selectedSubSubCategoryId =
-        state?.video?.movieData?.subSubCategoryId || 1004;
+      const selectedSubSubCategoryId = Number(
+        subSubCategoryIdArg ??
+          state?.video?.movieData?.subSubCategoryId ??
+          1004,
+      );
 
-      let reqMatchToGender = 1;
-
-      if (targetGender === "male") {
+      let reqMatchToGender = 0;
+      if (targetGender === "male" || targetGender === 1 || targetGender === "1") {
         reqMatchToGender = 1;
-      } else if (targetGender === "female") {
+      } else if (
+        targetGender === "female" ||
+        targetGender === 2 ||
+        targetGender === "2"
+      ) {
         reqMatchToGender = 2;
-      } else {
-        reqMatchToGender = Math.floor(Math.random() * 5) + 1;
       }
 
       const postData = {
@@ -159,10 +174,10 @@ export const uploadFullProcessThunk = createAsyncThunk(
         resizeMode: currentResizeMode,
         description: allFormData?.description || movieMeta?.desc || "",
         title: allFormData?.title || movieMeta?.title || "",
-        subSubCategoryId: Number(selectedSubSubCategoryId),
+        subSubCategoryId: selectedSubSubCategoryId,
         modeId: 3,
-        userGender: userGender || 1,
-        reqMatchToGender: reqMatchToGender || 94,
+        userGender: postUserGender,
+        reqMatchToGender,
       };
 
       const movieRes = await attachmentService.addMovie(postData);
@@ -172,62 +187,60 @@ export const uploadFullProcessThunk = createAsyncThunk(
       }
 
       const mediaFile = getCreateMediaFile();
-      const videoBlob = toBlob(allFormData?.video) || mediaFile;
-      const coverBlob = toBlob(allFormData?.imageCover);
-      const mimeType =
-        (videoBlob instanceof File ? videoBlob.type : "") ||
-        state.video.videoMimeType ||
-        mediaFile?.type ||
-        "";
-      const isImage = mimeType.startsWith("image/") && !toBlob(allFormData?.video);
+      const videoFile = toBlob(allFormData?.video);
+      let coverFile = toBlob(allFormData?.imageCover);
       const movieId = String(movieDataRes?.id);
-      const originalName =
-        (videoBlob instanceof File && videoBlob.name) ||
-        state.video.videoFileName ||
-        mediaFile?.name ||
-        (isImage ? "cover.png" : "video.mp4");
-      const videoName = `${makeMovieAttachmentName("video", movieId)}${fileExtension(originalName, ".mp4")}`;
-      const coverName = makeCoverFileName(movieId);
 
-      let coverFile = coverBlob;
-      if (!coverFile && videoBlob && !isImage) {
+      if (!coverFile && videoFile) {
         try {
           coverFile = await captureVideoCover(
-            videoBlob instanceof File
-              ? videoBlob
-              : new File([videoBlob], videoName, {
-                  type: mimeType || "video/mp4",
-                }),
+            videoFile instanceof File
+              ? videoFile
+              : new File([videoFile], "video.mp4", { type: "video/mp4" }),
           );
         } catch (coverError) {
           console.error("Failed to capture video cover:", coverError);
         }
       }
-      if (!coverFile && isImage) {
-        coverFile = videoBlob || mediaFile;
-      }
-      if (coverFile) {
-        coverFile = new File([coverFile], coverName, { type: "image/png" });
+      if (!coverFile && !videoFile) {
+        coverFile = toBlob(allFormData?.image) || mediaFile;
       }
 
-      const formData = new FormData();
-      if (videoBlob && !isImage) {
-        formData.append("FormFile", videoBlob, videoName);
-      }
-      if (coverFile) {
-        formData.append("FormFile", coverFile, coverName);
-      }
-      if (!formData.getAll("FormFile").length) {
+      const uploadAttachment = async (
+        file: Blob,
+        name: string,
+        attachmentType: string,
+        attachmentName: string,
+      ) => {
+        const formData = new FormData();
+        formData.append("FormFile", file, name);
+        formData.append("attachmentId", movieId);
+        formData.append("attachmentType", attachmentType);
+        formData.append("attachmentName", attachmentName);
+        const attachRes = await attachmentService.addAttachment(formData);
+        if (attachRes?.data?.status !== 0) {
+          throw new Error("Error uploading attachments");
+        }
+      };
+
+      if (!videoFile && !coverFile) {
         throw new Error("No video or cover file to upload");
       }
 
-      formData.append("attachmentId", movieId);
-      formData.append("attachmentType", "mo");
-      formData.append("attachmentName", "movies");
+      if (videoFile) {
+        const videoName = `${makeMovieAttachmentName("video", movieId)}${fileExtension(
+          videoFile instanceof File ? videoFile.name : "video.mp4",
+          ".mp4",
+        )}`;
+        await uploadAttachment(videoFile, videoName, "mo", "movies");
+      }
 
-      const attachRes = await attachmentService.addAttachment(formData);
-      if (attachRes?.data?.status !== 0) {
-        throw new Error("Error uploading attachments");
+      if (coverFile) {
+        const coverName =
+          coverFile instanceof File && /^cover_/i.test(coverFile.name)
+            ? coverFile.name
+            : `${makeCoverFileName(movieId)}.png`;
+        await uploadAttachment(coverFile, coverName, "co", "covers");
       }
 
       const requestData = {
@@ -235,28 +248,33 @@ export const uploadFullProcessThunk = createAsyncThunk(
         userId: Number(userId),
         movieId: Number(movieDataRes?.id),
         status: 0,
+        userGender: postUserGender,
+        reqMatchToGender,
       };
 
       console.log("Test rerender from: video sliceee");
       const inviteRes = await attachmentService.addInvite(requestData);
       const inviteData = inviteRes?.data?.data;
-      console.log("inviteRes", inviteRes?.data);
-      if (inviteRes?.data?.status !== 0 || !inviteData?.id) {
-        throw new Error("Error creating invite");
-      }
-      const pendingInviteId = Number(inviteData?.id);
-      dispatch(updateMovieData({ inviteId: pendingInviteId || null }));
-      if (pendingInviteId) setPendingInviteId(pendingInviteId);
+      console.log("inviteRes inviteRes inviteRes", inviteRes?.data);
       dispatch(setNeedProfileRefresh(true));
       dispatch(RsetIsLoading(false));
       dispatch(setWaitingForMatch(true));
       dispatch(RsetShowTimerButtn(true));
-      if (!socket.connected) socket.connect();
-      socket.emit("register_user", userId);
-      socket.emit("add_invite_offline", {
-        ...inviteData,
-        senderUserId: userId,
-      });
+      const emitInviteOffline = () => {
+        socket.emit("register_user", userId);
+        socket.emit("add_invite_offline", {
+          ...inviteData,
+          senderUserId: userId,
+          userGender: postUserGender,
+          reqMatchToGender,
+        });
+      };
+      if (socket.connected) {
+        emitInviteOffline();
+      } else {
+        socket.once("connect", emitInviteOffline);
+        socket.connect();
+      }
 
       const currentUserId = Number(userId);
 
@@ -280,7 +298,7 @@ export const uploadFullProcessThunk = createAsyncThunk(
       };
 
       const handleReceiveInvite = async (data: any) => {
-        keepMatchedInvite();
+        stopMatchTimer();
         dispatch(setWaitingForMatch(false));
         dispatch(RsetShowTimerButtn(false));
 
@@ -291,28 +309,28 @@ export const uploadFullProcessThunk = createAsyncThunk(
 
         await notifyMatchedUser(receiverUserId);
 
+        socket.off("receive_invite", handleReceiveInvite);
         router.replace("/profile");
       };
 
-      setMatchReceiveHandler(handleReceiveInvite);
+      socket.once("receive_invite", handleReceiveInvite);
 
       const matchedUserId = Number(
         inviteData?.userId ?? inviteData?.UserId ?? 0,
       );
       if (matchedUserId !== 0) {
-        keepMatchedInvite();
+        stopMatchTimer();
+        router.replace("/profile");
         dispatch(setWaitingForMatch(false));
         dispatch(RsetShowTimerButtn(false));
         await notifyMatchedUser(matchedUserId);
-        router.replace("/profile");
+        socket.off("receive_invite", handleReceiveInvite);
       } else {
         startMatchTimer(() => {
-          void cancelPendingInvite({ inviteId: pendingInviteId });
+          socket.off("receive_invite", handleReceiveInvite);
           dispatch(setWaitingForMatch(false));
           dispatch(RsetShowTimerButtn(false));
           dispatch(setShowTimeout(true));
-          dispatch(updateMovieData({ inviteId: null }));
-
           router.replace("/watch");
         });
       }
@@ -324,7 +342,6 @@ export const uploadFullProcessThunk = createAsyncThunk(
       };
     } catch (error: any) {
       stopMatchTimer();
-      void cancelPendingInvite();
       dispatch(RsetIsLoading(false));
       dispatch(setWaitingForMatch(false));
       dispatch(RsetShowTimerButtn(false));
@@ -372,7 +389,11 @@ const videoSlice = createSlice({
     },
     setPreparedMedia(
       state,
-      action: PayloadAction<{ src: string; mimeType: string; fileName: string }>,
+      action: PayloadAction<{
+        src: string;
+        mimeType: string;
+        fileName: string;
+      }>,
     ) {
       state.videoSrc = action.payload.src;
       state.videoMimeType = action.payload.mimeType;
@@ -431,7 +452,7 @@ const videoSlice = createSlice({
         state.resMovieData = movieData;
         state.movieData.movieId = movieData?.id;
         if (inviteData) {
-          state.movieData.inviteId = inviteData.id;
+          state.movieData.inviteId = inviteData.id ?? inviteData.Id;
         }
       })
       .addCase(uploadFullProcessThunk.rejected, (state, action) => {
