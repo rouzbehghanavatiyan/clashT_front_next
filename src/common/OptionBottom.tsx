@@ -72,7 +72,7 @@ const OptionBottom: React.FC<OptionBottomProps> = ({
   );
 
   const shouldShowLikeCount = useMemo(
-    () => Boolean(endTime && (itsHome || profileWatch || inviteWatch)),
+    () => Boolean(endTime && (itsHome || profileWatch) && !inviteWatch),
     [endTime, itsHome, profileWatch, inviteWatch],
   );
 

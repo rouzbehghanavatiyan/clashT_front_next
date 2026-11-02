@@ -16,6 +16,46 @@ export function getVideoDuration(file: File): Promise<number> {
   });
 }
 
+export function imageFileToPng(file: Blob, fileName: string): Promise<File> {
+  if (file.type === "image/png") {
+    return Promise.resolve(new File([file], fileName, { type: "image/png" }));
+  }
+
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth || image.width;
+      canvas.height = image.naturalHeight || image.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx || !canvas.width || !canvas.height) {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not convert image to png"));
+        return;
+      }
+      ctx.drawImage(image, 0, 0);
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(url);
+          if (!blob) {
+            reject(new Error("Could not convert image to png"));
+            return;
+          }
+          resolve(new File([blob], fileName, { type: "image/png" }));
+        },
+        "image/png",
+        0.92,
+      );
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not read image"));
+    };
+    image.src = url;
+  });
+}
+
 export function captureVideoCover(file: File): Promise<File> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);

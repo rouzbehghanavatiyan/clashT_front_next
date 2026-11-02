@@ -70,6 +70,11 @@ export function makeMovieAttachmentName(
   return `${prefix}_${id}_${token}_${id}_${guid}`;
 }
 
+export function makeCoverFileName(movieId: string | number) {
+  const guid = randomFromAlphabet(32, "0123456789abcdef");
+  return `cover_${Date.now()}_${movieId}_${guid}.png`;
+}
+
 export function fileExtension(name?: string | null, fallback = ".mp4") {
   const match = String(name || "").match(/(\.[a-z0-9]+)$/i);
   return match ? match[1].toLowerCase() : fallback;

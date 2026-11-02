@@ -176,13 +176,7 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
           title: "",
           description: "",
           imageCover,
-          ...(isImage
-            ? {
-                image: storedFile,
-              }
-            : {
-                video: storedFile,
-              }),
+          ...(isImage ? { image: storedFile } : { video: storedFile }),
         },
         movieMeta: { title: "", desc: "" },
         router,

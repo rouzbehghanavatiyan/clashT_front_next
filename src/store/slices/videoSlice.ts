@@ -15,10 +15,14 @@ import {
   setMatchReceiveHandler,
   setPendingInviteId,
 } from "@/utils/pendingInvite";
-import { clearCreateMediaFile, getCreateMediaFile } from "@/utils/createMediaFile";
-import { captureVideoCover } from "@/utils/media";
+import {
+  clearCreateMediaFile,
+  getCreateMediaFile,
+} from "@/utils/createMediaFile";
+import { captureVideoCover, imageFileToPng } from "@/utils/media";
 import {
   fileExtension,
+  makeCoverFileName,
   makeMovieAttachmentName,
 } from "@/utils/fileHelper";
 
@@ -115,8 +119,7 @@ export const cancelMatchSearchThunk = createAsyncThunk(
   "video/cancelMatchSearch",
   async (_, { dispatch, getState }) => {
     const state = getState() as any;
-    const inviteId =
-      Number(state?.video?.movieData?.inviteId) || undefined;
+    const inviteId = Number(state?.video?.movieData?.inviteId) || undefined;
     await cancelPendingInvite({ inviteId });
     dispatch(setWaitingForMatch(false));
     dispatch(RsetShowTimerButtn(false));
@@ -171,45 +174,62 @@ export const uploadFullProcessThunk = createAsyncThunk(
       }
 
       const mediaFile = getCreateMediaFile();
-      const videoBlob = toBlob(allFormData?.video) || mediaFile;
+      const explicitVideo = toBlob(allFormData?.video);
+      const explicitImage = toBlob(allFormData?.image);
       const coverBlob = toBlob(allFormData?.imageCover);
       const mimeType =
-        (videoBlob instanceof File ? videoBlob.type : "") ||
-        state.video.videoMimeType ||
+        (explicitVideo instanceof File ? explicitVideo.type : "") ||
+        (explicitImage instanceof File ? explicitImage.type : "") ||
         mediaFile?.type ||
+        state.video.videoMimeType ||
         "";
-      const isImage = mimeType.startsWith("image/") && !toBlob(allFormData?.video);
+      const isImage =
+        Boolean(explicitImage) ||
+        (!explicitVideo &&
+          (mimeType.startsWith("image/") ||
+            Boolean(mediaFile?.type?.startsWith("image/"))));
+      const videoBlob = explicitVideo || (!isImage ? mediaFile : null);
+      const imageBlob =
+        explicitImage || (isImage ? coverBlob || mediaFile : coverBlob);
       const movieId = String(movieDataRes?.id);
       const originalName =
         (videoBlob instanceof File && videoBlob.name) ||
         state.video.videoFileName ||
         mediaFile?.name ||
-        (isImage ? "cover.png" : "video.mp4");
+        "video.mp4";
       const videoName = `${makeMovieAttachmentName("video", movieId)}${fileExtension(originalName, ".mp4")}`;
-      const coverName = `${makeMovieAttachmentName("cover", movieId)}.png`;
+      const coverName = makeCoverFileName(movieId);
 
-      let coverFile = coverBlob;
+      let coverFile: File | Blob | null = imageBlob;
+      if (coverFile) {
+        try {
+          coverFile = await imageFileToPng(coverFile, coverName);
+        } catch (coverError) {
+          console.error("Failed to convert cover to png:", coverError);
+          coverFile = new File([coverFile], coverName, { type: "image/png" });
+        }
+      }
       if (!coverFile && videoBlob && !isImage) {
         try {
-          coverFile = await captureVideoCover(
+          const snap = await captureVideoCover(
             videoBlob instanceof File
               ? videoBlob
               : new File([videoBlob], videoName, {
                   type: mimeType || "video/mp4",
                 }),
           );
+          coverFile = new File([snap], coverName, { type: "image/png" });
         } catch (coverError) {
           console.error("Failed to capture video cover:", coverError);
         }
       }
-      if (!coverFile && isImage) {
-        coverFile = videoBlob || mediaFile;
-      }
 
       const formData = new FormData();
       if (videoBlob && !isImage) {
+        formData.append("FormFile", videoBlob, videoName);
         formData.append("formFile", videoBlob, videoName);
       } else if (coverFile) {
+        formData.append("FormFile", coverFile, coverName);
         formData.append("formFile", coverFile, coverName);
       } else {
         throw new Error("No video or cover file to upload");
@@ -364,7 +384,11 @@ const videoSlice = createSlice({
     },
     setPreparedMedia(
       state,
-      action: PayloadAction<{ src: string; mimeType: string; fileName: string }>,
+      action: PayloadAction<{
+        src: string;
+        mimeType: string;
+        fileName: string;
+      }>,
     ) {
       state.videoSrc = action.payload.src;
       state.videoMimeType = action.payload.mimeType;
@@ -419,7 +443,6 @@ const videoSlice = createSlice({
         state.isLoading = false;
         const movieData = action.payload?.movieData;
         const inviteData = action.payload?.inviteData;
-
         state.resMovieData = movieData;
         state.movieData.movieId = movieData?.id;
         if (inviteData) {
