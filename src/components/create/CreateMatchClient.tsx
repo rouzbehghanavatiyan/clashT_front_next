@@ -134,9 +134,6 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
     return () => {
       window.removeEventListener("pagehide", onPageLeave);
       window.removeEventListener("beforeunload", onPageLeave);
-      if (getPendingInviteId()) {
-        void dispatch(cancelMatchSearchThunk());
-      }
     };
   }, [dispatch]);
 
@@ -185,6 +182,9 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
   };
 
   const handleCancel = () => {
+    if (getPendingInviteId()) {
+      void dispatch(cancelMatchSearchThunk());
+    }
     if (onCancel) onCancel();
     else router.push("/");
   };
