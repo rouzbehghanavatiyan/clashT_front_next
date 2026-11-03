@@ -1,13 +1,13 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { jwtDecode } from "jwt-decode";
-import { RsetShowTimerButtn } from "./mainSlice";
+import { RsetMessageModal, RsetShowTimerButtn } from "./mainSlice";
 import {
   startMatchTimer,
   stopMatchTimer,
 } from "@/components/TimerForFindMatch";
 import { socket } from "@/lib/socket";
 import { attachmentService } from "@/services/attachment.service";
-import { sendUserNotif } from "@/services/notify.service";
+import { MATCH_NOTIF, notifyUserMatch } from "@/services/notify.service";
 import { authService } from "@/services/auth.service";
 import { cancelPendingInvite } from "@/utils/pendingInvite";
 import {
@@ -126,8 +126,6 @@ export const uploadFullProcessThunk = createAsyncThunk(
   "video/uploadFullProcess",
   async (
     {
-      segments,
-      mode,
       allFormData,
       movieMeta,
       router,
@@ -159,7 +157,11 @@ export const uploadFullProcessThunk = createAsyncThunk(
       );
 
       let reqMatchToGender = 0;
-      if (targetGender === "male" || targetGender === 1 || targetGender === "1") {
+      if (
+        targetGender === "male" ||
+        targetGender === 1 ||
+        targetGender === "1"
+      ) {
         reqMatchToGender = 1;
       } else if (
         targetGender === "female" ||
@@ -280,6 +282,15 @@ export const uploadFullProcessThunk = createAsyncThunk(
 
       const notifyMatchedUser = async (rawReceiverId: any) => {
         const receiverUserId = Number(rawReceiverId);
+        dispatch(
+          RsetMessageModal({
+            show: true,
+            icon: "success",
+            title: "Match found",
+            message: MATCH_NOTIF.message,
+            href: MATCH_NOTIF.url,
+          }),
+        );
         if (!receiverUserId || receiverUserId === currentUserId) {
           console.warn(
             "Could not resolve receiver userId for match notification",
@@ -287,14 +298,7 @@ export const uploadFullProcessThunk = createAsyncThunk(
           );
           return;
         }
-        try {
-          await sendUserNotif({
-            userId: receiverUserId,
-            message: "A match has been found for your video",
-          });
-        } catch (error) {
-          console.log("Error sending match notification", error);
-        }
+        await notifyUserMatch(receiverUserId);
       };
 
       const handleReceiveInvite = async (data: any) => {

@@ -187,12 +187,10 @@ const SignUpForm: FC = () => {
           <BrandLogo
 
             size={64}
-            showName={false}
             className="mb-4 transition-transform hover:scale-105"
             imageClassName="shadow-md ring-2 ring-blue-500/20"
             nameClassName="whitespace-nowrap text-2xl font-bold tracking-tight text-slate-800"
           />
-          <p className="text-sm text-slate-500 dark:text-gray-400">Create your account</p>
         </div>
 
         <form onSubmit={handleSignUp} className="space-y-4">
@@ -256,10 +254,10 @@ const SignUpForm: FC = () => {
                     disabled={isLoading}
                     onClick={() => handleInputChange("gender", item.value)}
                     className={`flex items-center justify-center gap-2 rounded-lg border py-3 text-sm transition ${isSelected
-                        ? "border-blue-600 bg-blue-50 font-semibold text-blue-700"
-                        : errors.gender
-                          ? "border-red-500 text-slate-700 hover:bg-slate-50"
-                          : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                      ? "border-blue-600 bg-blue-50 font-semibold text-blue-700"
+                      : errors.gender
+                        ? "border-red-500 text-slate-700 hover:bg-slate-50"
+                        : "border-slate-300 text-slate-700 hover:bg-slate-50"
                       }`}
                   >
                     <Icon fontSize="small" />
@@ -382,8 +380,8 @@ const SignUpForm: FC = () => {
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
             <div
               className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl ${modalState.type === "success"
-                  ? "bg-green-50 text-green-600"
-                  : "bg-red-50 text-red-600"
+                ? "bg-green-50 text-green-600"
+                : "bg-red-50 text-red-600"
                 }`}
             >
               {modalState.type === "success" ? "✓" : "✕"}
@@ -395,8 +393,8 @@ const SignUpForm: FC = () => {
             <Button
               type="button"
               className={`w-full font-semibold ${modalState.type === "success"
-                  ? "bg-green-600 hover:bg-green-700 focus-visible:ring-green-500"
-                  : ""
+                ? "bg-green-600 hover:bg-green-700 focus-visible:ring-green-500"
+                : ""
                 }`}
               onClick={handleCloseModal}
             >

@@ -38,6 +38,15 @@ interface CreateMatchPageProps {
 
 const activityIconSx = { fontSize: 28 };
 
+const OTHER_SPORT_ID = 2041;
+
+const otherSportOption: ActivityOption = {
+  label: "Other Sports",
+  id: OTHER_SPORT_ID,
+  value: "otherSport",
+  icon: <SportsScoreIcon sx={activityIconSx} />,
+};
+
 const activityOptions: ActivityOption[] = [
   {
     label: "Ball Sports",
@@ -46,7 +55,7 @@ const activityOptions: ActivityOption[] = [
     icon: <SportsSoccerIcon sx={activityIconSx} />,
   },
   {
-    label: "Fitness & Gym",
+    label: "Fitness",
     id: 1004,
     value: "fitness",
     icon: <FitnessCenterIcon sx={activityIconSx} />,
@@ -62,12 +71,6 @@ const activityOptions: ActivityOption[] = [
     id: 2040,
     value: "urban",
     icon: <SkateboardingIcon sx={activityIconSx} />,
-  },
-  {
-    label: "Other Sports",
-    id: 2041,
-    value: "otherSport",
-    icon: <SportsScoreIcon sx={activityIconSx} />,
   },
 ];
 
@@ -87,6 +90,7 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
   const router = useRouter();
   const dispatch = useAppDispatch();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const otherSportInputRef = useRef<HTMLInputElement>(null);
   const storedSrc = useAppSelector((state) => state.video.videoSrc);
   const videoMimeType = useAppSelector((state) => state.video.videoMimeType);
   const reduxLoading = useAppSelector((state) => state.video.isLoading);
@@ -106,8 +110,12 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
   const [selectedActivity, setSelectedActivity] = useState<ActivityOption | null>(
     null,
   );
+  const [otherSportName, setOtherSportName] = useState("");
   const [activityError, setActivityError] = useState(false);
   const [canceling, setCanceling] = useState(false);
+  const isOtherSport = selectedActivity?.id === OTHER_SPORT_ID;
+  const otherSportTitle = otherSportName.trim();
+  const otherSportMissing = isOtherSport && !otherSportTitle;
 
   const handleCancelMatching = async () => {
     if (canceling) return;
@@ -132,11 +140,18 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
       setActivityError(true);
       return;
     }
+    const sportTitle = isOtherSport ? otherSportTitle : "";
+    if (otherSportMissing) {
+      setActivityError(true);
+      otherSportInputRef.current?.focus();
+      return;
+    }
     onAccept?.(selectedGender, selectedActivity.value, selectedActivity.id);
     dispatch(
       updateMovieData({
         targetGender: selectedGender,
         subSubCategoryId: selectedActivity.id,
+        title: sportTitle,
       }),
     );
 
@@ -152,12 +167,12 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
     dispatch(
       uploadFullProcessThunk({
         allFormData: {
-          title: "",
-          description: "",
+          title: sportTitle,
+          description: sportTitle,
           imageCover,
           ...(isImage ? { image: storedFile } : { video: storedFile }),
         },
-        movieMeta: { title: "", desc: "" },
+        movieMeta: { title: sportTitle, desc: sportTitle },
         targetGender: selectedGender,
         subSubCategoryId: selectedActivity.id,
         router,
@@ -252,8 +267,8 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
                           setActivityError(false);
                         }}
                         className={`p-3.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${isSelected
-                            ? "bg-emerald-600/10 border-emerald-500 ring-2 ring-emerald-500/30 text-white"
-                            : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                          ? "bg-emerald-600/10 border-emerald-500 ring-2 ring-emerald-500/30 text-white"
+                          : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
                           }`}
                       >
                         <span className="mb-2 inline-flex">{item.icon}</span>
@@ -261,10 +276,45 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
                       </button>
                     );
                   })}
+                  <label
+                    className={`p-3.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-text ${otherSportMissing && activityError
+                      ? "bg-rose-600/10 border-rose-500 ring-2 ring-rose-500/30 text-white"
+                      : isOtherSport
+                        ? "bg-emerald-600/10 border-emerald-500 ring-2 ring-emerald-500/30 text-white"
+                        : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                      }`}
+                  >
+                    <span className="mb-2 inline-flex text-inherit">
+                      {otherSportOption.icon}
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                      Other Sports
+                    </span>
+                    <input
+                      ref={otherSportInputRef}
+                      type="text"
+                      required={isOtherSport}
+                      value={otherSportName}
+                      onFocus={() => {
+                        setSelectedActivity(otherSportOption);
+                      }}
+                      onChange={(event) => {
+                        setOtherSportName(event.target.value);
+                        setSelectedActivity(otherSportOption);
+                        setActivityError(false);
+                      }}
+                      placeholder="Sport type"
+                      className="w-full bg-transparent text-sm font-semibold text-white placeholder:text-slate-500 outline-none"
+                      aria-label="Sport type"
+                      aria-invalid={otherSportMissing && activityError}
+                    />
+                  </label>
                 </div>
                 {activityError && (
                   <p className="mt-2 text-xs text-rose-400 font-medium">
-                    Please select a topic before continuing.
+                    {isOtherSport
+                      ? "Please enter the sport type."
+                      : "Please select a topic before continuing."}
                   </p>
                 )}
               </div>
@@ -282,8 +332,8 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
                         type="button"
                         onClick={() => setSelectedGender(item.value)}
                         className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${isSelected
-                            ? "bg-blue-600/10 border-blue-500 ring-2 ring-blue-500/30 text-white"
-                            : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                          ? "bg-blue-600/10 border-blue-500 ring-2 ring-blue-500/30 text-white"
+                          : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
                           }`}
                       >
                         <p className="text-sm font-semibold">{item.label}</p>
@@ -314,7 +364,7 @@ const CreateMatchClient: React.FC<CreateMatchPageProps> = ({
                   </button>
                   <button
                     type="button"
-                    disabled={uploading}
+                    disabled={uploading || otherSportMissing}
                     onClick={handleStartMatch}
                     className="px-8 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-sm"
                   >

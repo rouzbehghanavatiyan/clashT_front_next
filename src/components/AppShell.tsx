@@ -7,6 +7,9 @@ import { Footer } from "./Footer";
 import { BottomTabBar } from "./BottomTabBar";
 import { Sidebar } from "./Sidebar";
 import ChatSocketListener from "./chat/ChatSocketListener";
+import MatchSocketListener from "./MatchSocketListener";
+import MessageModal from "./MessageModal";
+import DeactivatedModal from "@/common/DeactivatedModal";
 import { isProtectedRoute, isPublicRoute } from "@/lib/navigation";
 import { getAccessToken } from "@/services/tokenService";
 
@@ -76,6 +79,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
       </div>
       {!hideBottomChrome && <BottomTabBar />}
       <ChatSocketListener />
+      <MatchSocketListener />
+      <MessageModal />
+      <DeactivatedModal />
     </div>
   );
 };

@@ -52,10 +52,57 @@ export const sendAllNotif = async (postData: any) => {
   return await api.post(url, postData);
 };
 
+export const MATCH_NOTIF = {
+  title: "Clash Talent",
+  message: "A match has been found for your video",
+  url: "/profile",
+};
+
 export const sendUserNotif = async (postData: any) => {
   const url = `${notifBaseURL}/send`;
   return await api.post(url, postData);
 };
+
+export function showLocalNotification(
+  title: string,
+  body: string,
+  url = MATCH_NOTIF.url,
+) {
+  if (typeof window === "undefined") return;
+  if (!("Notification" in window) || Notification.permission !== "granted") {
+    return;
+  }
+  try {
+    const notification = new Notification(title, {
+      body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-48.png",
+      data: { url },
+    });
+    notification.onclick = () => {
+      window.focus();
+      window.location.href = url;
+      notification.close();
+    };
+  } catch {
+    // ignore
+  }
+}
+
+export async function notifyUserMatch(userId: number) {
+  showLocalNotification(MATCH_NOTIF.title, MATCH_NOTIF.message, MATCH_NOTIF.url);
+  if (!userId) return;
+  try {
+    await sendUserNotif({
+      userId,
+      title: MATCH_NOTIF.title,
+      message: MATCH_NOTIF.message,
+      data: { url: MATCH_NOTIF.url },
+    });
+  } catch (error) {
+    console.log("Error sending match notification", error);
+  }
+}
 
 export const registerForPushNotifications = async () => {
   try {

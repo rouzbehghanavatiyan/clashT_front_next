@@ -91,7 +91,9 @@ const initialState: any = {
   messageModal: {
     show: false,
     title: "",
+    message: "",
     icon: "",
+    href: "",
   },
   loading: false,
 };
@@ -277,7 +279,9 @@ const mainSlice = createSlice({
       action: PayloadAction<{
         show?: boolean;
         title?: string;
+        message?: string;
         icon?: string;
+        href?: string;
       }>,
     ) => {
       state.messageModal = {

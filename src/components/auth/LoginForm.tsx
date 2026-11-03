@@ -293,14 +293,11 @@ const LoginForm: FC = () => {
         <div className="mb-8 flex flex-col items-center">
           <BrandLogo
             size={64}
-            showName={false}
             className="mb-4 transition-transform hover:scale-105"
             imageClassName="shadow-md ring-2 ring-blue-500/20"
             nameClassName="whitespace-nowrap text-2xl font-bold tracking-tight text-slate-800"
           />
-          <p className="text-sm text-slate-500 dark:text-gray-400">Sign in to your account</p>
         </div>
-
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label
