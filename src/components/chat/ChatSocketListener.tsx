@@ -10,25 +10,33 @@ import {
   incrementUnreadCount,
   setUnreadMessagesCount,
 } from "@/store/slices/mainSlice";
+import { getLoginUserId } from "@/utils/jwt";
 
 export default function ChatSocketListener() {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
-  const userIdLogin = useAppSelector(
-    (state) => state.main?.userLogin?.user?.id,
-  );
+  const userLogin = useAppSelector((state) => state.main?.userLogin);
+  const userIdLogin = getLoginUserId(userLogin);
 
   useEffect(() => {
     if (!userIdLogin) return;
 
-    if (!socket.connected) socket.connect();
-    socket.emit("register_user", userIdLogin);
+    const register = () => {
+      socket.emit("register_user", userIdLogin);
+      unreadCount(userIdLogin)
+        .then((payload) => {
+          dispatch(setUnreadMessagesCount(parseUnreadCount(payload)));
+        })
+        .catch(() => {});
+    };
 
-    unreadCount(userIdLogin)
-      .then((payload) => {
-        dispatch(setUnreadMessagesCount(parseUnreadCount(payload)));
-      })
-      .catch(() => {});
+    if (socket.connected) register();
+    else socket.connect();
+    socket.on("connect", register);
+
+    return () => {
+      socket.off("connect", register);
+    };
   }, [userIdLogin, dispatch]);
 
   useEffect(() => {
@@ -36,7 +44,9 @@ export default function ChatSocketListener() {
 
     const handleReceive = (data: any) => {
       const sender = String(data?.senderId ?? data?.sender ?? "");
-      const receiver = String(data?.receiveId ?? data?.recieveId ?? "");
+      const receiver = String(
+        data?.receiveId ?? data?.recieveId ?? data?.recipient ?? "",
+      );
       const me = String(userIdLogin);
       if (!sender || sender === me) return;
       if (receiver && receiver !== me) return;

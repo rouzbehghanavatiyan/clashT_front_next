@@ -6,7 +6,7 @@ export { SITE_URL, API_URL, SOCKET_URL } from "@/lib/env";
 function createSocket(): Socket {
   return io(SOCKET_URL, {
     autoConnect: false,
-    transports: ["websocket"],
+    transports: ["websocket", "polling"],
     withCredentials: true,
   });
 }

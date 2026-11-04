@@ -11,6 +11,13 @@ export function decodeJwtPayload(token: string): Record<string, unknown> | null 
   }
 }
 
+export function getLoginUserId(login: any): number | null {
+  const raw = login?.user?.id ?? login?.userId ?? login?.id;
+  const userId = Number(raw);
+  if (!userId || Number.isNaN(userId)) return null;
+  return userId;
+}
+
 export function getUserIdFromToken(token: string): number | null {
   const decoded = decodeJwtPayload(token);
   if (!decoded) return null;

@@ -153,22 +153,6 @@ const VideoSection: React.FC<any> = ({
           : "relative flex h-full min-h-0 w-full flex-col border-b border-black/5 dark:border-white/10"
       }
     >
-      {!isExpanded && (
-        <OptionTop
-          main={main}
-          video={video}
-          userIdLogin={userIdLogin}
-          positionVideo={positionVideo}
-          openDropdowns={openDropdowns}
-          score={score}
-          setOpenDropdowns={setOpenDropdowns}
-          toggleDropdown={toggleDropdown}
-          dropdownItems={dropdownItems}
-          onExpand={toggleExpand}
-          isExpanded={isExpanded}
-          onBlockSuccess={() => setIsBlocked(true)}
-        />
-      )}
       <div className="relative min-h-0 flex-1">
         <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black">
           {!isBlocked && (
@@ -191,6 +175,21 @@ const VideoSection: React.FC<any> = ({
               }}
             />
           )}
+          <OptionTop
+            main={main}
+            video={video}
+            userIdLogin={userIdLogin}
+            positionVideo={positionVideo}
+            openDropdowns={openDropdowns}
+            score={score}
+            setOpenDropdowns={setOpenDropdowns}
+            toggleDropdown={toggleDropdown}
+            dropdownItems={dropdownItems}
+            onExpand={toggleExpand}
+            isExpanded={isExpanded}
+            isBlocked={isBlocked}
+            onBlockSuccess={() => setIsBlocked(true)}
+          />
           {!isExpanded && (
             <OptionBottom
               userIdLogin={userIdLogin}

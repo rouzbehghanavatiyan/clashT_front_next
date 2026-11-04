@@ -48,7 +48,13 @@ const chatSlice = createSlice({
         user.isReadChat = false;
         state.users.splice(index, 1);
         state.users.unshift(user);
+        return;
       }
+      state.users.unshift({
+        sender: senderStr,
+        unreadCount: 1,
+        isReadChat: false,
+      });
     },
     setChatUsersPage: (
       state,

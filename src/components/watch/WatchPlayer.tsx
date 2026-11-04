@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowBack } from "@mui/icons-material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Mousewheel } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
@@ -23,7 +21,6 @@ const getKey = (v: any, i: number) =>
   `invite-${v?.inviteInserted?.id ?? v?.attachmentInserted?.id ?? i}`;
 
 export default function WatchPlayer({ inviteId }: { inviteId: string }) {
-  const router = useRouter();
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -129,17 +126,6 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
       aria-label="Match videos"
       className="relative w-full bg-black flex flex-col h-svh md:h-[calc(100vh-65px)]"
     >
-      <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2 md:hidden">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          aria-label="Go back"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white hover:bg-black/65"
-        >
-          <ArrowBack sx={{ fontSize: 18 }} />
-        </button>
-      </div>
-
       {error && (
         <div
           role="alert"

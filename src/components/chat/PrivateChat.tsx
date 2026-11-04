@@ -6,10 +6,17 @@ import CircularProgress from "@mui/material/CircularProgress";
 import ImageRank from "@/components/ImageRank";
 import MessageInput from "@/common/MessageInput";
 import { useTheme } from "@/components/ThemeProvider";
-import { markAsRead, userMessages } from "@/services/chat.service";
+import {
+  markAsRead,
+  unreadCount,
+  userMessages,
+  parseUnreadCount,
+} from "@/services/chat.service";
 import { markSenderAsRead } from "@/store/slices/chatSlice";
+import { setUnreadMessagesCount } from "@/store/slices/mainSlice";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import { getImageUrl } from "@/utils/fileHelper";
+import { getLoginUserId } from "@/utils/jwt";
 import { socket } from "@/lib/socket";
 import ChatHeader from "./ChatHeader";
 import SmartText from "./SmartText";
@@ -74,7 +81,7 @@ export default function PrivateChat() {
   const score = searchParams.get("score");
   const userScore = Number(score);
   const main = useAppSelector((state) => state?.main);
-  const userIdLogin = main?.userLogin?.user?.id;
+  const userIdLogin = getLoginUserId(main?.userLogin);
   const reciveUserId = id;
   const { isDark } = useTheme();
   const [messages, setMessages] = useState<MessageType[]>([]);
@@ -113,6 +120,8 @@ export default function PrivateChat() {
       };
       await markAsRead(postData);
       dispatch(markSenderAsRead(String(reciveUserId)));
+      const unreadPayload = await unreadCount(userIdLogin);
+      dispatch(setUnreadMessagesCount(parseUnreadCount(unreadPayload)));
     } catch (err) {
       console.error("Error triggering markAsRead:", err);
     }

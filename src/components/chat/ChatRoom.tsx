@@ -16,6 +16,7 @@ import {
 } from "@/store/slices/mainSlice";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import { getImageUrl } from "@/utils/fileHelper";
+import { getLoginUserId } from "@/utils/jwt";
 
 const PAGE_SIZE = 10;
 
@@ -43,7 +44,7 @@ const ChatRoom: React.FC = () => {
   const skip = useAppSelector((state) => state.chat.skip);
   const hasMore = useAppSelector((state) => state.chat.hasMore);
   const unreadTotal = useAppSelector((state) => state.main.unreadMessagesCount) || 0;
-  const userIdLogin = main?.userLogin?.user?.id;
+  const userIdLogin = getLoginUserId(main?.userLogin);
 
   const [isLoading, setIsLoading] = useState(!chatListLoaded);
   const [isLoadingMore, setIsLoadingMore] = useState(false);

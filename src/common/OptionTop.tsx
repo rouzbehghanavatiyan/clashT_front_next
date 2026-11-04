@@ -65,6 +65,7 @@ const OptionTop: React.FC<any> = ({
   onExpand,
   isExpanded,
   onBlockSuccess,
+  isBlocked = false,
 }) => {
   const router = useRouter();
   const [localIsFollowed, setLocalIsFollowed] = useState(false);
@@ -80,16 +81,33 @@ const OptionTop: React.FC<any> = ({
     message: string;
   } | null>(null);
 
-  const currentUserId = main?.userLogin?.user?.id;
+  const currentUserId = Number(
+    userIdLogin ??
+      main?.userLogin?.user?.id ??
+      main?.userLogin?.userId ??
+      main?.userLogin?.id,
+  );
+  const userInfo =
+    positionVideo === 0
+      ? video?.userInserted ||
+        video?.inviteInserted?.user ||
+        (video?.inviteInserted?.userId
+          ? { id: video.inviteInserted.userId, userName: video?.inviteInserted?.userName }
+          : null)
+      : video?.userMatched ||
+        video?.inviteMatched?.user ||
+        (video?.inviteMatched?.userId
+          ? { id: video.inviteMatched.userId, userName: video?.inviteMatched?.userName }
+          : null);
   const profile =
     positionVideo === 0
       ? StringHelpers.getProfile(video?.profileInserted)
       : StringHelpers.getProfile(video?.profileMatched);
-  const userInfo =
-    positionVideo === 0 ? video?.userInserted : video?.userMatched;
-  const checkMyVideo = Boolean(
-    userInfo?.id && currentUserId && userInfo.id !== currentUserId,
-  );
+  const isOwnVideo =
+    Number.isFinite(currentUserId) &&
+    currentUserId > 0 &&
+    Number(userInfo?.id) === currentUserId;
+  const showOtherUserActions = Boolean(userInfo?.id) && !isOwnVideo;
   const userScore =
     positionVideo === 0 ? video?.scoreInserted : video?.scoreMatched;
 
@@ -239,8 +257,8 @@ const OptionTop: React.FC<any> = ({
   ];
 
   return (
-    <div className="absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-zinc-700/45 via-zinc-600/20 to-transparent p-2 pb-7">
-      <div className="grid grid-cols-9 items-center w-full">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-50 bg-gradient-to-b from-black/55 via-black/20 to-transparent p-2 pb-8">
+      <div className="pointer-events-auto grid grid-cols-9 items-center w-full">
         <div className="flex col-span-5 justify-start">
           <ImageRank
             userInfo={userInfo}
@@ -252,7 +270,7 @@ const OptionTop: React.FC<any> = ({
           />
         </div>
         <div className="flex col-span-2 justify-center">
-          {checkMyVideo && (
+          {showOtherUserActions && (
             <Follows
               title={localIsFollowed ? "Unfollow" : "Follow"}
               onFollowClick={handleFollowClick}
@@ -261,22 +279,24 @@ const OptionTop: React.FC<any> = ({
           )}
         </div>
         <div className="flex col-span-2 items-center justify-end gap-0.5">
-          <button
-            type="button"
-            aria-label={isExpanded ? "Exit fullscreen" : "View video fullscreen"}
-            onClick={(e) => {
-              e.stopPropagation();
-              onExpand?.();
-            }}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/15"
-          >
-            {isExpanded ? (
-              <ZoomOut sx={{ fontSize: 20 }} />
-            ) : (
-              <ZoomIn sx={{ fontSize: 20 }} />
-            )}
-          </button>
-          {checkMyVideo ? (
+          {!isBlocked && (
+            <button
+              type="button"
+              aria-label={isExpanded ? "Exit fullscreen" : "View video fullscreen"}
+              onClick={(e) => {
+                e.stopPropagation();
+                onExpand?.();
+              }}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/15"
+            >
+              {isExpanded ? (
+                <ZoomOut sx={{ fontSize: 20 }} />
+              ) : (
+                <ZoomIn sx={{ fontSize: 20 }} />
+              )}
+            </button>
+          )}
+          {!isBlocked && showOtherUserActions ? (
             <div className="relative">
               <button
                 type="button"

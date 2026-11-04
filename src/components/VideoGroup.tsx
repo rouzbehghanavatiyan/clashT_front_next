@@ -1,9 +1,43 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getImageUrl } from "@/utils/fileHelper";
 import { Icon } from "@/components/Icon";
 import { watchTour } from "@/utils/watchTourStore";
+
+function CoverImage({ src }: { src: string }) {
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setLoaded(false);
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) setLoaded(true);
+  }, [src]);
+
+  if (!src) {
+    return <div className="h-[140px] w-full animate-pulse bg-zinc-800" />;
+  }
+
+  return (
+    <div className="relative h-[140px] w-full overflow-hidden bg-zinc-800">
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-900" />
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={imgRef}
+        src={src}
+        alt=""
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={`h-[140px] w-full object-cover transition-opacity duration-200 ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
+      />
+    </div>
+  );
+}
 
 interface VideoGroupProps {
   group: any;
@@ -66,27 +100,8 @@ const VideoGroup = ({ group, onPress, measureForTour }: VideoGroupProps) => {
         )}
       </div>
 
-      {imageTop ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imageTop}
-          alt=""
-          className="h-[140px] w-full object-cover"
-        />
-      ) : (
-        <div className="h-[140px] w-full bg-black" />
-      )}
-
-      {imageBottom ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imageBottom}
-          alt=""
-          className="h-[140px] w-full object-cover"
-        />
-      ) : (
-        <div className="h-[140px] w-full bg-black" />
-      )}
+      <CoverImage src={imageTop} />
+      <CoverImage src={imageBottom} />
     </button>
   );
 };
