@@ -8,6 +8,14 @@ export const userUnBlock = async (data: any) => {
   return await api.post(`/userUnBlock`, data);
 };
 
+export const userBlock = async (data: any) => {
+  return await api.post(`/userBlock`, data);
+};
+
+export const reportVideo = async (data: any) => {
+  return await api.post(`/reportVideo`, data);
+};
+
 export const requestChangeEmail = async (data: { newEmail: string }) => {
   return await api.post(`/requestChangeEmail`, data);
 };
@@ -39,7 +47,9 @@ export const userService = {
   forgotPassword,
   requestChangeEmail,
   blockListByUser,
+  userBlock,
   userUnBlock,
+  reportVideo,
   searchUser: (postData: {
     userNameReq: string;
     pageNumber: number;

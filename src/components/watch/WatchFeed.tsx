@@ -11,6 +11,7 @@ import PwaInstallButton from "@/components/PwaInstallButton";
 import { attachmentService } from "@/services/attachment.service";
 import {
   appendWatchData,
+  appendWatchDataRaw,
   resetWatchState,
   setPaginationWatch,
   setWatchData,
@@ -38,24 +39,31 @@ export default function WatchFeed() {
   const pullDistanceRef = useRef(0);
   const refreshingRef = useRef(false);
   const skipSeedLoadRef = useRef(false);
-  const onRefreshRef = useRef<() => Promise<void>>(async () => {});
+  const onRefreshRef = useRef<() => Promise<void>>(async () => { });
+  const loadingRef = useRef(false);
+  const skipRef = useRef(pagination.skip || 0);
+  const seedRef = useRef<number | null>(null);
+  const roundCountRef = useRef(0);
 
   useEffect(() => {
-    setSeed(Math.floor(Math.random() * 1_000_000));
+    const s = Math.floor(Math.random() * 1_000_000);
+    seedRef.current = s;
+    setSeed(s);
   }, []);
 
   const handleGetAllMatch = useCallback(
     async (reset = false, customSeed?: number) => {
-      if (loading && !reset) return;
-      if (!reset && !pagination.hasMore) return;
-      const activeSeed = customSeed ?? seed;
+      // console.log("fetch", { skip, take, activeSeed, got: newData.length, round: roundCountRef.current });
+      if (loadingRef.current && !reset) return;
+      const activeSeed = customSeed ?? seedRef.current;
       if (activeSeed == null) return;
 
+      loadingRef.current = true;
       try {
         setLoading(true);
         setError("");
-        const skip = reset ? 0 : pagination.skip;
         const take = pagination.take || 6;
+        const skip = reset ? 0 : skipRef.current;
 
         const res = await attachmentService.attachmentList({
           skip,
@@ -67,26 +75,43 @@ export default function WatchFeed() {
         const newData = res?.data?.data || [];
 
         if (reset) {
+          roundCountRef.current = 0;
           dispatch(setWatchData(newData));
+        } else if (newData.length > 0) {
+          if (roundCountRef.current > 0) {
+            dispatch(appendWatchDataRaw(newData));
+          } else {
+            dispatch(appendWatchData(newData));
+          }
+        }
+
+        const reachedEnd = newData.length < take;
+        const hasAnyItems = skip > 0 || newData.length > 0;
+
+        if (reachedEnd && hasAnyItems) {
+          seedRef.current = Math.floor(Math.random() * 1_000_000);
+          roundCountRef.current += 1;
+          skipRef.current = 0;
         } else {
-          dispatch(appendWatchData(newData));
+          skipRef.current = skip + take;
         }
 
         dispatch(
           setPaginationWatch({
             take,
-            skip: skip + take,
-            hasMore: newData.length === take,
+            skip: skipRef.current,
+            hasMore: hasAnyItems,
           }),
         );
       } catch (err) {
         console.error("Failed to fetch matches:", err);
         setError("Could not load matches. Please try again.");
       } finally {
+        loadingRef.current = false;
         setLoading(false);
       }
     },
-    [loading, pagination.hasMore, pagination.skip, pagination.take, seed, dispatch],
+    [pagination.take, dispatch],
   );
 
   const onRefresh = useCallback(async () => {
@@ -96,6 +121,8 @@ export default function WatchFeed() {
     setRefreshing(true);
     try {
       const newSeed = Math.floor(Math.random() * 1_000_000);
+      seedRef.current = newSeed;
+      skipRef.current = 0;
       setSeed(newSeed);
       dispatch(resetWatchState());
       dispatch(setPaginationWatch({ take: 6, skip: 0, hasMore: true }));
@@ -181,24 +208,24 @@ export default function WatchFeed() {
     };
   }, []);
 
+  const loadMoreRef = useRef(handleGetAllMatch);
+  loadMoreRef.current = handleGetAllMatch;
+
   useEffect(() => {
     if (loading || !pagination.hasMore) return;
+    const target = bottomObserverRef.current;
+    if (!target || loading || !pagination.hasMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          handleGetAllMatch(false);
-        }
+        if (entries[0].isIntersecting) loadMoreRef.current(false);
       },
-      { threshold: 0.2 },
+      { root: scrollerRef.current, rootMargin: "300px 0px", threshold: 0 },
     );
 
-    const target = bottomObserverRef.current;
     if (target) observer.observe(target);
-    return () => {
-      if (target) observer.unobserve(target);
-    };
-  }, [handleGetAllMatch, loading, pagination.hasMore]);
+    return () => observer.disconnect();
+  }, [loading, pagination.hasMore, data?.length]);
 
   const handleShowMatch = (item: any) => {
     const inviteId = item?.inviteInserted?.id;
@@ -256,11 +283,11 @@ export default function WatchFeed() {
               item?.inviteInserted?.id ?? "x",
               item?.inviteMatched?.id ?? "x",
               item?.attachmentInserted?.attachmentId ??
-                item?.attachmentInserted?.id ??
-                "x",
+              item?.attachmentInserted?.id ??
+              "x",
               item?.attachmentMatched?.attachmentId ??
-                item?.attachmentMatched?.id ??
-                "x",
+              item?.attachmentMatched?.id ??
+              "x",
               index,
             ].join("-");
 

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useAppSelector } from "@/store/reduxHook";
 import OptionTop from "@/common/OptionTop";
 import OptionBottom from "@/common/OptionBottom";
+import BlockedVideo from "@/common/BlockedVideo";
 import Comments from "@/common/Comments";
 import StringHelpers from "@/utils/StringHelpers";
 import Video from "./Video";
@@ -60,6 +61,27 @@ const VideoSection: React.FC<any> = ({
   const rootRef = useRef<HTMLDivElement>(null);
   const userIdLogin = main?.userLogin?.user?.id;
   const isExpanded = overlay || nativeFs;
+  const initialBlocked =
+    positionVideo === 0
+      ? Boolean(video?.isBlockedInserted)
+      : Boolean(video?.isBlockedMatched);
+  const [isBlocked, setIsBlocked] = useState(initialBlocked);
+
+  useEffect(() => {
+    setIsBlocked(
+      positionVideo === 0
+        ? Boolean(video?.isBlockedInserted)
+        : Boolean(video?.isBlockedMatched),
+    );
+  }, [
+    video?.id,
+    video?.isBlockedInserted,
+    video?.isBlockedMatched,
+    positionVideo,
+  ]);
+
+  const blockedUser =
+    positionVideo === 0 ? video?.userInserted : video?.userMatched;
 
   const handleToggleComments = (videoData: any) => {
     setCommentUserInfo(videoData);
@@ -144,18 +166,31 @@ const VideoSection: React.FC<any> = ({
           dropdownItems={dropdownItems}
           onExpand={toggleExpand}
           isExpanded={isExpanded}
+          onBlockSuccess={() => setIsBlocked(true)}
         />
       )}
       <div className="relative min-h-0 flex-1">
         <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black">
-          <Video
-            className="h-full w-full object-contain"
-            loop
-            playing={isPlaying || overlay}
-            handleVideo={() => onVideoPlay(video)}
-            url={videoUrl}
-            onExitFullscreen={isExpanded ? toggleExpand : undefined}
-          />
+          {!isBlocked && (
+            <Video
+              className="h-full w-full object-contain"
+              loop
+              playing={isPlaying || overlay}
+              handleVideo={() => onVideoPlay(video)}
+              url={videoUrl}
+              onExitFullscreen={isExpanded ? toggleExpand : undefined}
+            />
+          )}
+          {isBlocked && (
+            <BlockedVideo
+              userName={blockedUser}
+              userIdLogin={userIdLogin}
+              onUnblockSuccess={() => {
+                setIsBlocked(false);
+                onVideoPlay?.(video);
+              }}
+            />
+          )}
           {!isExpanded && (
             <OptionBottom
               userIdLogin={userIdLogin}

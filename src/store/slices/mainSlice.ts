@@ -35,7 +35,9 @@ const watchItemIdentity = (item: any) =>
   [
     item?.inviteInserted?.id ?? "x",
     item?.inviteMatched?.id ?? "x",
-    item?.attachmentInserted?.attachmentId ?? item?.attachmentInserted?.id ?? "x",
+    item?.attachmentInserted?.attachmentId ??
+      item?.attachmentInserted?.id ??
+      "x",
     item?.attachmentMatched?.attachmentId ?? item?.attachmentMatched?.id ?? "x",
   ].join("-");
 
@@ -121,6 +123,12 @@ const mainSlice = createSlice({
       });
       state.watchVideo.data = [...state.watchVideo.data, ...incoming];
     },
+    appendWatchDataRaw: (state, action) => {
+      state.watchVideo.data = [
+        ...(state.watchVideo.data || []),
+        ...action.payload,
+      ];
+    },
     RsetAllFollowerList: (state, action: PayloadAction<any[]>) => {
       state.allFollowerList = action.payload;
     },
@@ -166,7 +174,9 @@ const mainSlice = createSlice({
     RsetUserLogin: (state, action: PayloadAction<any>) => {
       state.userLogin = action.payload;
       const userIdLogin =
-        action.payload?.user?.id ?? action.payload?.id ?? action.payload?.userId;
+        action.payload?.user?.id ??
+        action.payload?.id ??
+        action.payload?.userId;
       if (userIdLogin != null) {
         state.userId = userIdLogin;
       }
@@ -330,6 +340,7 @@ export const {
   RsetUserId,
   resetWatchState,
   resetProfileVideo,
+  appendWatchDataRaw,
   resetHomeState,
   RsetFollowerLength,
   RsetFollowingLength,
