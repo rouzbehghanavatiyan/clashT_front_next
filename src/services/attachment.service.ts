@@ -4,6 +4,10 @@ export const removeInvite = async (invId: number) => {
   return await api.delete(`/removeInvite?inviteId=${invId}`);
 };
 
+export const removeFile = async (movieId: number) => {
+  return await api.delete(`/removeFile?movieId=${movieId}`);
+};
+
 export const attachmentService = {
   attachmentList: (params: any) => api.get(`/attachmentList`, { params }),
   attachmentListByInviteId: (params: {
@@ -23,6 +27,7 @@ export const attachmentService = {
   play: (path: string) => `${api.defaults.baseURL}/attachmentPlay?path=${path}`,
 
   removeInvite,
+  removeFile,
 
   userAttachmentList: (postData: any) => {
     const skip = Number(postData?.skip) || 0;

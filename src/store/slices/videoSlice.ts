@@ -115,10 +115,21 @@ export const cancelMatchSearchThunk = createAsyncThunk(
   async (_, { dispatch, getState }) => {
     const state = getState() as any;
     const inviteId = Number(state?.video?.movieData?.inviteId) || undefined;
+    const movieId =
+      Number(state?.video?.movieData?.movieId) ||
+      Number(state?.video?.resMovieData?.id) ||
+      0;
+    if (movieId > 0) {
+      try {
+        await attachmentService.removeFile(movieId);
+      } catch (error) {
+        console.error("removeFile failed", error);
+      }
+    }
     await cancelPendingInvite({ inviteId });
     dispatch(setWaitingForMatch(false));
     dispatch(RsetShowTimerButtn(false));
-    dispatch(updateMovieData({ inviteId: null }));
+    dispatch(updateMovieData({ inviteId: null, movieId: null }));
   },
 );
 
@@ -192,6 +203,7 @@ export const uploadFullProcessThunk = createAsyncThunk(
       const videoFile = toBlob(allFormData?.video);
       let coverFile = toBlob(allFormData?.imageCover);
       const movieId = String(movieDataRes?.id);
+      dispatch(updateMovieData({ movieId: Number(movieDataRes?.id) }));
 
       if (!coverFile && videoFile) {
         try {
@@ -236,7 +248,6 @@ export const uploadFullProcessThunk = createAsyncThunk(
         )}`;
         await uploadAttachment(videoFile, videoName, "mo", "movies");
       }
-
       if (coverFile) {
         const coverName =
           coverFile instanceof File && /^cover_/i.test(coverFile.name)
@@ -258,6 +269,12 @@ export const uploadFullProcessThunk = createAsyncThunk(
       const inviteRes = await attachmentService.addInvite(requestData);
       const inviteData = inviteRes?.data?.data;
       console.log("inviteRes inviteRes inviteRes", inviteRes?.data);
+      dispatch(
+        updateMovieData({
+          movieId: Number(movieDataRes?.id),
+          inviteId: inviteData?.id ?? inviteData?.Id ?? null,
+        }),
+      );
       dispatch(setNeedProfileRefresh(true));
       dispatch(RsetIsLoading(false));
       dispatch(setWaitingForMatch(true));
