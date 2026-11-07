@@ -21,6 +21,20 @@ import VideoGroup from "@/components/VideoGroup";
 
 const PULL_THRESHOLD = 64;
 
+function WatchGroupSkeleton() {
+  return (
+    <div className="relative m-0.5 flex w-full flex-col overflow-hidden rounded-tr-xl rounded-bl-xl bg-gray-200">
+      {[0, 1].map((section) => (
+        <div
+          key={section}
+          className="relative h-[140px] animate-pulse overflow-hidden border-b border-white bg-gray-300"
+        >
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function WatchFeed() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -234,6 +248,7 @@ export default function WatchFeed() {
   };
 
   const visibleData = data || [];
+  const showSkeleton = !error && visibleData.length === 0 && (loading || seed == null);
 
   const pulling = pullDistance > 8 || refreshing;
 
@@ -275,34 +290,40 @@ export default function WatchFeed() {
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-[3px] lg:grid-cols-4">
-          {visibleData.map((item: any, index: number) => {
-            const key = [
-              item?.inviteInserted?.id ?? "x",
-              item?.inviteMatched?.id ?? "x",
-              item?.attachmentInserted?.attachmentId ??
-              item?.attachmentInserted?.id ??
-              "x",
-              item?.attachmentMatched?.attachmentId ??
-              item?.attachmentMatched?.id ??
-              "x",
-              index,
-            ].join("-");
-
-            return (
-              <article key={key} className="w-full">
-                <VideoGroup
-                  group={item}
-                  index={index}
-                  measureForTour={index === 0}
-                  onPress={() => handleShowMatch(item)}
-                />
+        <div className="grid grid-cols-2 gap-[2px] lg:grid-cols-4">
+          {showSkeleton
+            ? Array.from({ length: 6 }, (_, index) => (
+              <article key={`watch-skeleton-${index}`} className="w-full">
+                <WatchGroupSkeleton />
               </article>
-            );
-          })}
+            ))
+            : visibleData.map((item: any, index: number) => {
+              const key = [
+                item?.inviteInserted?.id ?? "x",
+                item?.inviteMatched?.id ?? "x",
+                item?.attachmentInserted?.attachmentId ??
+                item?.attachmentInserted?.id ??
+                "x",
+                item?.attachmentMatched?.attachmentId ??
+                item?.attachmentMatched?.id ??
+                "x",
+                index,
+              ].join("-");
+
+              return (
+                <article key={key} className="w-full">
+                  <VideoGroup
+                    group={item}
+                    index={index}
+                    measureForTour={index === 0}
+                    onPress={() => handleShowMatch(item)}
+                  />
+                </article>
+              );
+            })}
         </div>
 
-        {!loading && !error && visibleData.length === 0 && (
+        {!showSkeleton && !loading && !error && visibleData.length === 0 && (
           <p className="py-16 text-center text-sm text-gray-500">
             No matchups yet. Pull down to refresh or create a new clash.
           </p>
@@ -312,7 +333,7 @@ export default function WatchFeed() {
           ref={bottomObserverRef}
           className="flex min-h-[60px] w-full items-center justify-center py-8"
         >
-          {loading && !refreshing && <CircularProgress size={28} />}
+          {loading && !refreshing && !showSkeleton && <CircularProgress size={28} />}
         </div>
       </section>
     </div>

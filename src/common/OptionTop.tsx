@@ -58,6 +58,7 @@ function OverlayModal({
 
 const OptionTop: React.FC<any> = ({
   video,
+  inviteWatch = false,
   positionVideo,
   score,
   userIdLogin,
@@ -257,7 +258,13 @@ const OptionTop: React.FC<any> = ({
   ];
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-50 bg-gradient-to-b from-black/55 via-black/20 to-transparent p-2 pb-8">
+    <div
+      className={`pointer-events-none absolute inset-x-0 top-0 z-50 bg-gradient-to-b from-black/55 via-black/20 to-transparent pb-8 ${
+        inviteWatch && positionVideo === 1 && !isExpanded
+          ? "px-2 pb-8 pt-5"
+          : "p-2 pb-8"
+      }`}
+    >
       <div className="pointer-events-auto grid grid-cols-9 items-center w-full">
         <div className="flex col-span-5 justify-start">
           <ImageRank

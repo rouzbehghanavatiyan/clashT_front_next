@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import ArrowBack from "@mui/icons-material/ArrowBack";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Mousewheel } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
@@ -21,6 +23,7 @@ const getKey = (v: any, i: number) =>
   `invite-${v?.inviteInserted?.id ?? v?.attachmentInserted?.id ?? i}`;
 
 export default function WatchPlayer({ inviteId }: { inviteId: string }) {
+  const router = useRouter();
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -180,6 +183,18 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
           No videos found for this match.
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={() => {
+          if (window.history.length > 1) router.back();
+          else router.push("/watch");
+        }}
+        aria-label="Go back"
+        className="absolute left-3 top-1/2 z-[80] inline-flex -translate-y-1/2 items-center justify-center bg-transparent p-0 text-white"
+      >
+        <ArrowBack sx={{ fontSize: 29, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.65))" }} />
+      </button>
     </section>
   );
 }

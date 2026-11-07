@@ -276,14 +276,10 @@ const Video: React.FC<VideoProps> = ({
         </div>
       )}
 
-      <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-6 bg-gradient-to-t from-black/25 to-transparent transition-opacity duration-300 ${
-          showControls ? "opacity-100" : "opacity-0"
-        }`}
-      />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-16 bg-gradient-to-t from-black/45 to-transparent" />
 
       <div
-        className={`absolute inset-x-0 bottom-0 z-[5] transition-opacity duration-300 ${
+        className={`absolute inset-x-16 bottom-0 z-[5] transition-opacity duration-300 sm:inset-x-24 ${
           showControls ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >

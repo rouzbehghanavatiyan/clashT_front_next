@@ -193,7 +193,7 @@ const OptionBottom: React.FC<OptionBottomProps> = ({
   }, [isLiked, movieId, userIdLogin, canLike]);
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 px-3">
+    <div className="pointer-events-none absolute inset-x-16 bottom-4 z-10 sm:inset-x-24">
       <div className="flex items-center justify-between gap-0.5">
         <div className="flex flex-1 items-center justify-start">
           <button
@@ -239,7 +239,7 @@ const OptionBottom: React.FC<OptionBottomProps> = ({
 
             {shouldShowWaitingLike && (
               <div
-                className="flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1"
+                className="flex items-center gap-1.5"
                 aria-disabled="true"
                 title="Voting is disabled after the match ends"
               >

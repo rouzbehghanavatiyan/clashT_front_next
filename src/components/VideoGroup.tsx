@@ -16,13 +16,13 @@ function CoverImage({ src }: { src: string }) {
   }, [src]);
 
   if (!src) {
-    return <div className="h-[140px] w-full animate-pulse bg-zinc-800" />;
+    return <div className="h-[140px] w-full animate-pulse border-b border-white bg-gray-300" />;
   }
 
   return (
-    <div className="relative h-[140px] w-full overflow-hidden bg-zinc-800">
+    <div className="relative h-[140px] w-full overflow-hidden bg-gray-200">
       {!loaded && (
-        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-900" />
+        <div className="absolute inset-0 animate-pulse border-b border-white bg-gray-300" />
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -85,7 +85,7 @@ const VideoGroup = ({ group, onPress, measureForTour }: VideoGroupProps) => {
       ref={containerRef}
       type="button"
       onClick={onPress}
-      className="relative m-0.5 flex w-full flex-col overflow-hidden rounded-tr-xl rounded-bl-xl bg-black text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className="relative flex w-full flex-col overflow-hidden rounded-tr-xl rounded-bl-xl bg-gray-200 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
     >
       <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
         {matchTime && (

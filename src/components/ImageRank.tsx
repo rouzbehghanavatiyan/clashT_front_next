@@ -1,7 +1,7 @@
 // src/components/profile/ImageRank.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image, { StaticImageData } from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -93,14 +93,19 @@ const ImageRank: React.FC<ImageRankProps> = ({
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
 
+  useEffect(() => {
+    setImageError(false);
+  }, [imgSrc]);
+
   const rankData = useMemo(() => getRankData(score), [score]);
   const rankSize = Math.floor(imgSize * 0.6);
 
+  const userImg = typeof imgSrc === "string" ? imgSrc.trim() : "";
   const hasValidImage =
-    typeof imgSrc === "string" &&
-    imgSrc.trim() !== "" &&
-    imgSrc !== "null" &&
-    !imgSrc.includes("undefined") &&
+    Boolean(userImg) &&
+    userImg !== "null" &&
+    !userImg.includes("undefined") &&
+    !userImg.includes("/null") &&
     !imageError;
 
   const isClickable = !onClickDisable && showProfile;
@@ -150,17 +155,14 @@ const ImageRank: React.FC<ImageRankProps> = ({
         style={{ width: imgSize, height: imgSize }}
       >
         {hasValidImage ? (
-          <Image
-            src={imgSrc as string}
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={userImg}
+            src={userImg}
             alt={userName || "User Avatar"}
-            width={imgSize}
-            height={imgSize}
             onError={() => setImageError(true)}
             className="rounded-full object-cover border border-gray-200 dark:border-gray-700 shadow-sm"
             style={{ width: imgSize, height: imgSize }}
-            unoptimized={
-              typeof imgSrc === "string" && imgSrc.startsWith("blob:")
-            }
           />
         ) : (
           <div

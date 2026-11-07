@@ -179,6 +179,7 @@ const VideoSection: React.FC<any> = ({
             main={main}
             video={video}
             userIdLogin={userIdLogin}
+            inviteWatch={inviteWatch}
             positionVideo={positionVideo}
             openDropdowns={openDropdowns}
             score={score}

@@ -10,7 +10,8 @@ import ChatSocketListener from "./chat/ChatSocketListener";
 import MatchSocketListener from "./MatchSocketListener";
 import MessageModal from "./MessageModal";
 import DeactivatedModal from "@/common/DeactivatedModal";
-import { isProtectedRoute, isPublicRoute } from "@/lib/navigation";
+import { isMainTabPath, isProtectedRoute, isPublicRoute } from "@/lib/navigation";
+import { IosSwipeBack } from "@/components/IosSwipeBack";
 import { getAccessToken } from "@/services/tokenService";
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({
@@ -64,6 +65,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
     >
       <Sidebar />
       <div
+        id="app-swipe-root"
         className={`flex flex-1 flex-col min-w-0 md:pl-60 ${
           lockPageScroll ? "h-screen overflow-hidden" : "min-h-screen"
         }`}
@@ -78,6 +80,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
         </main>
       </div>
       {!hideBottomChrome && <BottomTabBar />}
+      <IosSwipeBack enabled={!isMainTabPath(pathname)} />
       <ChatSocketListener />
       <MatchSocketListener />
       <MessageModal />

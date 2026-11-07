@@ -6,7 +6,7 @@ import SearchRounded from "@mui/icons-material/SearchRounded";
 import CircularProgress from "@mui/material/CircularProgress";
 import ImageRank from "@/components/ImageRank";
 import { userService } from "@/services/user.service";
-import StringHelpers from "@/utils/StringHelpers";
+import { getImageUrl } from "@/utils/fileHelper";
 
 const PAGE_SIZE = 10;
 const DEBOUNCE_MS = 600;
@@ -184,9 +184,9 @@ export default function UserSearchInput({
                   className="flex w-full items-center gap-2.5 border-b border-gray-100 px-3 py-2.5 text-left last:border-b-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
                 >
                   <ImageRank
-                    imgSrc={StringHelpers.getProfile(item?.profile) || undefined}
+                    imgSrc={getImageUrl(item?.profile) || undefined}
+                    imgSize={50}
                     score={typeof item?.score === "number" ? item.score : -1}
-                    imgSize={40}
                     onClickDisable
                   />
                   <span className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
