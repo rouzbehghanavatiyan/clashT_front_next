@@ -11,7 +11,8 @@ import { VideoSlide } from "@/components/VideoSlide";
 import { HomeSlideSkeleton } from "@/components/home/HomeSlideSkeleton";
 import { isMatchActive } from "@/utils/matchTimer";
 
-const PAGE_SIZE = 6;
+const FIRST_TAKE = 6;
+const NEXT_TAKE = 3;
 
 function normalizeList(payload: any): any[] {
   if (Array.isArray(payload?.data)) return payload.data;
@@ -19,8 +20,15 @@ function normalizeList(payload: any): any[] {
   return [];
 }
 
-const getKey = (v: any, i: number) =>
-  `invite-${v?.inviteInserted?.id ?? v?.attachmentInserted?.id ?? i}`;
+const itemIdentity = (item: any) =>
+  [
+    item?.inviteInserted?.id ?? "x",
+    item?.inviteMatched?.id ?? "x",
+    item?.attachmentInserted?.attachmentId ?? item?.attachmentInserted?.id ?? "x",
+    item?.attachmentMatched?.attachmentId ?? item?.attachmentMatched?.id ?? "x",
+  ].join("-");
+
+const getKey = (v: any, i: number) => `${i}-${itemIdentity(v)}`;
 
 export default function WatchPlayer({ inviteId }: { inviteId: string }) {
   const router = useRouter();
@@ -33,52 +41,80 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
     {}
   );
 
-  const skipRef = useRef(0);
   const hasMoreRef = useRef(true);
   const loadingRef = useRef(false);
   const requestIdRef = useRef(0);
+  const dataRef = useRef<any[]>([]);
+  const skipRef = useRef(0);
+  const roundRef = useRef(0);
 
   const loadPage = useCallback(async () => {
     if (!inviteId || loadingRef.current || !hasMoreRef.current) return;
 
     loadingRef.current = true;
     const myRequestId = ++requestIdRef.current;
-    const isInitial = skipRef.current === 0;
+    const isInitial = dataRef.current.length === 0;
+    const take = isInitial ? FIRST_TAKE : NEXT_TAKE;
     if (isInitial) setIsLoading(true);
     else setIsFetchingMore(true);
     setError("");
 
-    try {
-      const numericId = Number(inviteId);
+    const numericId = Number(inviteId);
+    const requestInviteId = Number.isNaN(numericId) ? inviteId : numericId;
+
+    const readSlice = async (skip: number) => {
       const res = await attachmentService.attachmentListByInviteId({
-        skip: skipRef.current,
-        take: PAGE_SIZE,
-        inviteId: Number.isNaN(numericId) ? inviteId : numericId,
+        skip,
+        take,
+        inviteId: requestInviteId,
       });
-
-      if (myRequestId !== requestIdRef.current) return; // پاسخ کهنه
-
       const list = normalizeList(res?.data);
-      const isFirstPage = skipRef.current === 0;
+      return list.length > take ? list.slice(skip, skip + take) : list;
+    };
 
-      skipRef.current += list.length;
-      if (list.length < PAGE_SIZE) hasMoreRef.current = false;
+    let continueFromStart = false;
 
-      setData((prev) => {
-        const seen = new Set(prev.map((p) => p?.inviteInserted?.id));
-        return [
-          ...prev,
-          ...list.filter((i) => !seen.has(i?.inviteInserted?.id)),
-        ];
-      });
+    try {
+      let skip = skipRef.current;
+      let round = roundRef.current;
+      let page = await readSlice(skip);
 
-      if (isFirstPage && list[0]) {
-        setCurrentlyPlayingId(list[0]?.attachmentInserted?.attachmentId ?? null);
+      if (myRequestId !== requestIdRef.current) return;
+
+      if (page.length === 0 && skip > 0) {
+        skip = 0;
+        round += 1;
+        page = await readSlice(0);
+        if (myRequestId !== requestIdRef.current) return;
       }
+
+      if (page.length === 0) {
+        hasMoreRef.current = false;
+        return;
+      }
+
+      const reachedEnd = page.length < take;
+      skipRef.current = reachedEnd ? 0 : skip + take;
+      roundRef.current = reachedEnd ? round + 1 : round;
+
+      const prev = dataRef.current;
+      const seen = new Set(prev.map(itemIdentity));
+      const incoming =
+        round > 0 ? page : page.filter((item) => !seen.has(itemIdentity(item)));
+      if (incoming.length > 0) {
+        const next = [...prev, ...incoming];
+        dataRef.current = next;
+        setData(next);
+      }
+
+      if (isInitial && page[0]) {
+        setCurrentlyPlayingId(page[0]?.attachmentInserted?.attachmentId ?? null);
+      }
+
+      continueFromStart = reachedEnd && skip > 0;
     } catch (err) {
       if (myRequestId !== requestIdRef.current) return;
       console.error("Failed to load videos for invite:", err);
-      hasMoreRef.current = false; // جلوگیری از تلاش بی‌پایان بعد از خطا
       setError("Could not load videos for this match.");
     } finally {
       if (myRequestId === requestIdRef.current) {
@@ -87,11 +123,16 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
         setIsFetchingMore(false);
       }
     }
+
+    if (continueFromStart && myRequestId === requestIdRef.current) {
+      loadPage();
+    }
   }, [inviteId]);
 
-  // فقط وقتی inviteId عوض شد: ریست و بارگذاری صفحه اول
   useEffect(() => {
+    dataRef.current = [];
     skipRef.current = 0;
+    roundRef.current = 0;
     hasMoreRef.current = true;
     loadingRef.current = false;
     setData([]);
@@ -101,13 +142,13 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
   }, [inviteId, loadPage]);
 
   const handleSlideChange = (swiper: SwiperType) => {
-    const current = data[swiper.activeIndex];
+    const index = swiper.activeIndex;
+    const current = dataRef.current[index];
     setCurrentlyPlayingId(current?.attachmentInserted?.attachmentId ?? null);
     setOpenDropdowns({});
-    if (
-      swiper.activeIndex > 0 &&
-      (swiper.activeIndex % 3 === 0 || swiper.activeIndex >= data.length - 3)
-    ) {
+
+    const threshold = dataRef.current.length - 3;
+    if (index >= threshold && hasMoreRef.current && !loadingRef.current) {
       loadPage();
     }
   };

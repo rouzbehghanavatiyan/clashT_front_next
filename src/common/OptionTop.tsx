@@ -25,7 +25,9 @@ const REPORT_REASONS = [
   { id: 2, label: "Meaningless Content", value: "meaningless_content" },
   { id: 3, label: "Illegal or 18+", value: "illegal_adult" },
   { id: 4, label: "Against starfaceoff Rules", value: "against_rules" },
+  { id: 5, label: "Suspected AI-generated content", value: "ai_generated" },
 ];
+
 
 function OverlayModal({
   open,

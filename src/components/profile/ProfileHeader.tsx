@@ -15,6 +15,7 @@ import { attachmentService } from "@/services/attachment.service";
 import { userService } from "@/services/user.service";
 import { followService } from "@/services/follow.service";
 import ImageRank from "../ImageRank";
+import ProfileImageCropper from "./ProfileImageCropper";
 import { RsetUserLogin } from "@/store/slices/mainSlice";
 import Follows from "../Follows";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
@@ -56,6 +57,9 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
     const userId = main?.userLogin?.user?.id || main?.userLogin?.id;
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [cropSrc, setCropSrc] = useState<string | null>(null);
+    const [localImage, setLocalImage] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
     const [localIsFollowed, setLocalIsFollowed] = useState<boolean>(
       Boolean(currentProfile?.isFollowedByMe),
     );
@@ -71,16 +75,33 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
       fileInputRef.current?.click();
     };
 
-    const handleFileChange = useCallback(
-      async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+      setCropSrc(URL.createObjectURL(file));
+    };
 
-        // نمایش سریع پیش‌نمایش به کلاینت
+    const closeCropper = () => {
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+      setCropSrc(null);
+    };
+
+    const uploadProfileImage = useCallback(
+      async (file: File) => {
         const previewUrl = URL.createObjectURL(file);
+        setLocalImage((current) => {
+          if (current) URL.revokeObjectURL(current);
+          return previewUrl;
+        });
         setProfileImage?.(previewUrl);
+        closeCropper();
+
+        if (!userId) return;
 
         try {
+          setIsUploading(true);
           const formData = new FormData();
           formData.append("formFile", file);
           formData.append("attachmentId", String(userId));
@@ -91,8 +112,6 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
           const { status: attachmentStatus } = resAttachment?.data || {};
 
           if (attachmentStatus === 0) {
-            console.log("33333333333333333", userId);
-
             const resProfileAttachment =
               await userService.profileAttachment(userId);
             const { status, data } = resProfileAttachment?.data || {};
@@ -104,10 +123,10 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
         } catch (error) {
           console.error("Error uploading profile image:", error);
         } finally {
-          e.target.value = ""; // ریست مقدار input
+          setIsUploading(false);
         }
       },
-      [userId, dispatch, setProfileImage],
+      [userId, dispatch, setProfileImage, cropSrc],
     );
 
     const handleFollowClick = async () => {
@@ -158,7 +177,7 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
             <div className="rounded-full border border-gray-200 dark:border-gray-700 p-0.5 flex items-center justify-center">
               <ImageRank
                 score={score}
-                imgSrc={userImage}
+                imgSrc={localImage || userImage}
                 imgSize={96}
                 onClickDisable
               />
@@ -173,6 +192,11 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
                 className="hidden"
                 aria-label="Upload profile image"
               />
+            )}
+            {isUploading && (
+              <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-gray-500">
+                Uploading
+              </span>
             )}
           </div>
 
@@ -222,6 +246,13 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
             )}
           </div>
         </div>
+        {cropSrc && (
+          <ProfileImageCropper
+            src={cropSrc}
+            onCancel={closeCropper}
+            onConfirm={uploadProfileImage}
+          />
+        )}
       </header>
     );
   },

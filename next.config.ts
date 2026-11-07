@@ -22,6 +22,15 @@ const nextConfig: NextConfig = {
           { key: "Service-Worker-Allowed", value: "/" },
         ],
       },
+      {
+        source: "/((?!_next/static|_next/image|.*\\..*).*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=0, max-age=0, must-revalidate",
+          },
+        ],
+      },
     ];
   },
 };

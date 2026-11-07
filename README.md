@@ -34,3 +34,22 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+
+
+
+if server is right but local error html . . . 
+dont forget clear cache cloud flare.
+
+npm run build
+Remove-Item deploy -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item .next\standalone deploy -Recurse
+Copy-Item .next\static deploy\.next\static -Recurse
+Copy-Item public deploy\public -Recurse
+
+
+## ==> and server
+pm2 stop all
+Remove-Item C:\inetpub\wwwroot\sotui\.next -Recurse -Force
+pm2 start C:\inetpub\wwwroot\sotui\ecosystem.config.js

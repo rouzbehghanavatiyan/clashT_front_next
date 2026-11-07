@@ -13,6 +13,7 @@ import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 import CircularProgress from "@mui/material/CircularProgress";
 
 import { attachmentService } from "@/services/attachment.service";
+import ProfileImageCropper from "@/components/profile/ProfileImageCropper";
 import {
   addProfile,
   forgotPassword,
@@ -61,6 +62,7 @@ export default function EditProfilePage() {
     const [mail, setMail] = useState("");
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [cropSrc, setCropSrc] = useState<string | null>(null);
     const [avatarError, setAvatarError] = useState(false);
 
     const [resetEmail, setResetEmail] = useState("");
@@ -111,11 +113,23 @@ export default function EditProfilePage() {
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            setSelectedFile(file);
-            setSelectedImage(URL.createObjectURL(file));
-            setAvatarError(false);
-        }
+        e.target.value = "";
+        if (!file) return;
+        if (cropSrc) URL.revokeObjectURL(cropSrc);
+        setCropSrc(URL.createObjectURL(file));
+    };
+
+    const handleCropCancel = () => {
+        if (cropSrc) URL.revokeObjectURL(cropSrc);
+        setCropSrc(null);
+    };
+
+    const handleCropConfirm = (file: File) => {
+        if (selectedImage) URL.revokeObjectURL(selectedImage);
+        setSelectedFile(file);
+        setSelectedImage(URL.createObjectURL(file));
+        setAvatarError(false);
+        handleCropCancel();
     };
 
     const refreshProfile = async () => {
@@ -448,6 +462,14 @@ export default function EditProfilePage() {
                     </SectionCard>
                 </div>
             </main>
+
+            {cropSrc && (
+                <ProfileImageCropper
+                    src={cropSrc}
+                    onCancel={handleCropCancel}
+                    onConfirm={handleCropConfirm}
+                />
+            )}
 
             {/* Feedback Dialog / Modal */}
             {feedback.open && (
