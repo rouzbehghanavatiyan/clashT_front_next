@@ -27,13 +27,11 @@ const HomeFeed: React.FC = () => {
       take: number;
       inviteId: string | number | undefined;
     }) => {
-      const userId = params.inviteId ?? userIdLogin;
-      if (!userId) return [];
+      if (!userIdLogin) return [];
       try {
         const res = await attachmentService.followerAttachmentList({
           skip: params.skip,
           take: params.take || PAGE_SIZE,
-          userIdLogin: userId,
         });
         const payload = res?.data?.data ?? res?.data ?? [];
         return Array.isArray(payload) ? payload : [];

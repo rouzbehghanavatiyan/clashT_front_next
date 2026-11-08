@@ -7,21 +7,29 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import CircularProgress from "@mui/material/CircularProgress";
 
 import { attachmentService } from "@/services/attachment.service";
 import ProfileImageCropper from "@/components/profile/ProfileImageCropper";
 import {
   addProfile,
-  forgotPassword,
+  changePassword,
+  changeUserName,
+  checkUserName,
   requestChangeEmail,
   userService,
 } from "@/services/user.service";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import { RsetUserLogin } from "@/store/slices/mainSlice";
+import { getAccessToken } from "@/services/tokenService";
+import { getUserIdFromToken } from "@/utils/jwt";
 import StringHelpers from "@/utils/StringHelpers";
 
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
@@ -31,6 +39,53 @@ interface SectionCardProps {
     title: string;
     subtitle?: string;
     children: React.ReactNode;
+}
+
+function PasswordField({
+    label,
+    value,
+    onChange,
+    placeholder,
+    autoComplete,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder: string;
+    autoComplete: string;
+}) {
+    const [visible, setVisible] = useState(false);
+
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                {label}
+            </label>
+            <div className="relative">
+                <input
+                    type={visible ? "text" : "password"}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    autoComplete={autoComplete}
+                    placeholder={placeholder}
+                    className="w-full rounded-xl border border-gray-300 dark:border-zinc-700 bg-transparent px-3.5 py-2.5 pr-11 text-sm outline-none transition-colors focus:border-indigo-600 dark:focus:border-indigo-500"
+                />
+                <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={visible ? "Hide password" : "Show password"}
+                    onClick={() => setVisible((current) => !current)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                >
+                    {visible ? (
+                        <VisibilityIcon sx={{ fontSize: 20 }} />
+                    ) : (
+                        <VisibilityOffIcon sx={{ fontSize: 20 }} />
+                    )}
+                </button>
+            </div>
+        </div>
+    );
 }
 
 const SectionCard = ({ icon, title, subtitle, children }: SectionCardProps) => (
@@ -57,6 +112,7 @@ export default function EditProfilePage() {
     const userLogin = useAppSelector((state) => state?.main?.userLogin);
     const userId = userLogin?.user?.id || userLogin?.id;
 
+    const [userName, setUserName] = useState("");
     const [bio, setBio] = useState("");
     const [location, setLocation] = useState("");
     const [mail, setMail] = useState("");
@@ -65,12 +121,17 @@ export default function EditProfilePage() {
     const [cropSrc, setCropSrc] = useState<string | null>(null);
     const [avatarError, setAvatarError] = useState(false);
 
-    const [resetEmail, setResetEmail] = useState("");
     const [newEmail, setNewEmail] = useState("");
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [isEmailUpdating, setIsEmailUpdating] = useState(false);
-    const [isResetting, setIsResetting] = useState(false);
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [userNameAvailable, setUserNameAvailable] = useState<boolean | null>(null);
+    const [userNameChecking, setUserNameChecking] = useState(false);
 
     const [feedback, setFeedback] = useState<{
         open: boolean;
@@ -88,11 +149,49 @@ export default function EditProfilePage() {
 
     useEffect(() => {
         if (userLogin) {
+            setUserName(userLogin.user?.userName || userLogin.userName || "");
             setBio(userLogin.bio || "");
             setLocation(userLogin.location || "");
             setMail(userLogin.mail || "");
         }
     }, [userLogin]);
+
+    useEffect(() => {
+        const nextUserName = userName.trim();
+        const currentUserName = (
+            userLogin?.user?.userName ||
+            userLogin?.userName ||
+            ""
+        ).trim();
+
+        if (!nextUserName || nextUserName.toLowerCase() === currentUserName.toLowerCase()) {
+            setUserNameAvailable(null);
+            setUserNameChecking(false);
+            return;
+        }
+
+        setUserNameChecking(true);
+        setUserNameAvailable(null);
+        let cancelled = false;
+
+        const timer = setTimeout(async () => {
+            try {
+                const res = await checkUserName({ newUserName: nextUserName });
+                if (cancelled) return;
+                setUserNameAvailable(res?.data?.status === 0);
+            } catch {
+                if (cancelled) return;
+                setUserNameAvailable(false);
+            } finally {
+                if (!cancelled) setUserNameChecking(false);
+            }
+        }, 1000);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [userName, userLogin]);
 
     const showFeedback = (
         title: string,
@@ -134,7 +233,7 @@ export default function EditProfilePage() {
 
     const refreshProfile = async () => {
         if (!userId) return;
-        const resProfileAttachment = await userService.profileAttachment(userId);
+        const resProfileAttachment = await userService.profileAttachment();
         const { status, data } = resProfileAttachment?.data || {};
         if (status === 0 && data) {
             dispatch(RsetUserLogin(data));
@@ -144,6 +243,18 @@ export default function EditProfilePage() {
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
 
+        const nextUserName = userName.trim();
+        const currentUserName = (
+            userLogin?.user?.userName ||
+            userLogin?.userName ||
+            ""
+        ).trim();
+
+        if (!nextUserName) {
+            showFeedback("Error", "Please enter a username.", false);
+            return;
+        }
+
         const postData = {
             bio: bio || null,
             location: location || null,
@@ -152,9 +263,25 @@ export default function EditProfilePage() {
 
         try {
             setIsSubmitting(true);
+
+            let userNameChanged = false;
+            if (nextUserName.toLowerCase() !== currentUserName.toLowerCase()) {
+                const nameRes = await changeUserName({ newUserName: nextUserName });
+                if (nameRes?.data?.status !== 0) {
+                    showFeedback(
+                        "Error",
+                        nameRes?.data?.message || "Failed to change username.",
+                        false
+                    );
+                    return;
+                }
+                userNameChanged = true;
+            }
+
             const res = await addProfile(postData);
 
             if (res?.data?.status !== 0) {
+                if (userNameChanged) await refreshProfile();
                 showFeedback(
                     "Error",
                     res?.data?.message || "Failed to update profile.",
@@ -163,26 +290,7 @@ export default function EditProfilePage() {
                 return;
             }
 
-            if (selectedFile && userId) {
-                const formData = new FormData();
-                formData.append("formFile", selectedFile);
-                formData.append("attachmentId", String(userId));
-                formData.append("attachmentType", "pf");
-                formData.append("attachmentName", "profile");
-
-                const resAttachment = await attachmentService.addAttachment(formData);
-                if (resAttachment?.data?.status !== 0) {
-                    showFeedback(
-                        "Error",
-                        resAttachment?.data?.message || "Profile saved, but image upload failed.",
-                        false
-                    );
-                    return;
-                }
-            }
-
             await refreshProfile();
-            setSelectedFile(null);
             showFeedback(
                 "Success",
                 res?.data?.message || "Profile updated successfully.",
@@ -200,43 +308,113 @@ export default function EditProfilePage() {
         }
     };
 
-    const handleResetPassword = async () => {
-        if (isResetting) return;
+    const handleUploadProfileImage = async () => {
+        if (isUploadingImage) return;
 
-        const email = resetEmail.trim();
-        if (!EMAIL_REGEX.test(email)) {
-            showFeedback("Error", "Please enter a valid email address.", false);
+        if (!selectedFile) {
+            showFeedback("Error", "Please choose an image first.", false);
+            return;
+        }
+
+        const token = getAccessToken();
+        const jwtUserId = token ? getUserIdFromToken(token) : null;
+        if (!jwtUserId) {
+            showFeedback("Error", "User id was not found.", false);
             return;
         }
 
         try {
-            setIsResetting(true);
-            const res: any = await forgotPassword({ email });
+            setIsUploadingImage(true);
+            const formData = new FormData();
+            formData.append("formFile", selectedFile);
+            formData.append("attachmentId", String(jwtUserId));
+            formData.append("attachmentType", "pf");
+            formData.append("attachmentName", "profile");
+
+            const resAttachment = await attachmentService.addAttachment(formData);
+            if (resAttachment?.data?.status !== 0) {
+                showFeedback(
+                    "Error",
+                    resAttachment?.data?.message || "Image upload failed.",
+                    false
+                );
+                return;
+            }
+
+            if (selectedImage) URL.revokeObjectURL(selectedImage);
+            setSelectedFile(null);
+            setSelectedImage(null);
+            const resProfileAttachment = await userService.profileAttachment();
+            const { status, data } = resProfileAttachment?.data || {};
+            if (status === 0 && data) {
+                dispatch(RsetUserLogin(data));
+            }
+            showFeedback(
+                "Success",
+                resAttachment?.data?.message || "Profile image updated.",
+                true
+            );
+        } catch (error) {
+            console.error("Error uploading profile image:", error);
+            showFeedback(
+                "Network Error",
+                "Something went wrong. Please try again.",
+                false
+            );
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        if (isChangingPassword) return;
+
+        if (!currentPassword) {
+            showFeedback("Error", "Enter your current password.", false);
+            return;
+        }
+        if (newPassword.length < 8) {
+            showFeedback("Error", "New password must be at least 8 characters.", false);
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            showFeedback("Error", "New password and confirmation must be exactly the same.", false);
+            return;
+        }
+
+        try {
+            setIsChangingPassword(true);
+            const res: any = await changePassword({
+                currentPassword,
+                newPassword,
+            });
 
             if (res?.data?.status === 0) {
+                setCurrentPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
                 showFeedback(
-                    "Email Sent",
-                    "If an account matches that email, a password reset link has been sent. Check your inbox.",
+                    "Password Updated",
+                    res?.data?.message || "Your password has been changed.",
                     true
                 );
-                setResetEmail("");
             } else {
                 showFeedback(
                     "Error",
-                    res?.data?.message || "Failed to process request. Please try again.",
+                    res?.data?.message || "Password change failed.",
                     false
                 );
             }
         } catch (error: any) {
-            console.error("Forgot Password Error:", error);
+            console.error("Change password error:", error);
             showFeedback(
                 "Network Error",
                 error?.response?.data?.message ||
-                "An error occurred. Please try again later.",
+                "Something went wrong. Please try again.",
                 false
             );
         } finally {
-            setIsResetting(false);
+            setIsChangingPassword(false);
         }
     };
 
@@ -326,13 +504,24 @@ export default function EditProfilePage() {
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                    >
-                        Upload Image
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                        >
+                            Upload Image
+                        </button>
+                        <button
+                            type="button"
+                            disabled={isUploadingImage}
+                            onClick={handleUploadProfileImage}
+                            className="flex items-center gap-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50"
+                        >
+                            {isUploadingImage && <CircularProgress size={14} color="inherit" />}
+                            Save Image
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-6">
@@ -340,6 +529,32 @@ export default function EditProfilePage() {
                         icon={<PersonOutlineIcon sx={{ fontSize: 22 }} />}
                         title="Profile Info"
                     >
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                Username
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={userName}
+                                    onChange={(e) => setUserName(e.target.value)}
+                                    placeholder="Username"
+                                    className="w-full rounded-xl border border-gray-300 dark:border-zinc-700 bg-transparent px-3.5 py-2.5 pr-10 text-sm outline-none transition-colors focus:border-indigo-600 dark:focus:border-indigo-500"
+                                />
+                                {(userNameChecking || userNameAvailable !== null) && (
+                                    <span className="pointer-events-none absolute right-3 top-1/2 flex -translate-y-1/2 items-center">
+                                        {userNameChecking ? (
+                                            <CircularProgress size={18} sx={{ color: "#818cf8" }} />
+                                        ) : userNameAvailable ? (
+                                            <CheckCircleIcon sx={{ fontSize: 22, color: "#4ade80" }} />
+                                        ) : (
+                                            <CancelIcon sx={{ fontSize: 22, color: "#ef4444" }} />
+                                        )}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                                 Social Link
@@ -435,30 +650,55 @@ export default function EditProfilePage() {
                     <SectionCard
                         icon={<LockOutlinedIcon sx={{ fontSize: 22 }} />}
                         title="Change Password"
-                        subtitle="Enter your account email and we'll send you a link to set a new password."
+                        subtitle="Enter your current password. If it matches, it is replaced with the new one."
                     >
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                Account Email
-                            </label>
-                            <input
-                                type="email"
-                                value={resetEmail}
-                                onChange={(e) => setResetEmail(e.target.value)}
-                                placeholder="Your Email"
-                                className="w-full rounded-xl border border-gray-300 dark:border-zinc-700 bg-transparent px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-indigo-600 dark:focus:border-indigo-500"
-                            />
-                        </div>
+                        <PasswordField
+                            label="Current Password"
+                            value={currentPassword}
+                            onChange={setCurrentPassword}
+                            autoComplete="current-password"
+                            placeholder="Current password"
+                        />
+                        <PasswordField
+                            label="New Password"
+                            value={newPassword}
+                            onChange={setNewPassword}
+                            autoComplete="new-password"
+                            placeholder="At least 8 characters"
+                        />
+                        <PasswordField
+                            label="Confirm New Password"
+                            value={confirmPassword}
+                            onChange={setConfirmPassword}
+                            autoComplete="new-password"
+                            placeholder="Repeat the new password"
+                        />
+                        {confirmPassword.length > 0 && newPassword !== confirmPassword && (
+                            <p className="text-xs font-medium text-red-500">
+                                New password and confirmation must be exactly the same.
+                            </p>
+                        )}
 
                         <button
                             type="button"
-                            disabled={isResetting}
-                            onClick={handleResetPassword}
+                            disabled={
+                                isChangingPassword ||
+                                !currentPassword ||
+                                newPassword.length < 8 ||
+                                newPassword !== confirmPassword
+                            }
+                            onClick={handleChangePassword}
                             className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-600 py-2.5 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-colors disabled:opacity-50"
                         >
-                            {isResetting && <CircularProgress size={16} color="inherit" />}
-                            Send Reset Link
+                            {isChangingPassword && <CircularProgress size={16} color="inherit" />}
+                            Update Password
                         </button>
+                        <a
+                            href="/forgotPassword"
+                            className="text-center text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+                        >
+                            Forgot your current password? Reset it by email
+                        </a>
                     </SectionCard>
                 </div>
             </main>

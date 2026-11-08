@@ -154,7 +154,7 @@ const LoginForm: FC = () => {
         .then((res) => dispatch(RsetFollowerLength(res?.data?.data)))
         .catch((err) => console.error("Follower Length Error:", err?.message)),
       userService
-        .profileAttachment(userId)
+        .profileAttachment()
         .then((res) => {
           if (res?.data?.data) {
             dispatch(RsetUserLogin({ ...res.data.data, token, userId }));

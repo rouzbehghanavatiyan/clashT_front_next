@@ -35,7 +35,7 @@ export default function SettingPage() {
 
         const loadProfile = async () => {
             try {
-                const res = await userService.profileAttachment(userId);
+                const res = await userService.profileAttachment();
                 const profileData = res?.data?.data;
                 if (!cancelled && res?.data?.status === 0 && profileData) {
                     dispatch(

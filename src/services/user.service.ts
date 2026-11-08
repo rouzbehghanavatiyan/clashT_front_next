@@ -20,8 +20,23 @@ export const requestChangeEmail = async (data: { newEmail: string }) => {
   return await api.post(`/requestChangeEmail`, data);
 };
 
+export const changeUserName = async (data: { newUserName: string }) => {
+  return await api.put(`/changeUserName`, data);
+};
+
+export const checkUserName = async (data: { newUserName: string }) => {
+  return await api.post(`/checkUserName`, data);
+};
+
 export const forgotPassword = async (data: any) => {
   return await api.post(`/forgotPassword`, data);
+};
+
+export const changePassword = async (data: {
+  currentPassword: string;
+  newPassword: string;
+}) => {
+  return await api.put(`/changePassword`, data);
 };
 
 export const addProfile = async (data: any) => {
@@ -33,8 +48,7 @@ export const userService = {
   followerList: (userId: number) => api.get(`/followerList?userId=${userId}`),
   followingList: (userId: number) =>
     api.get(`/followingList?userId=${userId}`),
-  profileAttachment: (userId: number) =>
-    api.get(`/profileAttachment?userId=${userId}`),
+  profileAttachment: () => api.get("/profileAttachment"),
   addLike: (data: any) => api.post("/addLike", data),
   removeLike: (data: any) => api.delete("/removeLike", { data }),
   showProfileByUser: (userId: number) =>
@@ -45,7 +59,10 @@ export const userService = {
   profile: (username: any) => api.get(`/profile/${username}`),
   addProfile,
   forgotPassword,
+  changePassword,
   requestChangeEmail,
+  changeUserName,
+  checkUserName,
   blockListByUser,
   userBlock,
   userUnBlock,

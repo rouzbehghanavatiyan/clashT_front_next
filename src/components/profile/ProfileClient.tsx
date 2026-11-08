@@ -160,7 +160,7 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
   const refreshMyProfileAttachment = useCallback(async () => {
     if (!isMyProfile || !myUserId) return;
     try {
-      const profileRes = await userService.profileAttachment(myUserId);
+      const profileRes = await userService.profileAttachment();
       const freshUserData = profileRes?.data?.data || profileRes?.data;
       if (freshUserData) {
         dispatch(RsetUserLogin({ ...userLoginRef.current, ...freshUserData }));
@@ -176,7 +176,6 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
       return await attachmentService.userAttachmentList({
         skip: Number(paginationParams.skip) || 0,
         take: Number(paginationParams.take) || 3,
-        id: targetUserId,
       });
     },
     [targetUserId],
@@ -226,7 +225,6 @@ const ProfileClient: React.FC<Props> = ({ initialUserData }) => {
         attachmentService.userAttachmentList({
           skip: 0,
           take: 3,
-          id: targetUserId,
         }),
         followService
           .followingLength(targetUserId)

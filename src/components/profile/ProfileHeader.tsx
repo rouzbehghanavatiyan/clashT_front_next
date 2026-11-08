@@ -113,7 +113,7 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
 
           if (attachmentStatus === 0) {
             const resProfileAttachment =
-              await userService.profileAttachment(userId);
+              await userService.profileAttachment();
             const { status, data } = resProfileAttachment?.data || {};
 
             if (status === 0) {

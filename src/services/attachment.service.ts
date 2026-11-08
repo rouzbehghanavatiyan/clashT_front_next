@@ -29,16 +29,14 @@ export const attachmentService = {
   removeInvite,
   removeFile,
 
-  userAttachmentList: (postData: any) => {
+  userAttachmentList: (postData: { skip: number; take: number }) => {
     const skip = Number(postData?.skip) || 0;
     const take = Number(postData?.take) || 3;
-    return api.get(
-      `/userAttachmentList?skip=${skip}&take=${take}&userId=${postData?.id}`,
-    );
+    return api.get(`/userAttachmentList?skip=${skip}&take=${take}`);
   },
 
-  followerAttachmentList: (postData: any) =>
+  followerAttachmentList: (postData: { skip: number; take: number }) =>
     api.get(
-      `/followerAttachmentList?skip=${postData?.skip}&take=${postData?.take}&userId=${postData?.userIdLogin}`,
+      `/followerAttachmentList?skip=${postData?.skip}&take=${postData?.take}`,
     ),
 };

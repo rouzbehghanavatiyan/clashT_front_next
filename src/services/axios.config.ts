@@ -86,52 +86,58 @@ const setupInterceptors = (instance: AxiosInstance) => {
         });
       }
 
-      originalRequest._retry = true;
-      isRefreshing = true;
+      const tokenUsed =
+        originalRequest.headers.Authorization?.toString().replace(
+          "Bearer ",
+          "",
+        );
+      const current = getAccessToken();
+      if (current && current !== tokenUsed) {
+        originalRequest.headers.Authorization = `Bearer ${current}`;
+        return instance(originalRequest);
+      }
 
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        isRefreshing = false;
         processQueue(error, null);
         redirectToLogin();
         return Promise.reject(error);
       }
 
+      isRefreshing = true;
+      if (current && current !== tokenUsed) {
+        return instance(originalRequest);
+      }
+
+      if (!refreshToken) {
+        processQueue(error, null);
+        redirectToLogin();
+        return Promise.reject(error);
+      }
+
+      isRefreshing = true;
       try {
-        const response = await axios.post(`${baseURL}/refreshToken`, {
-          accessToken: getAccessToken(),
-          refreshToken,
-        });
+        const response = await axios.post(
+          `${baseURL}/refreshToken`,
+          { accessToken: current, refreshToken },
+          { skipAuth: true } as any,
+        );
 
         const data = response.data?.data;
-        const newAccessToken: string | undefined = data?.token;
-        const newRefreshToken: string | undefined = data?.refreshToken;
-
-        if (!newAccessToken || !newRefreshToken) {
+        if (!data?.token || !data?.refreshToken) {
           throw new Error("Invalid new tokens received from server.");
         }
 
-        saveTokens(newAccessToken, newRefreshToken);
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        processQueue(null, newAccessToken);
-
+        saveTokens(data.token, data.refreshToken);
+        processQueue(null, data.token);
+        originalRequest.headers.Authorization = `Bearer ${data.token}`;
         return instance(originalRequest);
       } catch (refreshError) {
-        console.error(
-          "refresh failed:",
-          (refreshError as any)?.response?.status,
-          (refreshError as any)?.response?.data,
-        );
         processQueue(refreshError, null);
-        redirectToLogin();
-
-        processQueue(refreshError, null);
-
         const status = axios.isAxiosError(refreshError)
           ? refreshError.response?.status
           : undefined;
-
-        if (status === 401 || status === 403 || status === 400) {
+        if (status === 401 || status === 400 || status === 403) {
           redirectToLogin();
         }
         return Promise.reject(refreshError);

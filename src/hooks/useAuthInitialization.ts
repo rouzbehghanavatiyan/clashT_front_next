@@ -63,7 +63,7 @@ export function useAuthInitialization() {
 
         try {
           const profileRes =
-            await userService.profileAttachment(userIdFromToken);
+            await userService.profileAttachment();
           const userData = profileRes?.data?.data;
           const finalUserId = Number(userData?.user?.id || userIdFromToken);
 

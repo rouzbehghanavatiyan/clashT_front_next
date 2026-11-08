@@ -193,7 +193,7 @@ const OptionBottom: React.FC<OptionBottomProps> = ({
   }, [isLiked, movieId, userIdLogin, canLike]);
 
   return (
-    <div className="pointer-events-none absolute inset-x-16 bottom-4 z-10 sm:inset-x-24">
+    <div className="pointer-events-none absolute inset-x-16 bottom-4 z-[6] sm:inset-x-24">
       <div className="flex items-center justify-between gap-0.5">
         <div className="flex flex-1 items-center justify-start">
           <button
