@@ -23,7 +23,7 @@ const PULL_THRESHOLD = 64;
 
 function WatchGroupSkeleton() {
   return (
-    <div className="relative m-0.5 flex w-full flex-col overflow-hidden rounded-tr-xl rounded-bl-xl bg-gray-200">
+    <div className="relative flex w-full flex-col overflow-hidden rounded-tr-xl rounded-bl-xl bg-gray-200">
       {[0, 1].map((section) => (
         <div
           key={section}
@@ -289,7 +289,6 @@ export default function WatchFeed() {
             {error}
           </p>
         )}
-
         <div className="grid grid-cols-2 gap-[2px] lg:grid-cols-4">
           {showSkeleton
             ? Array.from({ length: 6 }, (_, index) => (

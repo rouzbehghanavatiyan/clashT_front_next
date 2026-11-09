@@ -50,6 +50,13 @@ const redirectToLogin = () => {
   if (typeof window !== "undefined") window.location.href = "/login";
 };
 
+const bearerToken = (value: unknown) => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return String(raw ?? "")
+    .replace(/^Bearer\s+/i, "")
+    .trim();
+};
+
 const setupInterceptors = (instance: AxiosInstance) => {
   instance.interceptors.request.use((config) => {
     const token = getAccessToken();
@@ -76,6 +83,16 @@ const setupInterceptors = (instance: AxiosInstance) => {
         return Promise.reject(error);
       }
 
+      const tokenUsed = bearerToken(
+        originalRequest.headers?.get?.("Authorization") ??
+          originalRequest.headers?.Authorization,
+      );
+      const current = getAccessToken();
+      if (current && tokenUsed && current !== tokenUsed) {
+        originalRequest.headers.Authorization = `Bearer ${current}`;
+        return instance(originalRequest);
+      }
+
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -86,51 +103,30 @@ const setupInterceptors = (instance: AxiosInstance) => {
         });
       }
 
-      const tokenUsed =
-        originalRequest.headers.Authorization?.toString().replace(
-          "Bearer ",
-          "",
-        );
-      const current = getAccessToken();
-      if (current && current !== tokenUsed) {
-        originalRequest.headers.Authorization = `Bearer ${current}`;
-        return instance(originalRequest);
-      }
-
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        processQueue(error, null);
         redirectToLogin();
         return Promise.reject(error);
       }
 
-      isRefreshing = true;
-      if (current && current !== tokenUsed) {
-        return instance(originalRequest);
-      }
-
-      if (!refreshToken) {
-        processQueue(error, null);
-        redirectToLogin();
-        return Promise.reject(error);
-      }
-
+      originalRequest._retry = true;
       isRefreshing = true;
       try {
         const response = await axios.post(
           `${baseURL}/refreshToken`,
           { accessToken: current, refreshToken },
-          { skipAuth: true } as any,
         );
 
-        const data = response.data?.data;
-        if (!data?.token || !data?.refreshToken) {
+        const data = response.data?.data ?? response.data;
+        const nextAccess = data?.token ?? data?.Token;
+        const nextRefresh = data?.refreshToken ?? data?.RefreshToken;
+        if (!nextAccess || !nextRefresh || data?.statusCode === 401) {
           throw new Error("Invalid new tokens received from server.");
         }
 
-        saveTokens(data.token, data.refreshToken);
-        processQueue(null, data.token);
-        originalRequest.headers.Authorization = `Bearer ${data.token}`;
+        saveTokens(nextAccess, nextRefresh);
+        processQueue(null, nextAccess);
+        originalRequest.headers.Authorization = `Bearer ${nextAccess}`;
         return instance(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);

@@ -46,7 +46,6 @@ export const BottomTabBar: React.FC = () => {
   const userLogin = useAppSelector((state) => state?.main?.userLogin);
   const username = userLogin?.user?.userName ?? userLogin?.username;
   const avatarUrl = StringHelpers.getProfile(userLogin?.profile);
-  const score = typeof userLogin?.score === "number" ? userLogin.score : -1;
   const profileHref = username
     ? `/${encodeURIComponent(username)}`
     : "/profile";
@@ -70,15 +69,17 @@ export const BottomTabBar: React.FC = () => {
           const content =
             tab.id === "profile" ? (
               <span
-                className={`overflow-visible rounded-full ${
-                  isActive ? "ring-2 ring-blue-600 ring-offset-1 dark:ring-offset-zinc-950" : ""
+                className={`inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full ${
+                  isActive ? "ring-2 ring-inset ring-blue-600 dark:ring-blue-400" : ""
                 }`}
               >
                 <ImageRank
                   imgSrc={avatarUrl || undefined}
-                  imgSize={38}
+                  imgSize={28}
                   userInfo={userLogin}
+                  score={-1}
                   onClickDisable
+                  className="!gap-0"
                 />
               </span>
             ) : isActive ? (

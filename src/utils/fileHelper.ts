@@ -91,3 +91,11 @@ export function fileExtension(name?: string | null, fallback = ".mp4") {
   const match = String(name || "").match(/(\.[a-z0-9]+)$/i);
   return match ? match[1].toLowerCase() : fallback;
 }
+
+export function profileUploadFile(file: File) {
+  const ext = fileExtension(file.name, ".png");
+  const safeExt = ext === ".jpeg" ? ".jpg" : ext;
+  return new File([file], `profile${safeExt}`, {
+    type: file.type || "image/png",
+  });
+}

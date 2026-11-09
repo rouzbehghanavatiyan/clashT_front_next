@@ -23,6 +23,7 @@ import ruby2 from "../../public/assets/ranks/ruby2.png";
 import ruby3 from "../../public/assets/ranks/ruby3.png";
 import word from "../../public/assets/ranks/worldMain.png";
 import { Icon } from "./Icon";
+import StringHelpers from "@/utils/StringHelpers";
 
 type StarType = "bronse" | "silver" | "gold" | "gem" | "ruby" | "word" | "";
 
@@ -42,6 +43,7 @@ interface ImageRankProps {
   userNameLength?: number;
   showProfile?: boolean;
   onClickDisable?: boolean;
+  softBorder?: boolean;
   className?: string;
 }
 
@@ -79,6 +81,10 @@ const getRankData = (score: number): RankState => {
   return { base: word, stars: 3, starType: "word", displayNumber: 550 };
 };
 
+function embeddedSrc(src: string) {
+  return src.replace(/^https?:\/\/load\.clashtalent\.com(?=\/)/i, "/media");
+}
+
 const ImageRank: React.FC<ImageRankProps> = ({
   imgSrc,
   userName,
@@ -87,26 +93,33 @@ const ImageRank: React.FC<ImageRankProps> = ({
   userNameLength = 15,
   showProfile = true,
   onClickDisable = false,
+  softBorder = false,
   userInfo,
   className = "",
 }) => {
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
+  const [srcOverride, setSrcOverride] = useState<string | null>(null);
+
+  const userImg = useMemo(() => {
+    const raw =
+      typeof imgSrc === "string" && imgSrc.trim() && !imgSrc.includes("undefined")
+        ? imgSrc.trim()
+        : StringHelpers.getProfile(userInfo?.profile) ||
+          StringHelpers.getProfile(userInfo?.avatar) ||
+          StringHelpers.getProfile(userInfo?.attachment) ||
+          "";
+    return raw ? embeddedSrc(raw) : "";
+  }, [imgSrc, userInfo]);
 
   useEffect(() => {
+    setSrcOverride(null);
     setImageError(false);
-  }, [imgSrc]);
-
+  }, [userImg]);
+  const displaySrc = srcOverride ?? userImg;
+  const hasValidImage = Boolean(displaySrc) && !imageError;
   const rankData = useMemo(() => getRankData(score), [score]);
   const rankSize = Math.floor(imgSize * 0.6);
-
-  const userImg = typeof imgSrc === "string" ? imgSrc.trim() : "";
-  const hasValidImage =
-    Boolean(userImg) &&
-    userImg !== "null" &&
-    !userImg.includes("undefined") &&
-    !userImg.includes("/null") &&
-    !imageError;
 
   const isClickable = !onClickDisable && showProfile;
 
@@ -138,53 +151,76 @@ const ImageRank: React.FC<ImageRankProps> = ({
       onKeyDown={
         isClickable
           ? (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                handleClick(event);
-              }
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              handleClick(event);
             }
+          }
           : undefined
       }
-      className={`inline-flex items-center gap-2 select-none pointer-events-auto ${
-        isClickable ? "cursor-pointer group" : ""
-      } ${className}`}
+      className={`inline-flex items-center gap-2 select-none pointer-events-auto ${isClickable ? "cursor-pointer group" : ""
+        } ${className}`}
     >
-      {/* ظرف آواتار و مدال رتبه */}
       <div
-        className="relative shrink-0 flex items-center justify-center"
+        className="relative shrink-0"
         style={{ width: imgSize, height: imgSize }}
       >
         {hasValidImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
-            key={userImg}
-            src={userImg}
+            key={displaySrc}
+            src={displaySrc}
             alt={userName || "User Avatar"}
-            onError={() => setImageError(true)}
-            className="rounded-full object-cover border border-gray-200 dark:border-gray-700 shadow-sm"
-            style={{ width: imgSize, height: imgSize }}
+            referrerPolicy="no-referrer"
+            onError={() => {
+              const remote = imgSrc?.trim();
+              if (
+                !srcOverride &&
+                remote &&
+                /^https?:\/\//i.test(remote) &&
+                remote !== displaySrc
+              ) {
+                setSrcOverride(remote);
+                return;
+              }
+              setImageError(true);
+            }}
+            className="block object-cover"
+            style={{
+              width: imgSize,
+              height: imgSize,
+              borderRadius: imgSize / 2,
+              border: softBorder ? "2px solid #707070" : "1px solid #dfdfdf91",
+            }}
           />
         ) : (
           <div
-            className="rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700"
-            style={{ width: imgSize, height: imgSize }}
+            className={`flex items-center justify-center overflow-hidden bg-[#ececec] ${
+              softBorder
+                ? "border-2 border-[#d1d5db]"
+                : "border-[1.5px] border-[#f0f0f0]"
+            }`}
+            style={{
+              width: imgSize,
+              height: imgSize,
+              borderRadius: imgSize / 2,
+            }}
           >
             <Icon
               name="person"
               size={Math.round(imgSize * 0.55)}
-              className="text-gray-400 dark:text-gray-500"
+              className="text-[#9ca3af]"
             />
           </div>
         )}
 
         {score >= 0 && rankData.starType && (
           <div
-            className="absolute z-10 pointer-events-none drop-shadow-md"
+            className="pointer-events-none absolute z-20"
             style={{
               width: rankSize,
               height: rankSize,
-              bottom: -Math.floor(rankSize * 0.25),
-              left: -Math.floor(rankSize * 0.25),
+              bottom: -15,
+              left: -10,
             }}
           >
             <Image
@@ -192,12 +228,17 @@ const ImageRank: React.FC<ImageRankProps> = ({
               alt={rankData.starType}
               width={rankSize}
               height={rankSize}
-              className="object-contain w-full h-full"
+              className="h-full w-full object-contain"
             />
             {rankData.starType === "word" && rankData.displayNumber && (
               <span
-                className="absolute inset-0 flex items-center justify-center font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
-                style={{ fontSize: `${Math.max(rankSize * 0.22, 8)}px` }}
+                className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center font-bold text-white"
+                style={{
+                  width: rankSize * 0.35,
+                  height: rankSize * 0.35,
+                  fontSize: rankSize * 0.16,
+                  textShadow: "1px 1px 2px rgba(0, 0, 0, 0.75)",
+                }}
               >
                 {rankData.displayNumber}
               </span>

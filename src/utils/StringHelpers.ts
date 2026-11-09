@@ -7,12 +7,22 @@ export default class StringHelpers {
 
   static getProfile = (data: any): string => {
     if (!data) return "";
-    const type = String(data.attachmentType || "").replace(/^\/+|\/+$/g, "");
-    const ext = data.ext == null ? "" : String(data.ext);
-    const fileName = String(data.fileName || "")
+    if (typeof data === "string") {
+      const value = data.trim();
+      if (!value || value === "null" || value.includes("undefined")) return "";
+      if (/^https?:\/\//i.test(value) || value.startsWith("/")) return value;
+      return "";
+    }
+    const type = String(data.attachmentType || data.AttachmentType || "").replace(
+      /^\/+|\/+$/g,
+      "",
+    );
+    const extRaw = data.ext ?? data.Ext;
+    const ext = extRaw == null ? "" : String(extRaw);
+    const fileName = String(data.fileName || data.FileName || "")
       .replace(/[\u00a0\u202f]/g, " ")
       .trim();
-    if (!type || !fileName) return "";
+    if (!type || !fileName || fileName === "null") return "";
     const extNorm = ext && !ext.startsWith(".") ? `.${ext}` : ext;
     const alreadyHasExt = /\.[a-z0-9]+$/i.test(fileName);
     const suffix = alreadyHasExt ? "" : extNorm;

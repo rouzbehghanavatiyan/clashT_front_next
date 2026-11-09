@@ -20,6 +20,7 @@ import { RsetUserLogin } from "@/store/slices/mainSlice";
 import Follows from "../Follows";
 import { useAppDispatch, useAppSelector } from "@/store/reduxHook";
 import StringHelpers from "@/utils/StringHelpers";
+import { profileUploadFile } from "@/utils/fileHelper";
 import { buildChatHref } from "@/lib/chat";
 
 interface ProfileHeaderProps {
@@ -40,7 +41,6 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
     {
       currentProfile,
       isMyProfile,
-      userImage,
       userName,
       score,
       followersCount = 0,
@@ -55,6 +55,7 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
     const router = useRouter();
     const main = useAppSelector((state) => state?.main);
     const userId = main?.userLogin?.user?.id || main?.userLogin?.id;
+    const [serviceAvatar, setServiceAvatar] = useState("");
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -68,6 +69,27 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
     useEffect(() => {
       setLocalIsFollowed(Boolean(currentProfile?.isFollowedByMe));
     }, [currentProfile?.isFollowedByMe]);
+
+    useEffect(() => {
+      const name = userName?.trim();
+      if (!name) return;
+
+      let cancelled = false;
+      userService
+        .profile(encodeURIComponent(name))
+        .then((res: any) => {
+          if (cancelled || res?.data?.status !== 0) return;
+          const attachment = res?.data?.data?.avatar ?? res?.data?.data?.profile;
+          setServiceAvatar(StringHelpers.getProfile(attachment));
+        })
+        .catch((error) => {
+          console.error("profile avatar error:", error);
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }, [userName]);
 
     // انتخاب تصویر در وب
     const handleAvatarClick = () => {
@@ -103,7 +125,7 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
         try {
           setIsUploading(true);
           const formData = new FormData();
-          formData.append("formFile", file);
+          formData.append("formFile", profileUploadFile(file));
           formData.append("attachmentId", String(userId));
           formData.append("attachmentType", "pf");
           formData.append("attachmentName", "profile");
@@ -118,6 +140,16 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
 
             if (status === 0) {
               dispatch(RsetUserLogin(data));
+              const name = userName?.trim();
+              if (name) {
+                const res = await userService.profile(encodeURIComponent(name));
+                const attachment = res?.data?.data?.avatar ?? res?.data?.data?.profile;
+                const url = StringHelpers.getProfile(attachment);
+                if (url) {
+                  setServiceAvatar(url);
+                  setLocalImage(null);
+                }
+              }
             }
           }
         } catch (error) {
@@ -126,7 +158,7 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
           setIsUploading(false);
         }
       },
-      [userId, dispatch, setProfileImage, cropSrc],
+      [userId, userName, dispatch, setProfileImage, cropSrc],
     );
 
     const handleFollowClick = async () => {
@@ -164,6 +196,8 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
       if (href) router.push(href);
     };
 
+
+
     return (
       <header ref={ref} className="w-full px-4 py-3">
         <div className="flex items-center min-h-[128px]">
@@ -177,7 +211,7 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
             <div className="rounded-full border border-gray-200 dark:border-gray-700 p-0.5 flex items-center justify-center">
               <ImageRank
                 score={score}
-                imgSrc={localImage || userImage}
+                imgSrc={localImage || serviceAvatar || undefined}
                 imgSize={96}
                 onClickDisable
               />

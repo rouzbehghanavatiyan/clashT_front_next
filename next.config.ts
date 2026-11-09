@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.clashtalent.com" },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/media/:path*",
+        destination: "https://load.clashtalent.com/:path*",
+      },
+    ];
+  },
   async headers() {
     return [
       {

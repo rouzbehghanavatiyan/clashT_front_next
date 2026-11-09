@@ -86,22 +86,23 @@ const OptionTop: React.FC<any> = ({
 
   const currentUserId = Number(
     userIdLogin ??
-      main?.userLogin?.user?.id ??
-      main?.userLogin?.userId ??
-      main?.userLogin?.id,
+    main?.userLogin?.user?.id ??
+    main?.userLogin?.userId ??
+    main?.userLogin?.id,
   );
+
   const userInfo =
     positionVideo === 0
       ? video?.userInserted ||
-        video?.inviteInserted?.user ||
-        (video?.inviteInserted?.userId
-          ? { id: video.inviteInserted.userId, userName: video?.inviteInserted?.userName }
-          : null)
+      video?.inviteInserted?.user ||
+      (video?.inviteInserted?.userId
+        ? { id: video.inviteInserted.userId, userName: video?.inviteInserted?.userName }
+        : null)
       : video?.userMatched ||
-        video?.inviteMatched?.user ||
-        (video?.inviteMatched?.userId
-          ? { id: video.inviteMatched.userId, userName: video?.inviteMatched?.userName }
-          : null);
+      video?.inviteMatched?.user ||
+      (video?.inviteMatched?.userId
+        ? { id: video.inviteMatched.userId, userName: video?.inviteMatched?.userName }
+        : null);
   const profile =
     positionVideo === 0
       ? StringHelpers.getProfile(video?.profileInserted)
@@ -261,11 +262,10 @@ const OptionTop: React.FC<any> = ({
 
   return (
     <div
-      className={`pointer-events-none absolute inset-x-0 top-0 z-[6] bg-gradient-to-b from-black/55 via-black/20 to-transparent pb-8 ${
-        inviteWatch && positionVideo === 1 && !isExpanded
+      className={`pointer-events-none absolute inset-x-0 top-0 z-[6] bg-gradient-to-b from-black/55 via-black/20 to-transparent pb-8 ${inviteWatch && positionVideo === 1 && !isExpanded
           ? "px-2 pb-8 pt-5"
           : "p-2 pb-8"
-      }`}
+        }`}
     >
       <div className="pointer-events-auto grid grid-cols-9 items-center w-full">
         <div className="flex col-span-5 justify-start">
@@ -276,6 +276,7 @@ const OptionTop: React.FC<any> = ({
             imgSrc={profile}
             score={score}
             className="relative z-20 [&_span]:text-white [&_span]:drop-shadow-sm"
+            softBorder
           />
         </div>
         <div className="flex col-span-2 justify-center">
@@ -360,9 +361,8 @@ const OptionTop: React.FC<any> = ({
         {reportResult ? (
           <div className="flex flex-col items-center gap-3 py-2 text-center">
             <div
-              className={`rounded-full p-3 ${
-                reportResult.success ? "bg-emerald-50" : "bg-red-50"
-              }`}
+              className={`rounded-full p-3 ${reportResult.success ? "bg-emerald-50" : "bg-red-50"
+                }`}
             >
               {reportResult.success ? (
                 <CheckCircleIcon sx={{ fontSize: 48, color: "#10B981" }} />
@@ -411,11 +411,10 @@ const OptionTop: React.FC<any> = ({
                     type="button"
                     disabled={isSubmittingReport}
                     onClick={() => setSelectedReason(reason.id)}
-                    className={`flex w-full items-center gap-3 rounded-[10px] border px-3.5 py-3 text-left ${
-                      isSelected
+                    className={`flex w-full items-center gap-3 rounded-[10px] border px-3.5 py-3 text-left ${isSelected
                         ? "border-blue-600 bg-blue-50"
                         : "border-gray-200 bg-gray-50"
-                    }`}
+                      }`}
                   >
                     {isSelected ? (
                       <RadioButtonCheckedIcon sx={{ fontSize: 20, color: "#2563EB" }} />
@@ -423,9 +422,8 @@ const OptionTop: React.FC<any> = ({
                       <RadioButtonUncheckedIcon sx={{ fontSize: 20, color: "#9CA3AF" }} />
                     )}
                     <span
-                      className={`text-sm ${
-                        isSelected ? "font-bold text-blue-600" : "text-gray-700"
-                      }`}
+                      className={`text-sm ${isSelected ? "font-bold text-blue-600" : "text-gray-700"
+                        }`}
                     >
                       {reason.label}
                     </span>

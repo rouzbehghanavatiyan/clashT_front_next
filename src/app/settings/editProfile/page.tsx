@@ -18,6 +18,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 
 import { attachmentService } from "@/services/attachment.service";
 import ProfileImageCropper from "@/components/profile/ProfileImageCropper";
+import { profileUploadFile } from "@/utils/fileHelper";
 import {
   addProfile,
   changePassword,
@@ -326,7 +327,7 @@ export default function EditProfilePage() {
         try {
             setIsUploadingImage(true);
             const formData = new FormData();
-            formData.append("formFile", selectedFile);
+            formData.append("formFile", profileUploadFile(selectedFile));
             formData.append("attachmentId", String(jwtUserId));
             formData.append("attachmentType", "pf");
             formData.append("attachmentName", "profile");

@@ -33,13 +33,12 @@ export const Header: React.FC = () => {
 
   return (
     <header
-      className={`sticky top-0 z-40 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md overflow-visible dark:border-zinc-800 dark:bg-zinc-950/80 ${
-        isChatThreadPage
+      className={`sticky top-0 z-40 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md overflow-visible dark:border-zinc-800 dark:bg-zinc-950/80 ${isChatThreadPage
           ? "hidden"
           : showOnMobile
             ? "block"
             : "hidden md:block"
-      }`}
+        }`}
     >
       <div className="h-16 px-4 sm:px-6 flex items-center justify-between overflow-visible">
         <div className="flex min-w-0 flex-1 items-center gap-3 pr-4">
