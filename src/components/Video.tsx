@@ -8,7 +8,6 @@ import React, {
   useState,
 } from "react";
 import ReactPlayer from "react-player";
-import ZoomOut from "@mui/icons-material/ZoomOut";
 import { isImageMediaUrl } from "@/utils/fileHelper";
 
 function playSafely(el: HTMLMediaElement | null) {
@@ -43,7 +42,6 @@ interface VideoProps {
   style?: React.CSSProperties;
   width?: string | number;
   height?: string | number;
-  onExitFullscreen?: () => void;
 }
 
 const Video: React.FC<VideoProps> = ({
@@ -58,7 +56,6 @@ const Video: React.FC<VideoProps> = ({
   style,
   width = "100%",
   height = "100%",
-  onExitFullscreen,
 }) => {
   const playerRef = useRef<HTMLVideoElement | null>(null);
   const seekBarRef = useRef<HTMLDivElement | null>(null);
@@ -255,20 +252,6 @@ const Video: React.FC<VideoProps> = ({
           playing && ready ? "opacity-0" : "opacity-100"
         }`}
       />
-
-      {onExitFullscreen && (
-        <button
-          type="button"
-          aria-label="Exit fullscreen"
-          onClick={(e) => {
-            e.stopPropagation();
-            onExitFullscreen();
-          }}
-          className="absolute right-3 top-3 z-[5] inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white hover:bg-black/65"
-        >
-          <ZoomOut sx={{ fontSize: 20 }} />
-        </button>
-      )}
 
       {buffering && (
         <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center">

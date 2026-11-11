@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const OUTPUT = 1024;
 const MIN_SCALE = 1;
@@ -9,7 +10,7 @@ const MAX_SCALE = 4;
 interface ProfileImageCropperProps {
   src: string;
   onCancel: () => void;
-  onConfirm: (file: File) => void;
+  onConfirm: (file: File) => void | Promise<void>;
 }
 
 export default function ProfileImageCropper({
@@ -31,11 +32,24 @@ export default function ProfileImageCropper({
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [saving, setSaving] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     const measure = () => {
       const size = Math.round(
-        Math.max(220, Math.min(320, window.innerWidth - 48, window.innerHeight - 210)),
+        Math.max(
+          160,
+          Math.min(320, window.innerWidth - 48, window.innerHeight - 240),
+        ),
       );
       setCrop(size);
     };
@@ -135,38 +149,33 @@ export default function ProfileImageCropper({
     const context = canvas.getContext("2d");
     if (!context) return;
 
-    context.beginPath();
-    context.arc(OUTPUT / 2, OUTPUT / 2, OUTPUT / 2, 0, Math.PI * 2);
-    context.clip();
-    context.drawImage(image, sx, sy, side, side, 0, 0, OUTPUT, OUTPUT);
     setSaving(true);
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/png"),
-    );
-    setSaving(false);
-    if (!blob) return;
-    onConfirm(new File([blob], "profile.png", { type: "image/png" }));
+    try {
+      context.beginPath();
+      context.arc(OUTPUT / 2, OUTPUT / 2, OUTPUT / 2, 0, Math.PI * 2);
+      context.clip();
+      context.drawImage(image, sx, sy, side, side, 0, 0, OUTPUT, OUTPUT);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png"),
+      );
+      if (!blob) return;
+      await onConfirm(new File([blob], "profile.png", { type: "image/png" }));
+    } finally {
+      setSaving(false);
+    }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       data-no-swipe-back
-      className="fixed inset-0 z-[300] flex flex-col bg-black text-white"
+      className="fixed inset-0 z-[300] flex h-dvh max-h-dvh flex-col bg-black text-white"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="flex items-center justify-between px-4 py-3">
-        <button type="button" onClick={onCancel} className="px-2 py-1 text-sm">
-          Cancel
-        </button>
-        <p className="text-sm font-semibold">Move and scale</p>
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving || natural.w === 0}
-          className="px-2 py-1 text-sm font-semibold text-sky-400 disabled:opacity-40"
-        >
-          {saving ? "Saving" : "Choose"}
-        </button>
-      </div>
+      <p className="shrink-0 py-3 text-center text-sm font-semibold">
+        Move and scale
+      </p>
 
       <div
         className="relative min-h-0 flex-1 touch-none overflow-hidden"
@@ -210,7 +219,7 @@ export default function ProfileImageCropper({
         />
       </div>
 
-      <div className="flex items-center gap-3 px-6 py-4">
+      <div className="flex shrink-0 items-center gap-3 px-4 py-3">
         <span className="text-xs text-white/70">Zoom</span>
         <input
           type="range"
@@ -223,6 +232,44 @@ export default function ProfileImageCropper({
           className="w-full"
         />
       </div>
-    </div>
+
+      <div
+        className="relative z-30 grid shrink-0 grid-cols-2 gap-3 bg-black px-4 pt-1"
+        style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+      >
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="h-12 rounded-xl border border-white/50 text-base font-semibold text-white disabled:opacity-40"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving || natural.w === 0}
+          className="flex h-12 items-center justify-center gap-2 rounded-xl bg-white text-base font-semibold text-black disabled:opacity-100"
+        >
+          {saving ? (
+            <span
+              aria-label="Uploading"
+              className="h-7 w-7 animate-spin rounded-full border-4 border-black/20 border-t-black"
+            />
+          ) : (
+            "Accept"
+          )}
+        </button>
+      </div>
+      {saving && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50">
+          <span
+            aria-label="Uploading"
+            className="h-16 w-16 animate-spin rounded-full border-4 border-white/30 border-t-white"
+          />
+        </div>
+      )}
+    </div>,
+    document.body,
   );
 }

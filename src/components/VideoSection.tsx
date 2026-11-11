@@ -162,7 +162,6 @@ const VideoSection: React.FC<any> = ({
               playing={isPlaying || overlay}
               handleVideo={() => onVideoPlay(video)}
               url={videoUrl}
-              onExitFullscreen={isExpanded ? toggleExpand : undefined}
             />
           )}
           {isBlocked && (

@@ -118,9 +118,11 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
           return previewUrl;
         });
         setProfileImage?.(previewUrl);
-        closeCropper();
 
-        if (!userId) return;
+        if (!userId) {
+          closeCropper();
+          return;
+        }
 
         try {
           setIsUploading(true);
@@ -156,6 +158,7 @@ const ProfileHeader = forwardRef<HTMLDivElement, ProfileHeaderProps>(
           console.error("Error uploading profile image:", error);
         } finally {
           setIsUploading(false);
+          closeCropper();
         }
       },
       [userId, userName, dispatch, setProfileImage, cropSrc],
