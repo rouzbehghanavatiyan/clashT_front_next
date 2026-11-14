@@ -10,6 +10,7 @@ import ImageRank from "@/components/ImageRank";
 import UserSearchInput from "@/components/UserSearchInput";
 import StringHelpers from "@/utils/StringHelpers";
 import PwaInstallButton from "@/components/PwaInstallButton";
+import TicketButton from "@/components/TicketButton";
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
@@ -73,6 +74,7 @@ export const Header: React.FC = () => {
                 <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#FF3040] ring-2 ring-white dark:ring-zinc-950" />
               )}
             </Link>
+            <TicketButton />
             <Link
               href="/settings"
               aria-label="Open settings"

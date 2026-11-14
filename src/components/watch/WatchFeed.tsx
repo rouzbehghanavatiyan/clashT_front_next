@@ -18,6 +18,7 @@ import {
 } from "@/store/slices/mainSlice";
 import { stopMatchTimer } from "@/components/TimerForFindMatch";
 import VideoGroup from "@/components/VideoGroup";
+import TicketButton from "@/components/TicketButton";
 
 const PULL_THRESHOLD = 64;
 
@@ -269,6 +270,7 @@ export default function WatchFeed() {
             <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#FF3040] ring-2 ring-white dark:ring-zinc-950" />
           )}
         </Link>
+        <TicketButton iconSize="small" />
         <PwaInstallButton variant="header" />
       </header>
 
