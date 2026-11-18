@@ -7,6 +7,7 @@ import axios, {
 declare module "axios" {
   interface AxiosRequestConfig {
     skipAuth?: boolean;
+    optionalAuth?: boolean;
   }
 }
 import { CHAT_API_URL } from "@/lib/env";
@@ -32,6 +33,7 @@ export const chatApi = axios.create({
 type RetryConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
   skipAuth?: boolean;
+  optionalAuth?: boolean;
 };
 
 let isRefreshing = false;
@@ -105,7 +107,9 @@ const setupInterceptors = (instance: AxiosInstance) => {
 
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        redirectToLogin();
+        if (!originalRequest.optionalAuth && (current || tokenUsed)) {
+          redirectToLogin();
+        }
         return Promise.reject(error);
       }
 
@@ -133,7 +137,10 @@ const setupInterceptors = (instance: AxiosInstance) => {
         const status = axios.isAxiosError(refreshError)
           ? refreshError.response?.status
           : undefined;
-        if (status === 401 || status === 400 || status === 403) {
+        if (
+          !originalRequest.optionalAuth &&
+          (status === 401 || status === 400 || status === 403)
+        ) {
           redirectToLogin();
         }
         return Promise.reject(refreshError);

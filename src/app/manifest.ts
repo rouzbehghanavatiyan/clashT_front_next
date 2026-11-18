@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: SITE_NAME,
     short_name: "ClashT",
     description: SITE_DESCRIPTION,
-    start_url: "/",
+    start_url: "/watch",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

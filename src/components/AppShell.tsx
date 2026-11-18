@@ -31,12 +31,16 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const token = getAccessToken();
+    if (!token && (pathname === "/" || pathname === "/home")) {
+      router.replace("/watch");
+      return;
+    }
     if (!token && isProtectedRoute(pathname)) {
       router.replace("/login");
       return;
     }
     if (token && isAuthPage && pathname !== "/offline") {
-      router.replace("/");
+      router.replace("/watch");
     }
   }, [isAuthPage, pathname, router]);
 

@@ -53,7 +53,7 @@ export function isPublicRoute(pathname: string) {
 }
 
 export function isProtectedRoute(pathname: string) {
-  if (pathname === "/") return true;
+  if (pathname === "/" || pathname.startsWith("/watch")) return false;
   return (
     pathname.startsWith("/create") ||
     pathname.startsWith("/chat") ||

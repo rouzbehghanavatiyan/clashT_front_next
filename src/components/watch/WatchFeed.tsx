@@ -80,12 +80,15 @@ export default function WatchFeed() {
         const take = pagination.take || 6;
         const skip = reset ? 0 : skipRef.current;
 
-        const res = await attachmentService.attachmentList({
-          skip,
-          take,
-          subCatId: 0,
-          seed: activeSeed,
-        });
+        const res = await attachmentService.attachmentList(
+          {
+            skip,
+            take,
+            subCatId: 0,
+            seed: activeSeed,
+          },
+          true,
+        );
 
         const newData = res?.data?.data || [];
 
@@ -121,6 +124,13 @@ export default function WatchFeed() {
       } catch (err) {
         console.error("Failed to fetch matches:", err);
         setError("Could not load matches. Please try again.");
+        dispatch(
+          setPaginationWatch({
+            take: pagination.take || 6,
+            skip: skipRef.current,
+            hasMore: false,
+          }),
+        );
       } finally {
         loadingRef.current = false;
         setLoading(false);
