@@ -9,16 +9,12 @@ export const removeFile = async (movieId: number) => {
 };
 
 export const attachmentService = {
-  attachmentList: (params: any, optionalAuth = false) =>
-    api.get(`/attachmentList`, { params, optionalAuth }),
-  attachmentListByInviteId: (
-    params: {
-      skip: number;
-      take: number;
-      inviteId: string | number;
-    },
-    optionalAuth = false,
-  ) => api.get(`/attachmentListByInviteId`, { params, optionalAuth }),
+  attachmentList: (params: any) => api.get(`/attachmentList`, { params }),
+  attachmentListByInviteId: (params: {
+    skip: number;
+    take: number;
+    inviteId: string | number;
+  }) => api.get(`/attachmentListByInviteId`, { params }),
   listByInviteId: (params: any) =>
     api.get(`/attachmentListByInviteId`, { params }),
 

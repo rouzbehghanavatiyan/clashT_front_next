@@ -80,15 +80,12 @@ export default function WatchFeed() {
         const take = pagination.take || 6;
         const skip = reset ? 0 : skipRef.current;
 
-        const res = await attachmentService.attachmentList(
-          {
-            skip,
-            take,
-            subCatId: 0,
-            seed: activeSeed,
-          },
-          true,
-        );
+        const res = await attachmentService.attachmentList({
+          skip,
+          take,
+          subCatId: 0,
+          seed: activeSeed,
+        });
 
         const newData = res?.data?.data || [];
 

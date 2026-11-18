@@ -63,14 +63,11 @@ export default function WatchPlayer({ inviteId }: { inviteId: string }) {
     const requestInviteId = Number.isNaN(numericId) ? inviteId : numericId;
 
     const readSlice = async (skip: number) => {
-      const res = await attachmentService.attachmentListByInviteId(
-        {
-          skip,
-          take,
-          inviteId: requestInviteId,
-        },
-        true,
-      );
+      const res = await attachmentService.attachmentListByInviteId({
+        skip,
+        take,
+        inviteId: requestInviteId,
+      });
       const list = normalizeList(res?.data);
       return list.length > take ? list.slice(skip, skip + take) : list;
     };
