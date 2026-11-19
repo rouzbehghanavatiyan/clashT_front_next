@@ -16,6 +16,7 @@ import { RsetUserId, RsetUserLogin } from "@/store/slices/mainSlice";
 import { userService } from "@/services/user.service";
 import { removeTokens } from "@/services/tokenService";
 import { PWA_INSTALL_DISMISSED_KEY } from "@/lib/pwa";
+import { LEARNING_SEEN_KEY } from "@/components/learning/FirstVisitLearning";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -71,6 +72,7 @@ export default function SettingPage() {
 
             const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
             const pwaDismissed = localStorage.getItem(PWA_INSTALL_DISMISSED_KEY);
+            const learningSeen = localStorage.getItem(LEARNING_SEEN_KEY);
             removeTokens();
             localStorage.clear();
             if (savedTheme) {
@@ -78,6 +80,9 @@ export default function SettingPage() {
             }
             if (pwaDismissed) {
                 localStorage.setItem(PWA_INSTALL_DISMISSED_KEY, pwaDismissed);
+            }
+            if (learningSeen) {
+                localStorage.setItem(LEARNING_SEEN_KEY, learningSeen);
             }
 
             dispatch(RsetUserLogin(null));

@@ -13,6 +13,7 @@ import DeactivatedModal from "@/common/DeactivatedModal";
 import { isMainTabPath, isProtectedRoute, isPublicRoute } from "@/lib/navigation";
 import { IosSwipeBack } from "@/components/IosSwipeBack";
 import { getAccessToken } from "@/services/tokenService";
+import { FirstVisitLearning } from "@/components/learning/FirstVisitLearning";
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -57,11 +58,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [lockPageScroll]);
 
-  if (isAuthPage) {
-    return <main className="min-h-screen bg-background text-foreground">{children}</main>;
-  }
-
-  return (
+  const shell = isAuthPage ? (
+    <main className="min-h-screen bg-background text-foreground">{children}</main>
+  ) : (
     <div
       className={`flex bg-gray-50 text-gray-900 dark:bg-zinc-950 dark:text-gray-100 ${
         lockPageScroll ? "h-screen overflow-hidden" : "min-h-screen"
@@ -90,5 +89,12 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
       <MessageModal />
       <DeactivatedModal />
     </div>
+  );
+
+  return (
+    <>
+      {shell}
+      <FirstVisitLearning />
+    </>
   );
 };
